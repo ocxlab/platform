@@ -1,0 +1,55 @@
+name: ocp-platform
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: services/provider/Dockerfile
+      target: api
+    ports:
+      - "127.0.0.1:${OCP_HTTP_PORT:-18180}:8080"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, /ocp-api, -healthcheck]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+
+  db:
+    # PostgreSQL 18.6. Local-only credentials; no host database port is exposed.
+    image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    environment:
+      POSTGRES_USER: ocp_dev
+      POSTGRES_PASSWORD: ocp_local_only
+      POSTGRES_DB: ocp_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U ocp_dev -d ocp_dev"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+
+  tools:
+    profiles: [tools]
+    build:
+      context: .
+      dockerfile: services/provider/Dockerfile
+      target: tools
+    working_dir: /workspace/services/provider
+    environment:
+      GOTOOLCHAIN: local
+    volumes:
+      - .:/workspace
+      - go-build-cache:/root/.cache/go-build
+      - go-module-cache:/go/pkg/mod
+    command: [go, version]
+
+volumes:
+  postgres-data:
+  go-build-cache:
+  go-module-cache:

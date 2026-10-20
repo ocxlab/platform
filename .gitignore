@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.task/
+build/
+coverage/
+working/
+*.log
+*.test
+.DS_Store
+Thumbs.db

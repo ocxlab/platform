@@ -1,0 +1,90 @@
+version: '3'
+
+vars:
+  COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml
+
+tasks:
+  default:
+    desc: List available local commands
+    cmds:
+      - task --list
+
+  doctor:
+    desc: Check Task, Docker, and the Compose definition
+    cmds:
+      - task --version
+      - docker version --format '{{"{{.Server.Version}}"}}'
+      - '{{.COMPOSE}} config --quiet'
+
+  tools:build:
+    desc: Build the containerized Go toolchain
+    cmds:
+      - '{{.COMPOSE}} build tools'
+
+  fmt:
+    desc: Format Go sources inside Docker
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools go fmt ./...'
+
+  fmt:check:
+    desc: Fail when Go sources need formatting without editing them
+    cmds:
+      - >-
+        {{.COMPOSE}} run --rm --no-deps tools sh -ec
+        'unformatted=$(gofmt -l cmd internal); if [ -n "$unformatted" ]; then printf "%s\n" "$unformatted"; exit 1; fi'
+
+  test:
+    desc: Run Go unit tests inside Docker
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools go test -count=1 ./...'
+
+  test:race:
+    desc: Run tests with the Go race detector inside Docker
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./...'
+
+  vet:
+    desc: Run Go static checks inside Docker
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools go vet ./...'
+
+  build:
+    desc: Build the non-root API runtime image
+    cmds:
+      - '{{.COMPOSE}} build api'
+
+  check:
+    desc: Run formatting checks, vet, race tests, and the runtime build locally
+    cmds:
+      - task: tools:build
+      - task: fmt:check
+      - task: vet
+      - task: test:race
+      - task: build
+
+  dev:
+    desc: Build and start the local API and PostgreSQL; wait for health checks
+    cmds:
+      - '{{.COMPOSE}} up --build --detach --wait api db'
+
+  db:check:
+    desc: Execute a harmless SQL connectivity check against the local database
+    cmds:
+      - "{{.COMPOSE}} exec -T db psql -v ON_ERROR_STOP=1 -U ocp_dev -d ocp_dev -c 'SELECT 1 AS connection_ok;'"
+
+  smoke:
+    desc: Start the stack, check the running API, and execute the SQL check
+    cmds:
+      - task: dev
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_SMOKE_URL=http://api:8080 tools go run ./cmd/check-local'
+      - task: db:check
+
+  logs:
+    desc: Follow API and database logs
+    cmds:
+      - '{{.COMPOSE}} logs --follow api db'
+
+  stop:
+    desc: Stop the local stack while retaining database and compiler-cache volumes
+    cmds:
+      - '{{.COMPOSE}} down'
