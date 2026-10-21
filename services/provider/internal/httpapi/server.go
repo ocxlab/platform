@@ -18,6 +18,7 @@ import (
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
 	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/problems"
 )
 
 type principalKey struct{}
@@ -215,7 +216,14 @@ func decode(r *http.Request, target any) error {
 	return nil
 }
 func problem(w http.ResponseWriter, status int, code, detail string, current *int64) {
-	body := map[string]any{"type": "about:blank", "title": http.StatusText(status), "status": status, "code": code, "detail": detail, "instance": "urn:uuid:" + w.Header().Get("X-Request-ID")}
+	definition, ok := problems.Lookup(code)
+	if !ok || definition.Status != status {
+		status = 503
+		code = "unavailable"
+		detail = "The service could not complete this request."
+		definition, _ = problems.Lookup(code)
+	}
+	body := map[string]any{"type": "about:blank", "title": definition.Title, "status": status, "code": code, "detail": detail, "instance": "urn:uuid:" + w.Header().Get("X-Request-ID")}
 	if current != nil {
 		field := "current_revision"
 		if code == "publication_conflict" {
@@ -255,6 +263,9 @@ func write(w http.ResponseWriter, value any, err error) {
 		case errors.Is(err, persistence.ErrQuoteCapacity):
 			w.Header().Set("Retry-After", "60")
 			problem(w, 429, "quote_capacity", "This store has reached its temporary quote capacity. Please try again later.", nil)
+		case errors.Is(err, persistence.ErrGuestCapacity):
+			w.Header().Set("Retry-After", "60")
+			problem(w, 429, "guest_capacity", "This store has reached its temporary guest checkout capacity. Please try again later.", nil)
 		case errors.Is(err, offering.ErrUnsupported):
 			problem(w, 422, "unsupported_model", "No installed implementation supports this operation for the offering model.", nil)
 		default:

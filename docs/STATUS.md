@@ -1,6 +1,35 @@
 # Development status
 
-## Guest order placement checkpoint (unfinished)
+## Guest order placement and module-owned errors
+
+21 October 2026, Europe/Berlin (UTC+02:00). Batch 1 is complete at the bounded
+pickup-placement scope. The earlier pause checkpoint below records its history,
+not outstanding work. The contract corrections and additional checks listed there
+are now implemented. No development data was reset.
+
+`task check`, the additional `task test`, and `task test:browser` passed. Real
+PostgreSQL tests cover concurrent placement with matching and different keys,
+price changes versus unavailability, expiry, cross-store/merchant denial,
+handler restart, atomic rollback, runtime immutability, tenant RLS, guest-lookup
+privileges, and cleanup that preserves order actors. The browser journey now places
+and reloads an order, repeats placement without duplication, denies another browser,
+and retains private receipt access after public suspension. Engineering and protocol
+reviews accepted the corrected bounded implementation; these are automated reviews.
+
+Error codes now have module-owned sources under `contracts/errors/`, generated
+Go/TypeScript catalogs, drift checks, and safe fallback tests. Official Fluent
+resources provide English and German messages selected per request. The UI maps
+known codes to these messages rather than displaying backend details. This is an
+error-message foundation, not complete UI translation. See
+[the maintenance guide](../contracts/errors/README.md).
+
+Guest access lasts seven days. One active checkout intent is retained per store
+in a browser; requesting a new quote replaces it, and an older tab cannot silently
+place that superseded intent. Production guest recovery, abuse controls, retention,
+taxes and complete restaurant timing remain release work. Acceptance, kitchen
+operations and payments follow in the next two authorized batches.
+
+### Earlier pause checkpoint (superseded)
 
 21 October 2026, 19:58 Europe/Berlin (UTC+02:00). Paused at the founder's request.
 Batch 1 is NOT complete or deployed; the previous development app remains running.

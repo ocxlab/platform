@@ -42,5 +42,3 @@ get:
       $ref: ../components/responses/problem.yaml
     'default':
       $ref: ../components/responses/problem.yaml
-    '429':
-      $ref: ../components/responses/quote-capacity.yaml

@@ -1,0 +1,13 @@
+description: Active guest checkout capacity reached. Retry after the indicated delay; capacity may still be occupied.
+headers:
+  X-Request-ID:
+    $ref: ../headers/request-id.yaml
+  Retry-After:
+    description: Minimum suggested delay in seconds.
+    schema:
+      type: integer
+      enum: [60]
+content:
+  application/problem+json:
+    schema:
+      $ref: ../../schemas/common/problem.yaml

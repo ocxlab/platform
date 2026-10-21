@@ -414,6 +414,7 @@ export interface components {
             /** @enum {string} */
             resolution: "open";
             store_id: components["schemas"]["Identifier"];
+            /** @description Immutable agreed quote snapshot. expires_at is the deadline for first placement, not an expiry or cancellation of this order. */
             terms: components["schemas"]["FoodQuote"];
         };
         FoodQuote: {
@@ -631,6 +632,18 @@ export interface components {
         };
     };
     responses: {
+        /** @description Active guest checkout capacity reached. Retry after the indicated delay; capacity may still be occupied. */
+        ComponentsResponsesGuestCapacityYaml2ca50909: {
+            headers: {
+                /** @description Minimum suggested delay in seconds. */
+                "Retry-After"?: 60;
+                "X-Request-ID": components["headers"]["RequestID"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
         /** @description Active quote storage capacity reached. Retry after the indicated delay; capacity may still be occupied. */
         ComponentsResponsesQuoteCapacityYaml4bef3f4e: {
             headers: {
@@ -791,7 +804,6 @@ export interface operations {
             413: components["responses"]["ProblemResponse"];
             415: components["responses"]["ProblemResponse"];
             422: components["responses"]["ProblemResponse"];
-            429: components["responses"]["ComponentsResponsesQuoteCapacityYaml4bef3f4e"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };
@@ -828,7 +840,6 @@ export interface operations {
             413: components["responses"]["ProblemResponse"];
             415: components["responses"]["ProblemResponse"];
             422: components["responses"]["ProblemResponse"];
-            429: components["responses"]["ComponentsResponsesQuoteCapacityYaml4bef3f4e"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };
@@ -897,6 +908,11 @@ export interface operations {
                     "application/json": components["schemas"]["FoodQuote"];
                 };
             };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };
     };
@@ -1257,7 +1273,7 @@ export interface operations {
             413: components["responses"]["ProblemResponse"];
             415: components["responses"]["ProblemResponse"];
             422: components["responses"]["ProblemResponse"];
-            429: components["responses"]["ComponentsResponsesQuoteCapacityYaml4bef3f4e"];
+            429: components["responses"]["ComponentsResponsesGuestCapacityYaml2ca50909"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };

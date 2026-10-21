@@ -24,5 +24,15 @@ get:
         application/json:
           schema:
             $ref: ../domains/food/selection/v1/schema.yaml#/FoodQuote
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
     default:
       $ref: ../components/responses/problem.yaml

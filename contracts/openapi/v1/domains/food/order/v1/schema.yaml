@@ -23,7 +23,9 @@ FoodOrder:
       type: string
       enum: [ocp.food.order.v1]
     terms:
-      $ref: ../../selection/v1/schema.yaml#/FoodQuote
+      description: Immutable agreed quote snapshot. expires_at is the deadline for first placement, not an expiry or cancellation of this order.
+      allOf:
+        - $ref: ../../selection/v1/schema.yaml#/FoodQuote
     fulfilment:
       type: string
       enum: [pickup]

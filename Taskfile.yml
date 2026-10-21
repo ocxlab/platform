@@ -100,6 +100,7 @@ tasks:
     desc: Run formatting checks, vet, race tests, and the runtime build locally
     cmds:
       - task: tools:build
+      - task: errors:check
       - task: fmt:check
       - task: contracts:check
       - task: vet
@@ -118,6 +119,16 @@ tasks:
     desc: Validate modular local OpenAPI sources and build a self-contained bundle
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/contracts'
+
+  errors:generate:
+    desc: Generate Go and TypeScript error catalogs from module-owned contract files
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps web-tools node ../../scripts/generate-errors.mjs'
+
+  errors:check:
+    desc: Verify that generated error catalogs match their module-owned sources
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps web-tools node ../../scripts/generate-errors.mjs --check'
 
   contracts:generate:
     desc: Regenerate committed Go models, client, routing, and embedded contract

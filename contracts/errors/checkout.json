@@ -1,0 +1,22 @@
+{
+  "quote_capacity": {
+    "status": 429,
+    "title": "Quote capacity reached",
+    "message_key": "error-checkout-quote-capacity"
+  },
+  "guest_capacity": {
+    "status": 429,
+    "title": "Guest checkout capacity reached",
+    "message_key": "error-checkout-guest-capacity"
+  },
+  "quote_expired": {
+    "status": 409,
+    "title": "Quote expired",
+    "message_key": "error-checkout-quote-expired"
+  },
+  "quote_already_placed": {
+    "status": 409,
+    "title": "Quote already placed",
+    "message_key": "error-checkout-quote-already-placed"
+  }
+}

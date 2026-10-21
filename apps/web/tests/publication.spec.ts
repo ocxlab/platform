@@ -56,6 +56,30 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('15,00');
   await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('not an order');
+  await guest.reload();
+  await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('Garlic');
+  await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
+  await expect(guest.getByRole('heading', { name: 'Pickup order placed' })).toBeVisible();
+  const receipt = guest.url();
+  await expect(guest.getByRole('region', { name: 'Order details' })).toContainText('15,00');
+  await expect(guest.getByRole('region', { name: 'Order details' })).toContainText('Sauce: Garlic');
+  await expect(guest.getByText('Awaiting restaurant acceptance.', { exact: false })).toBeVisible();
+  await guest.reload();
+  await expect(guest).toHaveURL(receipt);
+  await guest.goto(storefront);
+  await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
+  await expect(guest).toHaveURL(receipt);
+  const guestCookies = await guestContext.cookies();
+  const credentialCookie = guestCookies.find((cookie) => cookie.name.startsWith('ocp_guest_'));
+  expect(credentialCookie?.httpOnly).toBe(true);
+  expect(credentialCookie?.sameSite).toBe('Strict');
+  expect((await guest.content()).includes(credentialCookie!.value)).toBe(false);
+  expect(await guest.evaluate(() => localStorage.length)).toBe(0);
+  const unrelatedContext = await browser.newContext(); const unrelated = await unrelatedContext.newPage();
+  await unrelated.goto(receipt);
+  await expect(unrelated.getByText('Open this order in the browser used at checkout.', { exact: false })).toBeVisible();
+  await expect(unrelated.getByRole('region', { name: 'Order details' })).toHaveCount(0);
+  await unrelatedContext.close();
   // Deletion is a draft edit, survives reload, and only reaches customers on publish.
   const removeItem = page.getByRole('button', { name: 'Remove menu item Döner', exact: true });
   const viewport = page.viewportSize();
@@ -104,6 +128,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await admin.getByRole('button', { name: 'Suspend visibility' }).click();
   await expect(admin.getByRole('status')).toContainText('Public visibility suspended');
   await guest.goto(storefront); await expect(guest.getByText('This store has no public menu available.')).toBeVisible();
+  await guest.goto(receipt); await expect(guest.getByRole('region', { name: 'Order details' })).toContainText('15,00');
   await admin.getByLabel('Reason for this action').fill('Browser review complete');
   await admin.getByRole('button', { name: 'Restore visibility' }).click();
   await expect(admin.getByRole('status')).toContainText('Visibility restored');

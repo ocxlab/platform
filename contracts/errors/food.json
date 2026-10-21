@@ -1,0 +1,7 @@
+{
+  "invalid_selection": {
+    "status": 422,
+    "title": "Invalid selection",
+    "message_key": "error-food-invalid-selection"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "invalid_request": {
+    "status": 400,
+    "title": "Invalid request",
+    "message_key": "error-common-invalid-request"
+  },
+  "not_found": {
+    "status": 404,
+    "title": "Resource not found",
+    "message_key": "error-common-not-found"
+  },
+  "unauthenticated": {
+    "status": 401,
+    "title": "Authentication required",
+    "message_key": "error-common-unauthenticated"
+  },
+  "forbidden": {
+    "status": 403,
+    "title": "Access denied",
+    "message_key": "error-common-forbidden"
+  },
+  "unavailable": {
+    "status": 503,
+    "title": "Service unavailable",
+    "message_key": "error-common-unavailable"
+  },
+  "body_too_large": {
+    "status": 413,
+    "title": "Request body too large",
+    "message_key": "error-common-body-too-large"
+  },
+  "unsupported_media_type": {
+    "status": 415,
+    "title": "Unsupported media type",
+    "message_key": "error-common-unsupported-media-type"
+  },
+  "idempotency_conflict": {
+    "status": 409,
+    "title": "Request key conflict",
+    "message_key": "error-common-idempotency-conflict"
+  }
+}

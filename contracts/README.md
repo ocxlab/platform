@@ -143,13 +143,22 @@ expiry is a validity limit, not a deletion guarantee. This is not internet rate
 limiting: an attacker could occupy those slots. Public release requires separately
 tested abuse controls, appropriate limits, and a retention policy.
 
-## Guest checkout checkpoint
+## Guest checkout
 
-The unfinished checkout batch adds a GuestBearerAuth audience and guest-owned
+Checkout uses a GuestBearerAuth audience and guest-owned
 quotes. Anonymous preview quotes do not confer placement authority. Pickup
 placement retains agreed quote terms, pending acceptance, without payment or
 preparation. Quote expiry limits first placement; it does not expire an order.
-See docs/STATUS.md for remaining review findings and verification work.
+Guest credentials are merchant/store scoped and expire after seven days. Receipt
+identifiers alone do not authorize reads. Placement and its event/replay commit
+together; a retry retains the original terms even after quote expiry or withdrawal.
+The web retains one checkout intent per store, including its original retry key.
+See `docs/STATUS.md` for executed checks and remaining product boundaries.
+
+Stable machine errors are owned by module under [errors/](errors/README.md).
+Run `task errors:generate` after catalog changes. English and German Fluent
+resources live with the web application; API problem details remain diagnostic,
+not the source of customer-facing translations.
 
 ## Tooling note
 

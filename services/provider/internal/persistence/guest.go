@@ -17,6 +17,8 @@ type GuestSession struct {
 	ExpiresAt time.Time `json:"expires_at"`
 }
 
+var ErrGuestCapacity = errors.New("active guest capacity exceeded")
+
 // A guest is an opaque, store-bound checkout grant, not an account. Only its
 // digest is retained; the secret never enters quotes, order history or replays.
 func CreateGuestSession(ctx context.Context, db *sql.DB, merchant, store uuid.UUID) (GuestSession, error) {
@@ -48,7 +50,7 @@ func CreateGuestSession(ctx context.Context, db *sql.DB, merchant, store uuid.UU
 		return GuestSession{}, err
 	}
 	if count >= 1000 {
-		return GuestSession{}, ErrQuoteCapacity
+		return GuestSession{}, ErrGuestCapacity
 	}
 	var entropy [32]byte
 	if _, err = rand.Read(entropy[:]); err != nil {
