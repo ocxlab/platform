@@ -81,6 +81,22 @@ services:
       timeout: 3s
       retries: 20
 
+  browser-web-dev:
+    profiles: [browser]
+    extends:
+      service: web-tools
+    environment:
+      OCP_API_URL: http://browser-api:8080
+      OCP_DEVELOPMENT_PAYMENTS: 'true'
+      OCP_LOCAL_INSECURE_COOKIES: 'true'
+      __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: browser-web-dev
+    command: [pnpm, exec, vite, --host, 0.0.0.0, --port, '3000']
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 2s
+      timeout: 10s
+      retries: 30
+
   browser:
     profiles: [browser]
     build:
@@ -89,6 +105,8 @@ services:
       target: browsers
     environment:
       OCP_BROWSER_URL: http://browser-web:3000
+    volumes:
+      - ./apps/web/test-results:/workspace/apps/web/test-results
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
 

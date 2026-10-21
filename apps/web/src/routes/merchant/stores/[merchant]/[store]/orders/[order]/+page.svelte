@@ -5,6 +5,7 @@
   import ActionButton from '$lib/components/ActionButton.svelte';
   import Check from '@lucide/svelte/icons/check';
   import X from '@lucide/svelte/icons/x';
+  import { fulfilmentAction } from '$lib/orders';
   const { t } = useI18n();
   let { data, form } = $props();
 </script>
@@ -22,5 +23,17 @@
       <ActionButton icon={decision === 'accept' ? Check : X} label={decision === 'accept' ? t('orders-accept') : t('orders-reject')} danger={decision === 'reject'} />
     </form>
   {/each}
+</section>
+{/if}
+{#if fulfilmentAction(data.order)}
+<section aria-label={t('fulfilment-title')}>
+  <h2>{t('fulfilment-title')}</h2>
+  <p>{t('fulfilment-help')}</p>
+  <form method="POST" action="?/fulfilment">
+    <input type="hidden" name="action" value={fulfilmentAction(data.order)} />
+    <input type="hidden" name="revision" value={data.order.revision} />
+    <input type="hidden" name="key" value={`${data.order.id}-${data.order.revision}-${fulfilmentAction(data.order)}`} />
+    <ActionButton icon={Check} label={t(`fulfilment-action-${fulfilmentAction(data.order)}`)} />
+  </form>
 </section>
 {/if}

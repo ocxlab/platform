@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { HTMLButtonAttributes } from 'svelte/elements';
   import type { LucideIcon } from '@lucide/svelte';
+  import { onMount } from 'svelte';
 
   type Props = Omit<HTMLButtonAttributes, 'children' | 'title' | 'aria-label'> & {
     label: string;
@@ -16,6 +17,8 @@
   let hovered = $state(false);
   let focused = $state(false);
   let dismissed = $state(false);
+  let interactive = $state(false);
+  onMount(() => { interactive = true; });
   const visible = $derived(!disabled && !dismissed && (hovered || focused));
   let button = $state<HTMLButtonElement>();
   let tip = $state<HTMLSpanElement>();
@@ -34,7 +37,7 @@
 <svelte:window onkeydown={(event) => { if (event.key === 'Escape') dismissed = true; }}
   onscroll={positionTooltip} onresize={positionTooltip} />
 <span class="action" role="presentation" onpointerenter={() => { hovered = true; dismissed = false; }} onpointerleave={() => { hovered = false; }}>
-  <button bind:this={button} {...attributes} {type} {disabled} aria-label={label}
+  <button bind:this={button} {...attributes} {type} disabled={disabled || (type === 'button' && !interactive)} aria-label={label}
     aria-describedby={[attributes['aria-describedby'], visible ? tooltipId : undefined].filter(Boolean).join(' ') || undefined}
     class={['action-button', className, { 'icon-only': iconOnly && !!Icon, danger }]}
     onclick={(event) => { dismissed = true; onclick?.(event); }}

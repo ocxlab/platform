@@ -1,7 +1,11 @@
 error-orders-development-payments-disabled = مدفوعات التطوير معطلة على هذا الخادم.
 payment-development = دفعة تجريبية للتطوير
 payment-development-help = محاكاة فقط. لا يتم تحويل أموال حقيقية. الحد الأقصى عشر محاولات دفع لكل طلب.
-payment-action-start = فتح صفحة الدفع التجريبية
+payment-action-start = دفع قيمة الطلب
+payment-resume = متابعة الدفع
+payment-checkout-title = صفحة الدفع التجريبية
+payment-checkout-help = اختر نتيجة اختبار أدناه. تستخدم صفحة الدفع المبلغ المتفق عليه للطلب ولا تجمع بيانات البطاقات.
+payment-return = العودة إلى الطلب
 payment-action-succeed = محاكاة دفع ناجح
 payment-action-decline = محاكاة دفع مرفوض
 payment-action-abandon = مغادرة الدفع دون دفع

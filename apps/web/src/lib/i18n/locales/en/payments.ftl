@@ -1,7 +1,11 @@
 error-orders-development-payments-disabled = Development payments are disabled on this server.
 payment-development = Development payment
 payment-development-help = Simulation only. No real money is moved. Up to ten checkout attempts per order.
-payment-action-start = Open development checkout
+payment-action-start = Pay order
+payment-resume = Continue to checkout
+payment-checkout-title = Development checkout
+payment-checkout-help = Choose a test outcome below. This checkout uses the agreed order total and never collects card details.
+payment-return = Return to order
 payment-action-succeed = Simulate successful payment
 payment-action-decline = Simulate declined payment
 payment-action-abandon = Leave checkout without paying

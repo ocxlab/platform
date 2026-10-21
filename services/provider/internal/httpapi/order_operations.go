@@ -49,3 +49,16 @@ func (s *Server) CancelGuestFoodOrder(w http.ResponseWriter, r *http.Request, me
 	})
 	write(w, result, err)
 }
+
+func (s *Server) ProgressFoodFulfilment(w http.ResponseWriter, r *http.Request, merchant, store, order uuid.UUID, params ProgressFoodFulfilmentParams) {
+	var body ProgressFoodFulfilmentJSONRequestBody
+	if decode(r, &body) != nil {
+		problem(w, 400, "invalid_request", "A fulfilment action and current order revision are required.", nil)
+		return
+	}
+	canonical, _ := json.Marshal(body)
+	result, err := persistence.Mutate(r.Context(), s.db, principal(r), "progressFoodFulfilment", store.String()+"/"+order.String(), params.IdempotencyKey, canonical, func(tx *sql.Tx) (any, error) {
+		return persistence.ProgressFoodFulfilment(r.Context(), tx, principal(r), store, order, body.ExpectedRevision, string(body.Action), uuid.MustParse(w.Header().Get("X-Request-ID")))
+	})
+	write(w, result, err)
+}

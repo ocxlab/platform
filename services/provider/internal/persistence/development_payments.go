@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/payment"
@@ -22,20 +21,6 @@ func paymentOperation(ctx context.Context, tx *sql.Tx, order FoodOrder) (payment
 func savePayment(ctx context.Context, tx *sql.Tx, order FoodOrder, operation payment.Operation) error {
 	_, err := tx.ExecContext(ctx, `INSERT INTO payment.development_operations(merchant_id,store_id,order_id,state,attempts,amount_minor,currency)
  VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(merchant_id,store_id,order_id) DO UPDATE SET state=EXCLUDED.state,attempts=EXCLUDED.attempts`, order.MerchantID, order.StoreID, order.ID, operation.State, operation.Attempts, order.Terms.Total, order.Terms.Currency)
-	return err
-}
-
-func changeOrderEvent(ctx context.Context, tx *sql.Tx, p Principal, order *FoodOrder, event string, requestID uuid.UUID) error {
-	order.Revision++
-	_, err := tx.ExecContext(ctx, `UPDATE commerce.food_order_operations SET revision=$4,acceptance=$5,resolution=$6 WHERE merchant_id=$1 AND store_id=$2 AND order_id=$3`, order.MerchantID, order.StoreID, order.ID, order.Revision, order.Acceptance, order.Resolution)
-	if err != nil {
-		return err
-	}
-	var at time.Time
-	err = tx.QueryRowContext(ctx, `INSERT INTO commerce.food_order_events(merchant_id,store_id,order_id,sequence,event,actor_id,request_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING created_at`, order.MerchantID, order.StoreID, order.ID, order.Revision, event, p.ID, requestID).Scan(&at)
-	if err == nil {
-		order.History = append(order.History, FoodOrderEvent{order.Revision, event, at})
-	}
 	return err
 }
 

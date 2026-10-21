@@ -1,0 +1,12 @@
+fulfilment-title = Abholstatus
+fulfilment-help = Erfasse den Fortschritt im Restaurant. Nach Beginn der Zubereitung ist eine automatische Stornierung nicht mehr möglich. Kunden können sich weiterhin an das Restaurant wenden.
+fulfilment-action-start_preparation = Zubereitung starten
+fulfilment-action-mark_ready = Zur Abholung bereit melden
+fulfilment-action-record_collection = Abholung erfassen
+fulfilment-status-not_started = Die Zubereitung wurde noch nicht gestartet.
+fulfilment-status-preparing = Das Restaurant bereitet deine Bestellung zu.
+fulfilment-status-ready = Deine Bestellung ist zur Abholung bereit.
+fulfilment-status-collected = Das Restaurant hat die Abholung erfasst.
+fulfilment-event-preparing = Zubereitung gestartet
+fulfilment-event-ready = Zur Abholung bereit
+fulfilment-event-collected = Abholung erfasst

@@ -1,0 +1,12 @@
+fulfilment-title = حالة الاستلام
+fulfilment-help = سجّل تقدم العمل في المطعم. يتوقف الإلغاء التلقائي عند بدء التحضير، ويمكن للعملاء التواصل مع المطعم للمساعدة.
+fulfilment-action-start_preparation = بدء التحضير
+fulfilment-action-mark_ready = تحديد الطلب جاهزًا للاستلام
+fulfilment-action-record_collection = تسجيل استلام العميل
+fulfilment-status-not_started = لم يبدأ التحضير بعد.
+fulfilment-status-preparing = المطعم يحضّر طلبك.
+fulfilment-status-ready = طلبك جاهز للاستلام.
+fulfilment-status-collected = سجّل المطعم استلام العميل للطلب.
+fulfilment-event-preparing = بدأ التحضير
+fulfilment-event-ready = جاهز للاستلام
+fulfilment-event-collected = تم تسجيل استلام العميل

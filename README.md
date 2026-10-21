@@ -13,8 +13,9 @@ TypeScript artifacts. Guest pickup-order placement and private receipts are
 available. The restaurant order inbox supports acceptance/rejection and private
 progress. A stateful development payment service supports simulated checkout,
 retry, cancellation, and refunds on unprepared orders. Orders and stores also
-have readable references alongside their UUIDs. Kitchen operations,
-real payment adapters, and native ONIX integration remain next slices; this is not yet a
+have readable references alongside their UUIDs. Merchants can report preparation,
+readiness, and customer pickup for accepted, paid orders. Real payment adapters,
+merchant delivery, and native ONIX integration remain next slices; this is not yet a
 complete ordering product.
 
 ## Start locally
@@ -82,6 +83,7 @@ credentials out of source control; none are needed for the current checks.
 | `task web:generate` | Regenerate TypeScript API types from the shared OpenAPI bundle |
 | `task check` | Check contracts, formatting, vet, race/SQL tests, web types/components, and runtime builds |
 | `task test:browser` | Run Chromium merchant/guest/admin journeys with disposable PostgreSQL |
+| `task test:browser:dev` | Run the same journeys against Vite to catch hydration and client-interaction regressions |
 | `task test:mutation:web` | Run Stryker against selected TypeScript rules and session helpers |
 | `task test:mutation:go` | Run Gremlins against Food and development-payment rules |
 | `task web:dev` | Start Docker API/database and local Svelte hot reload on localhost:18181 |
@@ -96,6 +98,10 @@ credentials out of source control; none are needed for the current checks.
 | `task db:check` | Run a harmless SQL connectivity query |
 | `task smoke` | Start the stack and check actual HTTP and SQL connectivity |
 | `task stop` | Stop the stack without deleting persisted data |
+
+Run integration and browser tasks serially: they share a disposable test database.
+Keep web checks and mutation runs separate from `test:browser:dev`, because those
+tools regenerate the Docker development SvelteKit graph.
 
 There is no CI configuration. The same Task commands can be called by CI later.
 First builds need registry access for the pinned images; later dependency updates

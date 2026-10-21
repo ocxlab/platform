@@ -1,0 +1,48 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - $ref: ../components/parameters/order-id.yaml
+post:
+  operationId: ProgressFoodFulfilment
+  x-access: merchant
+  x-required-scope: order:manage
+  tags: [Merchant commerce]
+  summary: Report preparation and pickup progress
+  description: >-
+    Requires an open, accepted pickup order with paid financial state and the current
+    operational revision. Only the development payment adapter is currently implemented.
+    Reports progress in order: start_preparation, mark_ready, record_collection.
+    Payment alone never starts preparation. Collection is the merchant's report, not
+    independent proof of delivery. Once preparation starts, automated guest cancellation
+    is unavailable; this does not remove legal or customer-support rights.
+    Each transition, event and replay result commit together. Matching retries retain the
+    original 201 body; stale revisions and invalid transitions return 409.
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../domains/food/order/v1/operations.yaml#/FoodFulfilmentRequest
+  responses:
+    '201':
+      $ref: ../components/responses/food-order.yaml
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

@@ -61,6 +61,8 @@ paths:
     $ref: paths/merchant-food-order.yaml
   /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions:
     $ref: paths/food-order-decisions.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment:
+    $ref: paths/food-order-fulfilment.yaml
   /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}:
     $ref: paths/admin-food-order.yaml
 components:
@@ -93,6 +95,8 @@ components:
       $ref: schemas/stores/public-list.yaml#/PublicStorePage
     FoodOrderDecision:
       $ref: domains/food/order/v1/operations.yaml#/FoodOrderDecision
+    FoodFulfilmentRequest:
+      $ref: domains/food/order/v1/operations.yaml#/FoodFulfilmentRequest
     CancelFoodOrderRequest:
       $ref: domains/food/order/v1/operations.yaml#/CancelFoodOrderRequest
     FoodOrderEvent:

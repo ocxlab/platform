@@ -15,7 +15,9 @@
     <th scope="row"><a href={`${root}/orders/${order.id}`}><bdi dir="ltr">{order.reference ?? order.id}</bdi></a></th>
     <td><time datetime={order.created_at}>{new Date(order.created_at).toLocaleString(locale())}</time></td>
     <td><bdi>{money(order.terms.total_minor, locale())}</bdi></td>
-    <td>{order.resolution === 'cancelled' ? t('orders-event-cancelled') : order.resolution === 'rejected' ? t('orders-event-rejected') : order.acceptance === 'accepted' ? t('orders-event-accepted') : t('orders-awaiting')}<br /><small>{t(`payment-status-${order.payment}`)}</small></td>
+    <td>{order.resolution === 'cancelled' ? t('orders-event-cancelled') : order.resolution === 'rejected' ? t('orders-event-rejected') : order.acceptance === 'accepted' ? t('orders-event-accepted') : t('orders-awaiting')}<br /><small>{t(`payment-status-${order.payment}`)}</small>
+      {#if order.fulfilment_progress !== 'not_started'}<br /><small>{t(`fulfilment-status-${order.fulfilment_progress}`)}</small>{/if}
+    </td>
   </tr>{/each}</tbody>
 </table></div>
 {/if}

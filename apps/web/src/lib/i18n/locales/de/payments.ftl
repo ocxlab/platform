@@ -1,7 +1,11 @@
 error-orders-development-payments-disabled = Entwicklungszahlungen sind auf diesem Server deaktiviert.
 payment-development = Entwicklungszahlung
 payment-development-help = Nur eine Simulation. Es wird kein echtes Geld bewegt. Höchstens zehn Zahlungsversuche pro Bestellung.
-payment-action-start = Entwicklungszahlung öffnen
+payment-action-start = Bestellung bezahlen
+payment-resume = Weiter zur Zahlung
+payment-checkout-title = Entwicklungszahlung
+payment-checkout-help = Wähle unten ein Testergebnis. Diese Zahlung verwendet den vereinbarten Gesamtbetrag und erfasst keine Kartendaten.
+payment-return = Zurück zur Bestellung
 payment-action-succeed = Erfolgreiche Zahlung simulieren
 payment-action-decline = Abgelehnte Zahlung simulieren
 payment-action-abandon = Zahlung ohne Bezahlen verlassen

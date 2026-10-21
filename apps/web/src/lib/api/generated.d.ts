@@ -324,6 +324,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report preparation and pickup progress
+         * @description Requires an open, accepted pickup order with paid financial state and the current operational revision. Only the development payment adapter is currently implemented. Reports progress in order: start_preparation, mark_ready, record_collection. Payment alone never starts preparation. Collection is the merchant's report, not independent proof of delivery. Once preparation starts, automated guest cancellation is unavailable; this does not remove legal or customer-support rights. Each transition, event and replay result commit together. Matching retries retain the original 201 body; stale revisions and invalid transitions return 409.
+         */
+        post: operations["ProgressFoodFulfilment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/merchants/{merchant_id}/stores/{store_id}/offering": {
         parameters: {
             query?: never;
@@ -544,6 +569,12 @@ export interface components {
         };
         /** Format: int64 */
         DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0: number;
+        FoodFulfilmentRequest: {
+            /** @enum {string} */
+            action: "start_preparation" | "mark_ready" | "record_collection";
+            /** Format: int64 */
+            expected_revision: number;
+        };
         FoodLocalIdentifier: string;
         FoodMenu: {
             /** @enum {string} */
@@ -586,7 +617,7 @@ export interface components {
             /** @enum {string} */
             fulfilment: "pickup";
             /** @enum {string} */
-            fulfilment_progress: "not_started";
+            fulfilment_progress: "not_started" | "preparing" | "ready" | "collected";
             /** @description Ordered durable history on individual order reads. Omitted from bounded inbox pages and old placement replays. Contains no credentials or actor identifiers. */
             history?: components["schemas"]["FoodOrderEvent"][];
             id: components["schemas"]["Identifier"];
@@ -618,7 +649,7 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             /** @enum {string} */
-            event: "placed" | "accepted" | "rejected" | "cancelled" | "payment_started" | "payment_paid" | "payment_failed" | "payment_abandoned" | "cancelled_refunded";
+            event: "placed" | "accepted" | "rejected" | "cancelled" | "payment_started" | "payment_paid" | "payment_failed" | "payment_abandoned" | "cancelled_refunded" | "preparation_started" | "ready_for_pickup" | "collected";
             /** Format: int64 */
             sequence: number;
         };
@@ -1425,6 +1456,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["FoodOrderDecision"];
+            };
+        };
+        responses: {
+            201: components["responses"]["ComponentsResponsesFoodOrderYamlfe02b813"];
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    ProgressFoodFulfilment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FoodFulfilmentRequest"];
             };
         };
         responses: {

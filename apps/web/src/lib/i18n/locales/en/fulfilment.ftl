@@ -1,0 +1,12 @@
+fulfilment-title = Pickup progress
+fulfilment-help = Record what the restaurant is doing. Starting preparation closes automatic cancellation; customers can still contact the restaurant for help.
+fulfilment-action-start_preparation = Start preparation
+fulfilment-action-mark_ready = Mark ready for pickup
+fulfilment-action-record_collection = Record customer pickup
+fulfilment-status-not_started = Preparation has not started.
+fulfilment-status-preparing = The restaurant is preparing your order.
+fulfilment-status-ready = Your order is ready for pickup.
+fulfilment-status-collected = The restaurant recorded customer pickup.
+fulfilment-event-preparing = Preparation started
+fulfilment-event-ready = Ready for pickup
+fulfilment-event-collected = Customer pickup recorded

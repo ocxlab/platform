@@ -1,7 +1,14 @@
 import { test, expect } from '@playwright/test';
 
 test('language preference persists and names keep their own direction in both layouts', async ({ page, browser, request }) => {
+  page.on('pageerror', error => console.error('Browser exception:', error.stack));
+  page.on('console', async entry => {
+    if (entry.text().includes('Failed to hydrate')) {
+      for (const argument of entry.args()) console.error(await argument.evaluate(value => value instanceof Error ? value.stack : String(value)));
+    }
+  });
   await page.goto('/merchant?view=test');
+  await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('header nav a')).toHaveCount(2);
   await expect(page.getByRole('link', { name: 'Merchant', exact: true })).toHaveAttribute('title','Merchant');
   await expect(page.getByRole('link', { name: 'Provider admin', exact: true })).toHaveAttribute('title','Provider admin');
@@ -24,6 +31,7 @@ test('language preference persists and names keep their own direction in both la
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { name: 'مساحة عمل التاجر', exact: true })).toBeVisible();
   await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await page.locator('.language-picker summary').click();
   for (const [code, name] of [['de','Deutsch'],['en','English']]) {

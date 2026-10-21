@@ -30,7 +30,7 @@ FoodOrderEvent:
       minimum: 1
     event:
       type: string
-      enum: [placed, accepted, rejected, cancelled, payment_started, payment_paid, payment_failed, payment_abandoned, cancelled_refunded]
+      enum: [placed, accepted, rejected, cancelled, payment_started, payment_paid, payment_failed, payment_abandoned, cancelled_refunded, preparation_started, ready_for_pickup, collected]
     created_at:
       type: string
       format: date-time
@@ -48,3 +48,15 @@ FoodOrderPage:
       type: string
       maxLength: 128
       description: Opaque position for the next page in newest-first order, not an authorization credential.
+FoodFulfilmentRequest:
+  type: object
+  additionalProperties: false
+  required: [expected_revision, action]
+  properties:
+    expected_revision:
+      type: integer
+      format: int64
+      minimum: 1
+    action:
+      type: string
+      enum: [start_preparation, mark_ready, record_collection]

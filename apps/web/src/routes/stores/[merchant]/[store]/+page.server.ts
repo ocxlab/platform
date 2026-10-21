@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import type { components } from '$lib/api/generated';
 import { api, message, text } from '$lib/server/api';
 import { guestCheckout } from '$lib/server/guest';
+import { foodSelection } from '$lib/server/food-selection';
 export const load: PageServerLoad = async ({ params, cookies }) => {
   const result = await api().GET('/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering', { params: { path: { merchant_id: params.merchant, store_id: params.store } } });
   if (!result.data) error(result.response.status, result.response.status === 404 ? text('storefront-no-menu') : message(result.error));
@@ -18,8 +19,8 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 };
 export const actions: Actions = {
   quote: async ({ params, request, cookies }) => {
-    const form = await request.formData(); let body: components['schemas']['FoodSelectionRequest'];
-    try { body = JSON.parse(String(form.get('selection'))) as typeof body; } catch { return fail(400, { error: text('storefront-select-required') }); }
+    const body = foodSelection(await request.formData());
+    if (!body) return fail(400, { error: text('storefront-select-required') });
     const guest = guestCheckout(cookies, params.merchant, params.store);
     const path = { merchant_id: params.merchant, store_id: params.store };
     let token = guest.token();

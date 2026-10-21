@@ -17,6 +17,18 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
   return { order: result.data };
 };
 export const actions: Actions = {
+  fulfilment: async ({ params, cookies, request }) => {
+    const current = authorized(cookies, params.merchant);
+    const form = await request.formData();
+    const action = form.get('action');
+    if (action !== 'start_preparation' && action !== 'mark_ready' && action !== 'record_collection') return fail(400, { error: text('error-common-invalid-request') });
+    const result = await api(current.token).POST('/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment', {
+      params: { path: { merchant_id: params.merchant, store_id: params.store, order_id: params.order }, header: { 'Idempotency-Key': String(form.get('key')) } },
+      body: { expected_revision: Number(form.get('revision')), action },
+    });
+    if (!result.data) return fail(result.response.status, { error: message(result.error) });
+    return { success: text('orders-saved') };
+  },
   decide: async ({ params, cookies, request }) => {
     const current = authorized(cookies, params.merchant);
     const form = await request.formData();

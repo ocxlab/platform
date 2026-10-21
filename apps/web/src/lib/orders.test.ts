@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type { components } from '$lib/api/generated';
-import { canCancelOrder, developmentActions } from './orders';
+import { canCancelOrder, developmentActions, fulfilmentAction } from './orders';
 type Order = components['schemas']['FoodOrder'];
 const order = (changes: Partial<Order> = {}) => ({ resolution: 'open', acceptance: 'accepted', payment: 'not_started', fulfilment_progress: 'not_started', ...changes }) as Order;
 
@@ -9,6 +9,17 @@ test('development checkout requires enablement and accepted, open, unprepared or
   expect(developmentActions(order(), true)).toEqual(['start']);
   for (const change of [{ resolution: 'cancelled' }, { resolution: 'rejected' }, { acceptance: 'pending' }, { acceptance: 'rejected' }, { fulfilment_progress: 'preparing' }]) {
     expect(developmentActions(order(change as Partial<Order>), true)).toEqual([]);
+  }
+});
+
+test('pickup actions require accepted paid orders and advance without skipping work', () => {
+  const paid = order({ payment: 'paid', fulfilment: 'pickup' });
+  expect(fulfilmentAction(paid)).toBe('start_preparation');
+  expect(fulfilmentAction({ ...paid, fulfilment_progress: 'preparing' })).toBe('mark_ready');
+  expect(fulfilmentAction({ ...paid, fulfilment_progress: 'ready' })).toBe('record_collection');
+  expect(fulfilmentAction({ ...paid, fulfilment_progress: 'collected' })).toBeUndefined();
+  for (const change of [{payment:'not_started'},{payment:'awaiting_customer'},{payment:'failed'},{payment:'refunded'},{acceptance:'pending'},{resolution:'cancelled'},{fulfilment:'delivery'}]) {
+    expect(fulfilmentAction({ ...paid, ...change } as Order)).toBeUndefined();
   }
 });
 

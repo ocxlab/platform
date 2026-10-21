@@ -12,3 +12,12 @@ export function canCancelOrder(order: Order): boolean {
   return order.resolution === 'open' && order.fulfilment_progress === 'not_started'
     && (order.payment === 'not_started' || order.payment_provider === 'development');
 }
+
+export function fulfilmentAction(order: Order): 'start_preparation' | 'mark_ready' | 'record_collection' | undefined {
+  if (order.resolution !== 'open' || order.acceptance !== 'accepted' || order.payment !== 'paid' || order.fulfilment !== 'pickup') return;
+  switch (order.fulfilment_progress) {
+    case 'not_started': return 'start_preparation';
+    case 'preparing': return 'mark_ready';
+    case 'ready': return 'record_collection';
+  }
+}

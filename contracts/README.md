@@ -190,13 +190,14 @@ replay result commit together. A matching successful retry returns its historica
 body, while GET returns current progress and ordered history. Closed orders cannot
 be reopened by later acceptance. Acceptance neither collects money nor starts
 preparation. The explicitly enabled development-payment operation below adds
-simulated financial progress; kitchen progress remains unimplemented.
+simulated financial progress; the merchant fulfilment operation separately
+records preparation and pickup progress.
 
 Placement bodies and agreed terms remain immutable. Migration 00004 backfills a
 separate operational row for existing orders. Current reads supply `revision`;
 it remains optional in the response schema so retained placement replay bodies
 without it stay valid. `history` is omitted from inbox pages and old placement
-replays. The bounded development checkout permits ten attempts, with at most 24
+replays. The bounded development checkout permits ten attempts, with at most 32
 history entries in the current response schema. Extend the history contract or
 add pagination before adding further events. Expanded state enums require updated consumers: this is a
 coordinated draft-contract increment, not proof that older generated clients
@@ -233,6 +234,29 @@ Store `handle` and order `reference` are optional presentation fields so retaine
 historical response bodies remain valid. Current reads overlay persistent,
 provider-unique sequence values; UUIDs continue to define API identity and scope.
 See [the walkthrough](../docs/LOCAL-PAYMENTS-AND-REFERENCES.md).
+
+## Merchant pickup progress
+
+`paths/food-order-fulfilment.yaml` defines the merchant `order:manage` operation.
+Its reusable `FoodFulfilmentRequest` lives beside the Food order schemas. The
+same operation serves the merchant UI and API consumers. This slice requires
+accepted, open, paid pickup orders and advances `fulfilment_progress` from
+`not_started` to `preparing`, `ready`, then `collected`. Reports cannot skip or
+reverse stages. Payment and acceptance do not start kitchen work automatically.
+
+Progress, attributable history, and the successful replay response commit under
+the same operational lock as cancellation and simulated payment. A stale revision
+conflicts; successful retries return their historical response. Current detail
+and inbox reads overlay persisted progress without rewriting agreed terms or
+legacy placement bodies. The history bound is 32 entries for the current bounded
+attempt/transition set. Expanded enums require coordinated draft-client updates.
+
+`collected` is terminal fulfilment, not a change to the separate resolution axis.
+Automatic guest cancellation ends when preparation starts; that is a capability
+limit, not a statement about statutory or support rights. Merchant reports are
+not independent physical proof. Own delivery, cash payment conditions, automatic
+acceptance, preparation deadlines, and post-preparation support/refunds remain
+separate work. No ingredient inventory is required by this progression.
 
 ## Tooling note
 

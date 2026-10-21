@@ -9,6 +9,7 @@
   provideLocale(() => data.locale);
   const t = (key: string) => translate(key, data.locale);
   $effect(() => { document.documentElement.lang = data.locale; document.documentElement.dir = direction(data.locale); });
+  $effect(() => { document.documentElement.dataset.hydrated = 'true'; });
 </script>
 <svelte:head><title>OCP Lab</title><meta name="description" content={t('ui-home-title')} /></svelte:head>
 <header><a href="/" class="brand" dir="ltr">OCP Lab</a><nav aria-label={t('ui-main')}><a href="/merchant" aria-label={t('ui-merchant')} title={t('ui-merchant')}><Store size={22} aria-hidden="true" /></a><a href="/admin" aria-label={t('ui-admin')} title={t('ui-admin')}><ShieldUser size={22} aria-hidden="true" /></a></nav></header>
