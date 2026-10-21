@@ -3,11 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "overrides": {
-    "cookie": "0.7.2"
-  },
+  "packageManager": "pnpm@11.20.0",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite --host 127.0.0.1 --port 18181 --strictPort",
     "prepare": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "build": "vite build",

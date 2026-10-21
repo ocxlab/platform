@@ -17,6 +17,8 @@ publish, register services, or use real payment credentials without authorizatio
   if needed; `cmd/` is not a build-script directory.
 - Run builds, formatting, tests, and development services in Docker. Do not require
   host Go, PostgreSQL, Python, or a cloud account. Task and Docker are host tools.
+  Exception: the user requests local Node/pnpm for Svelte/Vite hot reload through
+  `task web:dev`; backend/database and reproducible checks remain in Docker.
 - Keep commands portable across Windows, Linux, and macOS. Put shell-specific
   implementation details in containers, not host-only scripts.
 - Pin dependencies and retained artifacts. Do not copy private research snapshots,

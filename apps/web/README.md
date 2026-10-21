@@ -27,7 +27,11 @@ Add future dependencies through `task web:add PACKAGE=name` inside Docker.
 
 ## Development and verification
 
-Use root `task web:dev` to build and start the application on localhost:18181.
+Use root `task web:dev` to start local Svelte/Vite hot reload on localhost:18181,
+with Node.js 22.12+ or 24 and pnpm 11.20.0. The backend/database stay in Docker.
+`task web:container` retains the fully containerized built alternative; stop local
+Vite before using it. Both modes use the same pnpm lockfile. Dependency install
+scripts are disabled. The pnpm workspace file owns overrides and build policy.
 Use `task dev:credential` for merchant bootstrap and `task dev:admin-credential`
 for the separate admin bootstrap. `task web:check` checks generated API drift,
 Svelte/TypeScript, focused Vitest tests, and the runtime image. `task test:browser`
@@ -64,20 +68,20 @@ than this bootstrap map. Backend grants are checked on every action.
 
 `OCP_API_URL` is a trusted server-only origin. `ORIGIN` must match the browser
 origin for SvelteKit CSRF checks. Cookies are Secure by default;
-`OCP_LOCAL_INSECURE_COOKIES=true` is only for local HTTP Compose. Responses use
+`OCP_LOCAL_INSECURE_COOKIES=true` is only for local HTTP development. Responses use
 no-store; browsers cannot select arbitrary API proxy destinations. Production
 login, rate limits, CSP hardening, signup, secrets management, domain routing, and
 a broad browser/accessibility matrix remain work before public deployment. This
-slice does not create orders or payments.
+slice supports guest pickup-order placement, but not real payments or kitchen work.
 
 ## Tooling cohort
 
-Exact versions are in `package.json` and `package-lock.json`: Svelte 5, SvelteKit 2,
+Exact versions are in `package.json` and `pnpm-lock.yaml`: Svelte 5, SvelteKit 2,
 adapter-node 5, Vite 7, TypeScript 5, openapi-typescript/openapi-fetch, Vitest,
 Svelte Testing Library, and Playwright. The Node 24 image is pinned by digest.
 TypeScript 5 satisfies this generation cohort; upgrades must be tested together.
 The cookie override pins the patched compatible 0.7.2 transitive release.
-npm audit is a point-in-time advisory check, not proof of security.
+An advisory audit is a point-in-time check, not proof of security.
 
 Tool references: [SvelteKit](https://svelte.dev/docs/kit),
 [OpenAPI TypeScript](https://openapi-ts.dev/), and

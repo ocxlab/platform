@@ -1,5 +1,31 @@
 # Development status
 
+## Local Vite development and compact navigation
+
+21 October 2026, Europe/Berlin (UTC+02:00). `task web:dev` now runs Svelte/Vite
+locally with pnpm 11.20.0 and the backend/database in Docker. The app keeps
+http://localhost:18181/; `task web:container` retains the built Docker alternative.
+One imported pnpm lockfile replaces the npm lockfile for both environments.
+Dependencies remain pinned; install scripts stay disabled, including esbuild's
+postinstall. Container pnpm storage and Svelte's generated files are isolated from
+the host's copies, preventing Docker checks from replacing local Vite's paths.
+
+The language control is flag-only at the physical bottom-right, with its named
+options opening upward. Header navigation uses Lucide Store and ShieldUser icons,
+translated accessible labels, and native tooltips. Both local-Chrome language
+tests passed. A temporary source edit updated an already-open page without a
+full reload; the probe was removed afterward. Local desktop/mobile rendering
+was inspected. The final pnpm Docker browser suite passed all three journeys;
+`task web:check` passed (22 unit tests, no Svelte errors/warnings, generated-type
+drift check, runtime build). `task smoke` passed. During migration, `task check`
+passed backend checks, race tests, SQL integration, and the API build; its web
+install was interrupted to fix a slow bind-mounted dependency cache. The web
+remainder was rerun successfully with a named Docker cache, including a repeat
+install that reused it. A separate Docker Svelte check and another local browser
+run verify generated-file isolation. These checks do not certify production readiness.
+No development data was reset. Restarting the web process still expires the
+existing in-memory development login sessions; reconnect with the same credentials.
+
 ## Web languages and bidirectional text
 
 21 October 2026, Europe/Berlin (UTC+02:00). The current web screens now offer
@@ -14,8 +40,8 @@ publication/order/receipt flow. The development app was rebuilt and is running
 at http://localhost:18181/. No development data was reset. Arabic translations
 still need native-speaker review; these checks are not a full accessibility audit.
 
-The current `task web:dev` starts a built Docker image, not a Vite hot-reload
-server. Source edits therefore require another rebuild before they appear.
+At that checkpoint, `task web:dev` started a built Docker image, not a Vite
+hot-reload server; the later local-development batch above supersedes this.
 Full `task check` passed, including 22 web unit tests and the runtime build.
 
 ## Guest order placement and module-owned errors

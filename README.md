@@ -9,13 +9,16 @@ The current slice connects private menu editing, exact-revision publication,
 guest browsing, and server-priced selection quotes. Merchants and provider admins
 use separately authorized JSON APIs backed by PostgreSQL; SvelteKit supplies their
 interfaces and the public storefront. Modular OpenAPI contracts generate Go and
-TypeScript artifacts. Purchase execution, payment, and native ONIX integration
-remain connected next slices; this is not yet an ordering product.
+TypeScript artifacts. Guest pickup-order placement and private receipts are
+available. Acceptance, kitchen operations, payment, and native ONIX integration
+remain next slices; this is not yet a complete ordering product.
 
 ## Start locally
 
 Install Docker with Compose and [Task v3](https://taskfile.dev/docs/installation).
-No host Go installation, npm install, cloud account, or payment key is required.
+No host Go installation, cloud account, or payment key is required.
+For Svelte hot reload, install Node.js 22.12+ (or Node.js 24) and pnpm 11.20.0.
+Use `task web:container` instead if you prefer no host Node installation.
 Docker must be running with Linux containers.
 
 ```text
@@ -47,7 +50,11 @@ task stop
 compiler-cache volumes. No destructive reset task is provided. Local database
 credentials in Compose are development-only and are not a production account model.
 
-Edit code, then run `task dev` to rebuild/restart it. Hot reload is not configured.
+`task web:dev` runs the Svelte/Vite development server locally with hot reload;
+leave its terminal running and stop it with Ctrl+C. It uses the Docker API/database
+and keeps the same web URL. `task web:container` runs the built web image instead;
+stop the local Vite process before switching to it. For backend edits, run
+`task dev` to rebuild/restart the API. `task stop` stops Docker, not local Vite.
 The HTTP port can be changed in an optional `.env`, using `.env.example` as a guide.
 The repository works with the defaults without creating that file. Keep real
 credentials out of source control; none are needed for the current checks.
@@ -64,7 +71,8 @@ credentials out of source control; none are needed for the current checks.
 | `task web:generate` | Regenerate TypeScript API types from the shared OpenAPI bundle |
 | `task check` | Check contracts, formatting, vet, race/SQL tests, web types/components, and runtime builds |
 | `task test:browser` | Run Chromium merchant/guest/admin journeys with disposable PostgreSQL |
-| `task web:dev` | Start API/database and the web application on localhost:18181 |
+| `task web:dev` | Start Docker API/database and local Svelte hot reload on localhost:18181 |
+| `task web:container` | Start the built web app in Docker without hot reload |
 | `task test` | Run unit tests |
 | `task test:race` | Run unit tests with the race detector |
 | `task test:integration` | Exercise authorized HTTP/SQL behavior in disposable isolated databases |

@@ -2,6 +2,7 @@
 .env
 .env.*
 .task
+.pnpm-store
 build
 coverage
 working

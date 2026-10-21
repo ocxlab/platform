@@ -56,32 +56,50 @@ tasks:
   web:install:
     desc: Install the locked web cohort inside Docker, never on the host
     cmds:
-      - '{{.COMPOSE}} run --rm --no-deps web-tools npm ci --ignore-scripts'
+      - '{{.COMPOSE}} build web-tools'
+      - '{{.COMPOSE}} run --rm --no-deps web-tools pnpm install --store-dir /root/.local/share/pnpm/store --frozen-lockfile --ignore-scripts'
 
   web:add:
     desc: Add an exact web dependency inside Docker (task web:add PACKAGE=name)
     requires:
       vars: [PACKAGE]
     cmds:
-      - '{{.COMPOSE}} run --rm --no-deps web-tools npm install --save-exact --ignore-scripts {{.PACKAGE}}'
+      - '{{.COMPOSE}} run --rm --no-deps web-tools pnpm add --store-dir /root/.local/share/pnpm/store --save-exact --ignore-scripts {{.PACKAGE}}'
 
   web:generate:
     desc: Generate committed TypeScript API types from the same OpenAPI bundle as Go
     cmds:
       - task: contracts:bundle
       - task: web:install
-      - '{{.COMPOSE}} run --rm --no-deps web-tools npm run contracts:generate'
+      - '{{.COMPOSE}} run --rm --no-deps web-tools pnpm run contracts:generate'
 
   web:check:
     desc: Verify generated API drift, type/component checks, tests, and web runtime build
     cmds:
       - task: contracts:bundle
       - task: web:install
-      - '{{.COMPOSE}} run --rm --no-deps web-tools sh -ec "npm run contracts:check && npm run check && npm test"'
+      - '{{.COMPOSE}} run --rm --no-deps web-tools sh -ec "pnpm run contracts:check && pnpm run check && pnpm test"'
       - '{{.COMPOSE}} build web'
 
   web:dev:
-    desc: Start the actual API/database and the web app on localhost:18181
+    desc: Run local Svelte hot reload on localhost:18181 with API/database in Docker
+    cmds:
+      - task: dev
+      - '{{.COMPOSE}} stop web'
+      - task: web:local
+
+  web:local:
+    desc: Run local Svelte hot reload against the already running local API
+    dir: apps/web
+    env:
+      OCP_API_URL: http://127.0.0.1:18180
+      OCP_LOCAL_INSECURE_COOKIES: 'true'
+    cmds:
+      - pnpm install --frozen-lockfile --ignore-scripts
+      - pnpm run dev
+
+  web:container:
+    desc: Run the built web app in Docker on localhost:18181 without hot reload
     cmds:
       - task: dev
       - '{{.COMPOSE}} up --build --detach --wait web'
@@ -100,6 +118,7 @@ tasks:
     desc: Run formatting checks, vet, race tests, and the runtime build locally
     cmds:
       - task: tools:build
+      - '{{.COMPOSE}} build web-tools'
       - task: errors:check
       - task: fmt:check
       - task: contracts:check

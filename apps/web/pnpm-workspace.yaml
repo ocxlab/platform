@@ -1,0 +1,14 @@
+packages:
+  - '.'
+
+overrides:
+  cookie: 0.7.2
+
+# esbuild ships its platform binary as an optional dependency; no install scripts
+# from dependencies are needed for this app. Keep unreviewed scripts disabled.
+allowBuilds:
+  esbuild: false
+
+minimumReleaseAgeExclude:
+  # Retain the exact Lucide version already selected and tested before migration.
+  - '@lucide/svelte@1.61.0'

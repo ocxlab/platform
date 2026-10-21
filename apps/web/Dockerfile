@@ -1,18 +1,19 @@
-# Tested Node 24 cohort. All frontend dependencies are pinned in package-lock.json.
+# Tested Node 24 cohort. Local and container builds share pnpm-lock.yaml.
 FROM node:24-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS tools
+RUN npm install --global pnpm@11.20.0
 WORKDIR /workspace/apps/web
 
 FROM tools AS build
-COPY apps/web/package*.json ./
-RUN npm ci --ignore-scripts
+COPY apps/web/package.json apps/web/pnpm-lock.yaml apps/web/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY apps/web/ ./
-RUN npm run check && npm run build
+RUN pnpm run check && pnpm run build
 
 FROM tools AS browsers
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-COPY apps/web/package*.json ./
-RUN npm ci --ignore-scripts
-RUN npx playwright install --with-deps chromium
+COPY apps/web/package.json apps/web/pnpm-lock.yaml apps/web/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm exec playwright install --with-deps chromium
 COPY apps/web/ ./
 CMD ["node", "scripts/run-browser-tests.mjs"]
 

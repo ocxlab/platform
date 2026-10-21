@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 .task/
+.pnpm-store/
 build/
 coverage/
 working/

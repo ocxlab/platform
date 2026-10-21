@@ -24,10 +24,15 @@ services:
       dockerfile: apps/web/Dockerfile
       target: tools
     working_dir: /workspace/apps/web
+    environment:
+      CI: 'true'
+      pnpm_config_store_dir: /root/.local/share/pnpm/store
     volumes:
       - .:/workspace
       - web-node-modules:/workspace/apps/web/node_modules
+      - web-svelte-kit:/workspace/apps/web/.svelte-kit
       - web-npm-cache:/root/.npm
+      - web-pnpm-cache:/root/.local/share/pnpm/store
     command: [node, --version]
 
   browser-api:
@@ -147,7 +152,9 @@ services:
 
 volumes:
   web-node-modules:
+  web-svelte-kit:
   web-npm-cache:
+  web-pnpm-cache:
   postgres-data:
   go-build-cache:
   go-module-cache:
