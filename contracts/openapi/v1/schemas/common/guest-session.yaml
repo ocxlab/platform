@@ -1,0 +1,12 @@
+GuestSession:
+  type: object
+  additionalProperties: false
+  required: [access_token, expires_at]
+  properties:
+    access_token:
+      type: string
+      pattern: '^ocg_[A-Za-z0-9_-]{43}$'
+      description: Returned once. Keep private; send only as bearer authorization.
+    expires_at:
+      type: string
+      format: date-time

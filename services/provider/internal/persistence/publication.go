@@ -160,12 +160,27 @@ type FoodQuote struct {
 }
 
 func CreateFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID, expected int64, calculate func(PublicOffering) (QuoteCalculation, error)) (FoodQuote, error) {
+	return createFoodQuote(ctx, db, merchant, store, expected, nil, calculate)
+}
+
+func CreateGuestFoodQuote(ctx context.Context, db *sql.DB, guest Principal, expected int64, calculate func(PublicOffering) (QuoteCalculation, error)) (FoodQuote, error) {
+	return createFoodQuote(ctx, db, guest.MerchantID, guest.StoreID, expected, &guest, calculate)
+}
+
+func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID, expected int64, guest *Principal, calculate func(PublicOffering) (QuoteCalculation, error)) (FoodQuote, error) {
 	q := FoodQuote{}
 	tx, err := TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return q, err
 	}
 	defer tx.Rollback()
+	var guestID any
+	if guest != nil {
+		if err := checkGuest(ctx, tx, *guest); err != nil {
+			return q, err
+		}
+		guestID = guest.ID
+	}
 	p, err := publicOffering(ctx, tx, merchant, store, true)
 	if err != nil {
 		return q, err
@@ -200,7 +215,7 @@ func CreateFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 	if err != nil {
 		return q, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_quotes(merchant_id,store_id,id,body,expires_at) VALUES($1,$2,$3,$4,$5)`, merchant, store, q.ID, string(body), q.ExpiresAt)
+	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_quotes(merchant_id,store_id,id,body,expires_at,guest_id) VALUES($1,$2,$3,$4,$5,$6)`, merchant, store, q.ID, string(body), q.ExpiresAt, guestID)
 	if err != nil {
 		return q, err
 	}

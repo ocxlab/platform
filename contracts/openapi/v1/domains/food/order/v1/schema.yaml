@@ -1,0 +1,44 @@
+PlaceFoodOrderRequest:
+  type: object
+  additionalProperties: false
+  required: [quote_id, fulfilment]
+  properties:
+    quote_id:
+      $ref: ../../../../schemas/common/identifier.yaml
+    fulfilment:
+      type: string
+      enum: [pickup]
+FoodOrder:
+  type: object
+  additionalProperties: false
+  required: [id, merchant_id, store_id, contract, terms, fulfilment, acceptance, payment, fulfilment_progress, resolution, created_at]
+  properties:
+    id:
+      $ref: ../../../../schemas/common/identifier.yaml
+    merchant_id:
+      $ref: ../../../../schemas/common/identifier.yaml
+    store_id:
+      $ref: ../../../../schemas/common/identifier.yaml
+    contract:
+      type: string
+      enum: [ocp.food.order.v1]
+    terms:
+      $ref: ../../selection/v1/schema.yaml#/FoodQuote
+    fulfilment:
+      type: string
+      enum: [pickup]
+    acceptance:
+      type: string
+      enum: [pending]
+    payment:
+      type: string
+      enum: [not_started]
+    fulfilment_progress:
+      type: string
+      enum: [not_started]
+    resolution:
+      type: string
+      enum: [open]
+    created_at:
+      type: string
+      format: date-time

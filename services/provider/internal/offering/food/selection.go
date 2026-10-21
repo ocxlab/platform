@@ -30,11 +30,19 @@ type SelectionLine struct {
 	Options   []SelectedOption `json:"options"`
 }
 type QuotedLine struct {
-	Selection   SelectionLine `json:"selection"`
-	ItemName    string        `json:"item_name"`
-	VariantName string        `json:"variant_name"`
-	UnitPrice   int64         `json:"unit_price_minor"`
-	Total       int64         `json:"total_minor"`
+	Selection       SelectionLine  `json:"selection"`
+	ItemName        string         `json:"item_name"`
+	VariantName     string         `json:"variant_name"`
+	UnitPrice       int64          `json:"unit_price_minor"`
+	Total           int64          `json:"total_minor"`
+	SelectedOptions []QuotedOption `json:"selected_options"`
+}
+
+type QuotedOption struct {
+	GroupID    string `json:"group_id"`
+	OptionID   string `json:"option_id"`
+	GroupName  string `json:"group_name"`
+	OptionName string `json:"option_name"`
 }
 
 // Price uses only the published model and selection references. Neither UI totals
@@ -76,6 +84,7 @@ func Price(raw json.RawMessage, lines []SelectionLine) ([]QuotedLine, int64, err
 			return nil, 0, ErrSelection
 		}
 		seen := map[SelectedOption]bool{}
+		descriptions := make([]QuotedOption, 0, len(line.Options))
 		counts := map[string]int{}
 		for _, option := range line.Options {
 			if seen[option] {
@@ -92,6 +101,7 @@ func Price(raw json.RawMessage, lines []SelectionLine) ([]QuotedLine, int64, err
 							}
 							unit += choice.Price
 							counts[group.ID]++
+							descriptions = append(descriptions, QuotedOption{GroupID: group.ID, OptionID: choice.ID, GroupName: group.Name, OptionName: choice.Name})
 							found = true
 							break
 						}
@@ -115,7 +125,7 @@ func Price(raw json.RawMessage, lines []SelectionLine) ([]QuotedLine, int64, err
 			return nil, 0, ErrSelection
 		}
 		total += lineTotal
-		quoted = append(quoted, QuotedLine{Selection: line, ItemName: selected.Name, VariantName: name, UnitPrice: unit, Total: lineTotal})
+		quoted = append(quoted, QuotedLine{Selection: line, ItemName: selected.Name, VariantName: name, UnitPrice: unit, Total: lineTotal, SelectedOptions: descriptions})
 	}
 	return quoted, total, nil
 }

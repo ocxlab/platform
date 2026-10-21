@@ -39,6 +39,16 @@ paths:
     $ref: paths/public-offering.yaml
   /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes:
     $ref: paths/food-quotes.yaml
+  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions:
+    $ref: paths/guest-sessions.yaml
+  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes:
+    $ref: paths/guest-quotes.yaml
+  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}:
+    $ref: paths/guest-quote.yaml
+  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders:
+    $ref: paths/food-orders.yaml
+  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}:
+    $ref: paths/food-order.yaml
 components:
   parameters:
     MerchantID:
@@ -54,11 +64,19 @@ components:
     RequestID:
       $ref: components/headers/request-id.yaml
   securitySchemes:
+    GuestBearerAuth:
+      $ref: components/security/guest-bearer.yaml
     BearerAuth:
       $ref: components/security/bearer.yaml
     ProviderBearerAuth:
       $ref: components/security/provider-bearer.yaml
   schemas:
+    GuestSession:
+      $ref: schemas/common/guest-session.yaml#/GuestSession
+    PlaceFoodOrderRequest:
+      $ref: domains/food/order/v1/schema.yaml#/PlaceFoodOrderRequest
+    FoodOrder:
+      $ref: domains/food/order/v1/schema.yaml#/FoodOrder
     Identifier:
       $ref: schemas/common/identifier.yaml
     Store:

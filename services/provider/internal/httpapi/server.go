@@ -44,12 +44,16 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 		problem(w, 400, "invalid_request", "Request does not match the API contract.", nil)
 	}})
 	scopes := map[string]string{}
-	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true}
-	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true}
+	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true}
+	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true}
+	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true}
 	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true}
 	for _, path := range spec.Paths.Map() {
 		for _, operation := range path.Operations() {
 			expectedAccess := "merchant"
+			if guest[operation.OperationID] {
+				expectedAccess = "guest"
+			}
 			if public[operation.OperationID] {
 				expectedAccess = "public"
 			}
@@ -70,6 +74,9 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 				effective = *operation.Security
 			}
 			scheme := "BearerAuth"
+			if guest[operation.OperationID] {
+				scheme = "GuestBearerAuth"
+			}
 			if provider[operation.OperationID] {
 				scheme = "ProviderBearerAuth"
 			}
@@ -121,6 +128,9 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 				return
 			}
 			authenticate := persistence.Authenticate
+			if guest[route.Operation.OperationID] {
+				authenticate = persistence.AuthenticateGuest
+			}
 			if provider[route.Operation.OperationID] {
 				authenticate = persistence.AuthenticateProvider
 			}
@@ -141,6 +151,17 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 			if (!principal.Provider && principal.MerchantID != merchant) || !principal.Allows(scopes[route.Operation.OperationID]) {
 				problem(w, 403, "forbidden", "Credential does not authorize this merchant and action.", nil)
 				return
+			}
+			if principal.Guest {
+				store, err := uuid.Parse(pathParams["store_id"])
+				if err != nil {
+					problem(w, 400, "invalid_request", "Store identifier must be a UUID.", nil)
+					return
+				}
+				if principal.StoreID != store {
+					problem(w, 403, "forbidden", "Guest credential does not authorize this store.", nil)
+					return
+				}
 			}
 			if principal.Provider {
 				principal.MerchantID = merchant
@@ -215,6 +236,12 @@ func write(w http.ResponseWriter, value any, err error) {
 		var conflict *persistence.RevisionConflict
 		var publicationConflict *persistence.PublicationConflict
 		switch {
+		case errors.Is(err, persistence.ErrUnauthenticated):
+			problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
+		case errors.Is(err, persistence.ErrQuoteExpired):
+			problem(w, 409, "quote_expired", "This quote has expired. Request fresh terms before placing an order.", nil)
+		case errors.Is(err, persistence.ErrQuoteUsed):
+			problem(w, 409, "quote_already_placed", "This quote already has an order. Retry with the original placement key or inspect the existing order.", nil)
 		case errors.Is(err, persistence.ErrNotFound):
 			problem(w, 404, "not_found", "Resource not found.", nil)
 		case errors.Is(err, persistence.ErrReplayConflict):

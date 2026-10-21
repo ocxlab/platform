@@ -58,6 +58,8 @@ type Principal struct {
 	MerchantID uuid.UUID
 	Scopes     []string
 	Provider   bool
+	Guest      bool
+	StoreID    uuid.UUID
 }
 
 func (p Principal) Allows(scope string) bool {

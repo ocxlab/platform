@@ -79,7 +79,7 @@ every retry. Unknown offering models return 422, not optimistic acceptance.
 Revisit retention/archival before general availability; do not enable unbounded
 merchant write volume without that explicit operational and contract decision.
 
-Each operation declares `x-access` as public, merchant, or provider. Public operations
+Each operation declares `x-access` as public, merchant, provider, or guest. Public operations
 also explicitly clear security; private operations use the matching bearer scheme
 and an `x-required-scope`. Startup rejects inconsistent audiences or unknown/missing
 actions. These local extensions describe opaque grants, not OAuth scope negotiation.
@@ -142,6 +142,14 @@ The local storage guard allows at most 1,000 active quotes per store; 429 includ
 expiry is a validity limit, not a deletion guarantee. This is not internet rate
 limiting: an attacker could occupy those slots. Public release requires separately
 tested abuse controls, appropriate limits, and a retention policy.
+
+## Guest checkout checkpoint
+
+The unfinished checkout batch adds a GuestBearerAuth audience and guest-owned
+quotes. Anonymous preview quotes do not confer placement authority. Pickup
+placement retains agreed quote terms, pending acceptance, without payment or
+preparation. Quote expiry limits first placement; it does not expire an order.
+See docs/STATUS.md for remaining review findings and verification work.
 
 ## Tooling note
 

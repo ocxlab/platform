@@ -92,6 +92,23 @@ QuotedLine:
       type: string
     variant_name:
       type: string
+    selected_options:
+      type: array
+      maxItems: 600
+      description: Retained choice labels for display, including zero-price options. Optional for older preview quotes.
+      items:
+        type: object
+        additionalProperties: false
+        required: [group_id, option_id, group_name, option_name]
+        properties:
+          group_id:
+            $ref: ../../menu/v1/schema.yaml#/LocalIdentifier
+          option_id:
+            $ref: ../../menu/v1/schema.yaml#/LocalIdentifier
+          group_name:
+            type: string
+          option_name:
+            type: string
     unit_price_minor:
       type: integer
       format: int64

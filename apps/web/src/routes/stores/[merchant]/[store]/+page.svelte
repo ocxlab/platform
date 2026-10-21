@@ -3,6 +3,7 @@
   import Notice from '$lib/components/Notice.svelte';
   import ActionButton from '$lib/components/ActionButton.svelte';
   import Calculator from '@lucide/svelte/icons/calculator';
+  import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
   import { money } from '$lib/money';
   let { data, form } = $props();
   let itemId = $state(untrack(() => data.menu.items[0]?.id ?? ''));
@@ -40,9 +41,18 @@
     <ActionButton icon={Calculator} label="Check selection price" disabled={!item.available} />
   {/if}
 </form></section>
-{#if form?.quote}
+{#if data.quote}
 <section aria-label="Selection quote"><h2>Your selection</h2>
-{#each form.quote.lines as line}<p>{line.selection.quantity} × {line.item_name} ({line.variant_name}) · {money(line.total_minor)}</p>{/each}
-<p><strong>Total {money(form.quote.total_minor)}</strong></p>
-<p class="muted">Price quote valid until {new Date(form.quote.expires_at).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin' })} (Berlin time). This is not an order or a reservation. Ordering and payment follow in the next slice.</p></section>
+{#each data.quote.lines as line}<p>{line.selection.quantity} × {line.item_name} ({line.variant_name}) · {money(line.total_minor)}{#each line.selected_options ?? [] as option}<br /><small>{option.group_name}: {option.option_name}</small>{/each}</p>{/each}
+<p><strong>Total {money(data.quote.total_minor)}</strong></p>
+<p>Pickup · awaiting restaurant acceptance after placement. Payment and kitchen handling are not connected yet.</p>
+<p class="muted">Price quote valid until {new Date(data.quote.expires_at).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin' })} (Berlin time). This is not an order or a reservation. Placing it agrees to the selections and total shown above.</p>
+</section>
+{/if}
+{#if data.intent}
+<form method="POST" action="?/place">
+  <input type="hidden" name="quote" value={data.intent.quote} />
+  <input type="hidden" name="key" value={data.intent.key} />
+  <ActionButton icon={ShoppingBag} label={data.quote ? 'Place pickup order' : 'Recover placement result'} />
+</form>
 {/if}

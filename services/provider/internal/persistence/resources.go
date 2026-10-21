@@ -49,6 +49,11 @@ func Mutate(ctx context.Context, db *sql.DB, principal Principal, operation, res
 		return Result{}, err
 	}
 	defer tx.Rollback()
+	if principal.Guest {
+		if err := checkGuest(ctx, tx, principal); err != nil {
+			return Result{}, err
+		}
+	}
 	fingerprint, err := json.Marshal(struct {
 		Operation string          `json:"operation"`
 		Resource  string          `json:"resource"`
@@ -67,6 +72,9 @@ func Mutate(ctx context.Context, db *sql.DB, principal Principal, operation, res
 	table := "commerce.request_replays"
 	if principal.Provider {
 		table = "commerce.provider_request_replays"
+	}
+	if principal.Guest {
+		table = "commerce.guest_request_replays"
 	}
 	err = tx.QueryRowContext(ctx, `SELECT request_hash,response_status,response_body
   FROM `+table+` WHERE merchant_id=$1 AND grant_id=$2 AND operation=$3 AND resource=$4 AND replay_key=$5`, principal.MerchantID, principal.ID, operation, resource, key).Scan(&previous, &result.Status, &result.Body)

@@ -1,0 +1,51 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+post:
+  operationId: CreateGuestFoodQuote
+  tags: [Customer commerce]
+  summary: Quote a selection for this guest
+  description: >-
+    Create an immutable ten-minute quote bound to this guest. The public preview quote endpoint does not grant placement authority. Repeating a quote creates another preview, not an order.
+  security:
+    - GuestBearerAuth: []
+  x-access: guest
+  x-required-scope: quote:create
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../domains/food/selection/v1/schema.yaml#/FoodSelectionRequest
+  responses:
+    '201':
+      description: Successful operation.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/selection/v1/schema.yaml#/FoodQuote
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/quote-capacity.yaml

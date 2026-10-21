@@ -1,0 +1,53 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+post:
+  operationId: PlaceFoodOrder
+  tags: [Customer commerce]
+  summary: Place a pickup order using agreed quote terms
+  description: >-
+    Records agreement to the complete immutable guest-owned quote for pickup. Requires unexpired terms and current selection availability at a visible store; price-only publication changes do not rewrite issued terms. Same authorized key and complete request return byte-identical 201, including after quote expiry. A different request conflicts; a quote can place only one order, even under different keys. No acceptance, stock reservation, payment, or preparation is performed in this batch.
+  security:
+    - GuestBearerAuth: []
+  x-access: guest
+  x-required-scope: order:create
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../domains/food/order/v1/schema.yaml#/PlaceFoodOrderRequest
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  responses:
+    '201':
+      description: Successful operation.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/order/v1/schema.yaml#/FoodOrder
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/quote-capacity.yaml

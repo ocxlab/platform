@@ -1,5 +1,48 @@
 # Development status
 
+## Guest order placement checkpoint (unfinished)
+
+21 October 2026, 19:58 Europe/Berlin (UTC+02:00). Paused at the founder's request.
+Batch 1 is NOT complete or deployed; the previous development app remains running.
+No development data was reset. Migration 00003 ran only in disposable test databases.
+
+Implemented: store-scoped seven-day opaque guest grants; guest-bound quotes;
+pickup placement with immutable quote-derived terms; atomic placement event and
+replay; one order per quote; private receipt access. Orders await acceptance, with
+payment and preparation not started. Guest secrets are hashed in PostgreSQL and
+kept in HttpOnly/SameSite=Strict web cookies, not rendered HTML. Retained cookie
+references preserve the quote and original placement key across refresh/retry.
+Issued prices survive price-only edits; current selection availability is rechecked.
+Extras retain display names, including free choices. Quote expiry is the historical
+first-placement deadline, not order expiry. No external effects/workers exist yet.
+
+Passed: Go/TypeScript generation, task fmt, task test (DB suite skips in that
+command), task test:integration with race detector, Svelte check (zero diagnostics),
+and the existing 13 focused web tests. The new DB journey checks quote ownership,
+missing/wrong-audience access, one order per quote, replay conflict, byte-identical
+replay after expiry and after withdrawal/quote deletion, private reads and revocation.
+The first DB run found a row-lock privilege issue; UPDATE is now granted only on
+guest revocation. The rerun passed. No new browser test or full task check ran.
+
+Preliminary engineering/protocol reviews ran. Expired unreferenced guest cleanup
+is added; historical actor/replay references remain. Resume with:
+
+1. Fix protocol-review findings: explain historical expiry in FoodOrder.terms using
+   a valid OpenAPI 3.0 schema wrapper; distinguish guest vs quote capacity errors;
+   remove impossible order 429s; list expected GetGuestFoodQuote errors. Regenerate.
+2. Add DB tests for concurrent same/different keys, first-placement expiry, price
+   edits vs unavailability, store/merchant isolation, restart/rollback, RLS, guest
+   lookup ACL/search_path, runtime immutability, and abandoned-grant cleanup.
+3. Test guest cookies and browser placement/receipt/refresh/retry, cross-browser
+   denial and secret non-disclosure. Check multi-tab/checkout-intent replacement.
+4. Finish engineering/protocol rechecks, task check and task test:browser; then
+   task web:dev without reset. Add merchant/provider inspection with the next
+   restaurant-operations slice; no inbox, acceptance, payment or kitchen exists yet.
+
+Public abuse controls, production retention/receipt recovery, complete restaurant
+terms/taxes/timing, and delivery remain release gates or subsequent slices. The
+seven-day guest policy is a bounded foundation choice, not production readiness.
+
 ## Lucide action buttons
 
 21 October 2026, Europe/Berlin (UTC+02:00). Added pinned `@lucide/svelte` 1.61.0

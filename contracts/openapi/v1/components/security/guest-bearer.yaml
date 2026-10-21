@@ -1,0 +1,3 @@
+type: http
+scheme: bearer
+description: Store-scoped opaque guest credential. Not a customer account, quote identifier, or merchant credential.

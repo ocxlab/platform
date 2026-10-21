@@ -26,6 +26,7 @@ import (
 
 const (
 	BearerAuthScopes         = "BearerAuth.Scopes"
+	GuestBearerAuthScopes    = "GuestBearerAuth.Scopes"
 	ProviderBearerAuthScopes = "ProviderBearerAuth.Scopes"
 )
 
@@ -53,6 +54,96 @@ const (
 func (e FoodMenuCurrency) Valid() bool {
 	switch e {
 	case FoodMenuCurrencyEUR:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodOrderAcceptance.
+const (
+	Pending FoodOrderAcceptance = "pending"
+)
+
+// Valid indicates whether the value is a known member of the FoodOrderAcceptance enum.
+func (e FoodOrderAcceptance) Valid() bool {
+	switch e {
+	case Pending:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodOrderContract.
+const (
+	OcpFoodOrderV1 FoodOrderContract = "ocp.food.order.v1"
+)
+
+// Valid indicates whether the value is a known member of the FoodOrderContract enum.
+func (e FoodOrderContract) Valid() bool {
+	switch e {
+	case OcpFoodOrderV1:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodOrderFulfilment.
+const (
+	FoodOrderFulfilmentPickup FoodOrderFulfilment = "pickup"
+)
+
+// Valid indicates whether the value is a known member of the FoodOrderFulfilment enum.
+func (e FoodOrderFulfilment) Valid() bool {
+	switch e {
+	case FoodOrderFulfilmentPickup:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodOrderFulfilmentProgress.
+const (
+	FoodOrderFulfilmentProgressNotStarted FoodOrderFulfilmentProgress = "not_started"
+)
+
+// Valid indicates whether the value is a known member of the FoodOrderFulfilmentProgress enum.
+func (e FoodOrderFulfilmentProgress) Valid() bool {
+	switch e {
+	case FoodOrderFulfilmentProgressNotStarted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodOrderPayment.
+const (
+	FoodOrderPaymentNotStarted FoodOrderPayment = "not_started"
+)
+
+// Valid indicates whether the value is a known member of the FoodOrderPayment enum.
+func (e FoodOrderPayment) Valid() bool {
+	switch e {
+	case FoodOrderPaymentNotStarted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodOrderResolution.
+const (
+	Open FoodOrderResolution = "open"
+)
+
+// Valid indicates whether the value is a known member of the FoodOrderResolution enum.
+func (e FoodOrderResolution) Valid() bool {
+	switch e {
+	case Open:
 		return true
 	default:
 		return false
@@ -119,6 +210,21 @@ func (e OfferingRevisionState) Valid() bool {
 	}
 }
 
+// Defines values for PlaceFoodOrderRequestFulfilment.
+const (
+	PlaceFoodOrderRequestFulfilmentPickup PlaceFoodOrderRequestFulfilment = "pickup"
+)
+
+// Valid indicates whether the value is a known member of the PlaceFoodOrderRequestFulfilment enum.
+func (e PlaceFoodOrderRequestFulfilment) Valid() bool {
+	switch e {
+	case PlaceFoodOrderRequestFulfilmentPickup:
+		return true
+	default:
+		return false
+	}
+}
+
 // ChangePublicationRequest defines model for ChangePublicationRequest.
 type ChangePublicationRequest struct {
 	ExpectedGeneration int64 `json:"expected_generation"`
@@ -176,6 +282,45 @@ type FoodOptionGroup struct {
 	Options     []FoodOption        `json:"options"`
 }
 
+// FoodOrder defines model for FoodOrder.
+type FoodOrder struct {
+	Acceptance         FoodOrderAcceptance         `json:"acceptance"`
+	Contract           FoodOrderContract           `json:"contract"`
+	CreatedAt          time.Time                   `json:"created_at"`
+	Fulfilment         FoodOrderFulfilment         `json:"fulfilment"`
+	FulfilmentProgress FoodOrderFulfilmentProgress `json:"fulfilment_progress"`
+
+	// Id Durable opaque identifier; not a display name or hostname.
+	Id Identifier `json:"id"`
+
+	// MerchantId Durable opaque identifier; not a display name or hostname.
+	MerchantId Identifier          `json:"merchant_id"`
+	Payment    FoodOrderPayment    `json:"payment"`
+	Resolution FoodOrderResolution `json:"resolution"`
+
+	// StoreId Durable opaque identifier; not a display name or hostname.
+	StoreId Identifier `json:"store_id"`
+	Terms   FoodQuote  `json:"terms"`
+}
+
+// FoodOrderAcceptance defines model for FoodOrder.Acceptance.
+type FoodOrderAcceptance string
+
+// FoodOrderContract defines model for FoodOrder.Contract.
+type FoodOrderContract string
+
+// FoodOrderFulfilment defines model for FoodOrder.Fulfilment.
+type FoodOrderFulfilment string
+
+// FoodOrderFulfilmentProgress defines model for FoodOrder.FulfilmentProgress.
+type FoodOrderFulfilmentProgress string
+
+// FoodOrderPayment defines model for FoodOrder.Payment.
+type FoodOrderPayment string
+
+// FoodOrderResolution defines model for FoodOrder.Resolution.
+type FoodOrderResolution string
+
 // FoodQuote defines model for FoodQuote.
 type FoodQuote struct {
 	CreatedAt time.Time         `json:"created_at"`
@@ -202,7 +347,15 @@ type FoodQuoteCurrency string
 
 // FoodQuotedLine defines model for FoodQuotedLine.
 type FoodQuotedLine struct {
-	ItemName       string            `json:"item_name"`
+	ItemName string `json:"item_name"`
+
+	// SelectedOptions Retained choice labels for display, including zero-price options. Optional for older preview quotes.
+	SelectedOptions *[]struct {
+		GroupId    FoodLocalIdentifier `json:"group_id"`
+		GroupName  string              `json:"group_name"`
+		OptionId   FoodLocalIdentifier `json:"option_id"`
+		OptionName string              `json:"option_name"`
+	} `json:"selected_options,omitempty"`
 	Selection      FoodSelectionLine `json:"selection"`
 	TotalMinor     int64             `json:"total_minor"`
 	UnitPriceMinor int64             `json:"unit_price_minor"`
@@ -234,6 +387,13 @@ type FoodVariant struct {
 	Id         FoodLocalIdentifier `json:"id"`
 	Name       string              `json:"name"`
 	PriceMinor int64               `json:"price_minor"`
+}
+
+// GuestSession defines model for GuestSession.
+type GuestSession struct {
+	// AccessToken Returned once. Keep private; send only as bearer authorization.
+	AccessToken string    `json:"access_token"`
+	ExpiresAt   time.Time `json:"expires_at"`
 }
 
 // Health defines model for Health.
@@ -298,6 +458,17 @@ type OfferingRevision struct {
 // OfferingRevisionState Not published, orderable, or evidence of payment readiness.
 type OfferingRevisionState string
 
+// PlaceFoodOrderRequest defines model for PlaceFoodOrderRequest.
+type PlaceFoodOrderRequest struct {
+	Fulfilment PlaceFoodOrderRequestFulfilment `json:"fulfilment"`
+
+	// QuoteId Durable opaque identifier; not a display name or hostname.
+	QuoteId Identifier `json:"quote_id"`
+}
+
+// PlaceFoodOrderRequestFulfilment defines model for PlaceFoodOrderRequest.Fulfilment.
+type PlaceFoodOrderRequestFulfilment string
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Code Stable machine-readable error code.
@@ -351,6 +522,9 @@ type Publication struct {
 	Suspended bool `json:"suspended"`
 }
 
+// SchemasCommonEmptyYaml077e1183 defines model for SchemasCommonEmptyYaml077e1183.
+type SchemasCommonEmptyYaml077e1183 = map[string]interface{}
+
 // SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627 defines model for SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627.
 type SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627 = time.Time
 
@@ -402,6 +576,9 @@ type WriteOfferingRequest struct {
 	Model    Model                  `json:"model"`
 }
 
+// ComponentsParametersOrderIdYaml294fa0a5 Durable opaque identifier; not a display name or hostname.
+type ComponentsParametersOrderIdYaml294fa0a5 = Identifier
+
 // ComponentsParametersPageLimitYaml06bb837c defines model for ComponentsParametersPageLimitYaml06bb837c.
 type ComponentsParametersPageLimitYaml06bb837c = int
 
@@ -425,6 +602,12 @@ type ProblemResponse = Problem
 
 // AdminSuspendPublicationParams defines parameters for AdminSuspendPublication.
 type AdminSuspendPublicationParams struct {
+	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// PlaceFoodOrderParams defines parameters for PlaceFoodOrder.
+type PlaceFoodOrderParams struct {
 	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
 	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
 }
@@ -459,6 +642,12 @@ type ChangePublicationParams struct {
 // AdminSuspendPublicationJSONRequestBody defines body for AdminSuspendPublication for application/json ContentType.
 type AdminSuspendPublicationJSONRequestBody = SuspendPublicationRequest
 
+// PlaceFoodOrderJSONRequestBody defines body for PlaceFoodOrder for application/json ContentType.
+type PlaceFoodOrderJSONRequestBody = PlaceFoodOrderRequest
+
+// CreateGuestFoodQuoteJSONRequestBody defines body for CreateGuestFoodQuote for application/json ContentType.
+type CreateGuestFoodQuoteJSONRequestBody = FoodSelectionRequest
+
 // CreateStoreJSONRequestBody defines body for CreateStore for application/json ContentType.
 type CreateStoreJSONRequestBody = CreateStoreRequest
 
@@ -470,6 +659,9 @@ type ChangePublicationJSONRequestBody = ChangePublicationRequest
 
 // CreateFoodQuoteJSONRequestBody defines body for CreateFoodQuote for application/json ContentType.
 type CreateFoodQuoteJSONRequestBody = FoodSelectionRequest
+
+// CreateGuestSessionJSONRequestBody defines body for CreateGuestSession for application/json ContentType.
+type CreateGuestSessionJSONRequestBody = SchemasCommonEmptyYaml077e1183
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -552,6 +744,22 @@ type ClientInterface interface {
 
 	AdminSuspendPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, body AdminSuspendPublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PlaceFoodOrderWithBody request with any body
+	PlaceFoodOrderWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PlaceFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, body PlaceFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetGuestFoodOrder request
+	GetGuestFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateGuestFoodQuoteWithBody request with any body
+	CreateGuestFoodQuoteWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateGuestFoodQuote(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetGuestFoodQuote request
+	GetGuestFoodQuote(ctx context.Context, merchantId MerchantID, storeId StoreID, quoteId Identifier, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListStores request
 	ListStores(ctx context.Context, merchantId MerchantID, params *ListStoresParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -587,6 +795,11 @@ type ClientInterface interface {
 
 	CreateFoodQuote(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// CreateGuestSessionWithBody request with any body
+	CreateGuestSessionWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateGuestSession(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetPublicOffering request
 	GetPublicOffering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -620,6 +833,78 @@ func (c *Client) AdminSuspendPublicationWithBody(ctx context.Context, merchantId
 
 func (c *Client) AdminSuspendPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, body AdminSuspendPublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAdminSuspendPublicationRequest(c.Server, merchantId, storeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PlaceFoodOrderWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPlaceFoodOrderRequestWithBody(c.Server, merchantId, storeId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PlaceFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, body PlaceFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPlaceFoodOrderRequest(c.Server, merchantId, storeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetGuestFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetGuestFoodOrderRequest(c.Server, merchantId, storeId, orderId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateGuestFoodQuoteWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateGuestFoodQuoteRequestWithBody(c.Server, merchantId, storeId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateGuestFoodQuote(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateGuestFoodQuoteRequest(c.Server, merchantId, storeId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetGuestFoodQuote(ctx context.Context, merchantId MerchantID, storeId StoreID, quoteId Identifier, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetGuestFoodQuoteRequest(c.Server, merchantId, storeId, quoteId)
 	if err != nil {
 		return nil, err
 	}
@@ -786,6 +1071,30 @@ func (c *Client) CreateFoodQuote(ctx context.Context, merchantId MerchantID, sto
 	return c.Client.Do(req)
 }
 
+func (c *Client) CreateGuestSessionWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateGuestSessionRequestWithBody(c.Server, merchantId, storeId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateGuestSession(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateGuestSessionRequest(c.Server, merchantId, storeId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetPublicOffering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetPublicOfferingRequest(c.Server, merchantId, storeId)
 	if err != nil {
@@ -913,6 +1222,223 @@ func NewAdminSuspendPublicationRequestWithBody(server string, merchantId Merchan
 
 		req.Header.Set("Idempotency-Key", headerParam0)
 
+	}
+
+	return req, nil
+}
+
+// NewPlaceFoodOrderRequest calls the generic PlaceFoodOrder builder with application/json body
+func NewPlaceFoodOrderRequest(server string, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, body PlaceFoodOrderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPlaceFoodOrderRequestWithBody(server, merchantId, storeId, params, "application/json", bodyReader)
+}
+
+// NewPlaceFoodOrderRequestWithBody generates requests for PlaceFoodOrder with any type of body
+func NewPlaceFoodOrderRequestWithBody(server string, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/guest/merchants/%s/stores/%s/food/orders", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Idempotency-Key", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetGuestFoodOrderRequest generates requests for GetGuestFoodOrder
+func NewGetGuestFoodOrderRequest(server string, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/guest/merchants/%s/stores/%s/food/orders/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateGuestFoodQuoteRequest calls the generic CreateGuestFoodQuote builder with application/json body
+func NewCreateGuestFoodQuoteRequest(server string, merchantId MerchantID, storeId StoreID, body CreateGuestFoodQuoteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateGuestFoodQuoteRequestWithBody(server, merchantId, storeId, "application/json", bodyReader)
+}
+
+// NewCreateGuestFoodQuoteRequestWithBody generates requests for CreateGuestFoodQuote with any type of body
+func NewCreateGuestFoodQuoteRequestWithBody(server string, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/guest/merchants/%s/stores/%s/food/quotes", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetGuestFoodQuoteRequest generates requests for GetGuestFoodQuote
+func NewGetGuestFoodQuoteRequest(server string, merchantId MerchantID, storeId StoreID, quoteId Identifier) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "quote_id", quoteId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/guest/merchants/%s/stores/%s/food/quotes/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
 	}
 
 	return req, nil
@@ -1409,6 +1935,60 @@ func NewCreateFoodQuoteRequestWithBody(server string, merchantId MerchantID, sto
 	return req, nil
 }
 
+// NewCreateGuestSessionRequest calls the generic CreateGuestSession builder with application/json body
+func NewCreateGuestSessionRequest(server string, merchantId MerchantID, storeId StoreID, body CreateGuestSessionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateGuestSessionRequestWithBody(server, merchantId, storeId, "application/json", bodyReader)
+}
+
+// NewCreateGuestSessionRequestWithBody generates requests for CreateGuestSession with any type of body
+func NewCreateGuestSessionRequestWithBody(server string, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/public/merchants/%s/stores/%s/guest-sessions", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetPublicOfferingRequest generates requests for GetPublicOffering
 func NewGetPublicOfferingRequest(server string, merchantId MerchantID, storeId StoreID) (*http.Request, error) {
 	var err error
@@ -1528,6 +2108,22 @@ type ClientWithResponsesInterface interface {
 
 	AdminSuspendPublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, body AdminSuspendPublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminSuspendPublicationResponse, error)
 
+	// PlaceFoodOrderWithBodyWithResponse request with any body
+	PlaceFoodOrderWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PlaceFoodOrderResponse, error)
+
+	PlaceFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, body PlaceFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*PlaceFoodOrderResponse, error)
+
+	// GetGuestFoodOrderWithResponse request
+	GetGuestFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*GetGuestFoodOrderResponse, error)
+
+	// CreateGuestFoodQuoteWithBodyWithResponse request with any body
+	CreateGuestFoodQuoteWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGuestFoodQuoteResponse, error)
+
+	CreateGuestFoodQuoteWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateGuestFoodQuoteResponse, error)
+
+	// GetGuestFoodQuoteWithResponse request
+	GetGuestFoodQuoteWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, quoteId Identifier, reqEditors ...RequestEditorFn) (*GetGuestFoodQuoteResponse, error)
+
 	// ListStoresWithResponse request
 	ListStoresWithResponse(ctx context.Context, merchantId MerchantID, params *ListStoresParams, reqEditors ...RequestEditorFn) (*ListStoresResponse, error)
 
@@ -1562,6 +2158,11 @@ type ClientWithResponsesInterface interface {
 	CreateFoodQuoteWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateFoodQuoteResponse, error)
 
 	CreateFoodQuoteWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateFoodQuoteResponse, error)
+
+	// CreateGuestSessionWithBodyWithResponse request with any body
+	CreateGuestSessionWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGuestSessionResponse, error)
+
+	CreateGuestSessionWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateGuestSessionResponse, error)
 
 	// GetPublicOfferingWithResponse request
 	GetPublicOfferingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetPublicOfferingResponse, error)
@@ -1626,6 +2227,128 @@ func (r AdminSuspendPublicationResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r AdminSuspendPublicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PlaceFoodOrderResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *FoodOrder
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ComponentsResponsesQuoteCapacityYaml4bef3f4e
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PlaceFoodOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PlaceFoodOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetGuestFoodOrderResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *FoodOrder
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ComponentsResponsesQuoteCapacityYaml4bef3f4e
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetGuestFoodOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetGuestFoodOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateGuestFoodQuoteResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *FoodQuote
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ComponentsResponsesQuoteCapacityYaml4bef3f4e
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateGuestFoodQuoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateGuestFoodQuoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetGuestFoodQuoteResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *FoodQuote
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetGuestFoodQuoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetGuestFoodQuoteResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1898,6 +2621,39 @@ func (r CreateFoodQuoteResponse) StatusCode() int {
 	return 0
 }
 
+type CreateGuestSessionResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *GuestSession
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ComponentsResponsesQuoteCapacityYaml4bef3f4e
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateGuestSessionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateGuestSessionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetPublicOfferingResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
@@ -1972,6 +2728,58 @@ func (c *ClientWithResponses) AdminSuspendPublicationWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseAdminSuspendPublicationResponse(rsp)
+}
+
+// PlaceFoodOrderWithBodyWithResponse request with arbitrary body returning *PlaceFoodOrderResponse
+func (c *ClientWithResponses) PlaceFoodOrderWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PlaceFoodOrderResponse, error) {
+	rsp, err := c.PlaceFoodOrderWithBody(ctx, merchantId, storeId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePlaceFoodOrderResponse(rsp)
+}
+
+func (c *ClientWithResponses) PlaceFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *PlaceFoodOrderParams, body PlaceFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*PlaceFoodOrderResponse, error) {
+	rsp, err := c.PlaceFoodOrder(ctx, merchantId, storeId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePlaceFoodOrderResponse(rsp)
+}
+
+// GetGuestFoodOrderWithResponse request returning *GetGuestFoodOrderResponse
+func (c *ClientWithResponses) GetGuestFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*GetGuestFoodOrderResponse, error) {
+	rsp, err := c.GetGuestFoodOrder(ctx, merchantId, storeId, orderId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetGuestFoodOrderResponse(rsp)
+}
+
+// CreateGuestFoodQuoteWithBodyWithResponse request with arbitrary body returning *CreateGuestFoodQuoteResponse
+func (c *ClientWithResponses) CreateGuestFoodQuoteWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGuestFoodQuoteResponse, error) {
+	rsp, err := c.CreateGuestFoodQuoteWithBody(ctx, merchantId, storeId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateGuestFoodQuoteResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateGuestFoodQuoteWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateGuestFoodQuoteResponse, error) {
+	rsp, err := c.CreateGuestFoodQuote(ctx, merchantId, storeId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateGuestFoodQuoteResponse(rsp)
+}
+
+// GetGuestFoodQuoteWithResponse request returning *GetGuestFoodQuoteResponse
+func (c *ClientWithResponses) GetGuestFoodQuoteWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, quoteId Identifier, reqEditors ...RequestEditorFn) (*GetGuestFoodQuoteResponse, error) {
+	rsp, err := c.GetGuestFoodQuote(ctx, merchantId, storeId, quoteId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetGuestFoodQuoteResponse(rsp)
 }
 
 // ListStoresWithResponse request returning *ListStoresResponse
@@ -2085,6 +2893,23 @@ func (c *ClientWithResponses) CreateFoodQuoteWithResponse(ctx context.Context, m
 		return nil, err
 	}
 	return ParseCreateFoodQuoteResponse(rsp)
+}
+
+// CreateGuestSessionWithBodyWithResponse request with arbitrary body returning *CreateGuestSessionResponse
+func (c *ClientWithResponses) CreateGuestSessionWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGuestSessionResponse, error) {
+	rsp, err := c.CreateGuestSessionWithBody(ctx, merchantId, storeId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateGuestSessionResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateGuestSessionWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateGuestSessionResponse, error) {
+	rsp, err := c.CreateGuestSession(ctx, merchantId, storeId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateGuestSessionResponse(rsp)
 }
 
 // GetPublicOfferingWithResponse request returning *GetPublicOfferingResponse
@@ -2270,6 +3095,348 @@ func ParseAdminSuspendPublicationResponse(rsp *http.Response) (*AdminSuspendPubl
 			return nil, err
 		}
 		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePlaceFoodOrderResponse parses an HTTP response from a PlaceFoodOrderWithResponse call
+func ParsePlaceFoodOrderResponse(rsp *http.Response) (*PlaceFoodOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PlaceFoodOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest FoodOrder
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ComponentsResponsesQuoteCapacityYaml4bef3f4e
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetGuestFoodOrderResponse parses an HTTP response from a GetGuestFoodOrderWithResponse call
+func ParseGetGuestFoodOrderResponse(rsp *http.Response) (*GetGuestFoodOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetGuestFoodOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FoodOrder
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ComponentsResponsesQuoteCapacityYaml4bef3f4e
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateGuestFoodQuoteResponse parses an HTTP response from a CreateGuestFoodQuoteWithResponse call
+func ParseCreateGuestFoodQuoteResponse(rsp *http.Response) (*CreateGuestFoodQuoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateGuestFoodQuoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest FoodQuote
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ComponentsResponsesQuoteCapacityYaml4bef3f4e
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetGuestFoodQuoteResponse parses an HTTP response from a GetGuestFoodQuoteWithResponse call
+func ParseGetGuestFoodQuoteResponse(rsp *http.Response) (*GetGuestFoodQuoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetGuestFoodQuoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FoodQuote
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ProblemResponse
@@ -2993,6 +4160,109 @@ func ParseCreateFoodQuoteResponse(rsp *http.Response) (*CreateFoodQuoteResponse,
 	return response, nil
 }
 
+// ParseCreateGuestSessionResponse parses an HTTP response from a CreateGuestSessionWithResponse call
+func ParseCreateGuestSessionResponse(rsp *http.Response) (*CreateGuestSessionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateGuestSessionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest GuestSession
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ComponentsResponsesQuoteCapacityYaml4bef3f4e
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetPublicOfferingResponse parses an HTTP response from a GetPublicOfferingWithResponse call
 func ParseGetPublicOfferingResponse(rsp *http.Response) (*GetPublicOfferingResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -3095,6 +4365,18 @@ type ServerInterface interface {
 	// Suspend or restore publication visibility
 	// (PUT /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication)
 	AdminSuspendPublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params AdminSuspendPublicationParams)
+	// Place a pickup order using agreed quote terms
+	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders)
+	PlaceFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params PlaceFoodOrderParams)
+	// Inspect this guest's pickup order
+	// (GET /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id})
+	GetGuestFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5)
+	// Quote a selection for this guest
+	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes)
+	CreateGuestFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
+	// Retrieve this guest's retained terms
+	// (GET /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id})
+	GetGuestFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, quoteId Identifier)
 	// List stores managed by the authorized merchant
 	// (GET /api/v1/merchants/{merchant_id}/stores)
 	ListStores(w http.ResponseWriter, r *http.Request, merchantId MerchantID, params ListStoresParams)
@@ -3122,6 +4404,9 @@ type ServerInterface interface {
 	// Validate and price a food selection
 	// (POST /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes)
 	CreateFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
+	// Start guest checkout without registering
+	// (POST /api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions)
+	CreateGuestSession(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Browse current public offering
 	// (GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering)
 	GetPublicOffering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
@@ -3238,6 +4523,212 @@ func (siw *ServerInterfaceWrapper) AdminSuspendPublication(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminSuspendPublication(w, r, merchantId, storeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PlaceFoodOrder operation middleware
+func (siw *ServerInterfaceWrapper) PlaceFoodOrder(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, GuestBearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PlaceFoodOrderParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PlaceFoodOrder(w, r, merchantId, storeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetGuestFoodOrder operation middleware
+func (siw *ServerInterfaceWrapper) GetGuestFoodOrder(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "order_id" -------------
+	var orderId ComponentsParametersOrderIdYaml294fa0a5
+
+	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, GuestBearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetGuestFoodOrder(w, r, merchantId, storeId, orderId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateGuestFoodQuote operation middleware
+func (siw *ServerInterfaceWrapper) CreateGuestFoodQuote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, GuestBearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateGuestFoodQuote(w, r, merchantId, storeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetGuestFoodQuote operation middleware
+func (siw *ServerInterfaceWrapper) GetGuestFoodQuote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "quote_id" -------------
+	var quoteId Identifier
+
+	err = runtime.BindStyledParameterWithOptions("simple", "quote_id", r.PathValue("quote_id"), &quoteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "quote_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, GuestBearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetGuestFoodQuote(w, r, merchantId, storeId, quoteId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3695,6 +5186,40 @@ func (siw *ServerInterfaceWrapper) CreateFoodQuote(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// CreateGuestSession operation middleware
+func (siw *ServerInterfaceWrapper) CreateGuestSession(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateGuestSession(w, r, merchantId, storeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetPublicOffering operation middleware
 func (siw *ServerInterfaceWrapper) GetPublicOffering(w http.ResponseWriter, r *http.Request) {
 
@@ -3865,6 +5390,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.AdminGetPublication)
 	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.AdminSuspendPublication)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders", wrapper.PlaceFoodOrder)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.GetGuestFoodOrder)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes", wrapper.CreateGuestFoodQuote)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}", wrapper.GetGuestFoodQuote)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores", wrapper.ListStores)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores", wrapper.CreateStore)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}", wrapper.GetStore)
@@ -3874,6 +5403,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.GetPublication)
 	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.ChangePublication)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes", wrapper.CreateFoodQuote)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions", wrapper.CreateGuestSession)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.GetPublicOffering)
 	m.HandleFunc("GET "+options.BaseURL+"/health/live", wrapper.GetLiveness)
 
@@ -3883,102 +5413,121 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"///ZeVN3yXsAAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

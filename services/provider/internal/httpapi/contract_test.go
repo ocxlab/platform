@@ -93,11 +93,11 @@ func TestProtectedOperationsDeclareScope(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	known := map[string]bool{"store:read": true, "store:write": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true}
+	known := map[string]bool{"store:read": true, "store:write": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true}
 	for _, path := range spec.Paths.Map() {
 		for _, operation := range path.Operations() {
 			access, ok := operation.Extensions["x-access"].(string)
-			if !ok || (access != "merchant" && access != "provider" && access != "public") {
+			if !ok || (access != "merchant" && access != "provider" && access != "public" && access != "guest") {
 				t.Fatalf("missing audience: %s", operation.OperationID)
 			}
 			for status, response := range operation.Responses.Map() {
@@ -108,7 +108,7 @@ func TestProtectedOperationsDeclareScope(t *testing.T) {
 					}
 				}
 			}
-			if operation.OperationID == "GetLiveness" || operation.OperationID == "GetPublicOffering" || operation.OperationID == "CreateFoodQuote" {
+			if operation.OperationID == "GetLiveness" || operation.OperationID == "GetPublicOffering" || operation.OperationID == "CreateFoodQuote" || operation.OperationID == "CreateGuestSession" {
 				if access != "public" {
 					t.Fatal("public operation audience mismatch")
 				}

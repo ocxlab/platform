@@ -48,6 +48,12 @@ func (s *Server) GetPublicOffering(w http.ResponseWriter, r *http.Request, merch
 	write(w, value, err)
 }
 func (s *Server) CreateFoodQuote(w http.ResponseWriter, r *http.Request, merchant, store uuid.UUID) {
+	s.createFoodQuote(w, r, merchant, store, false)
+}
+func (s *Server) CreateGuestFoodQuote(w http.ResponseWriter, r *http.Request, merchant, store uuid.UUID) {
+	s.createFoodQuote(w, r, merchant, store, true)
+}
+func (s *Server) createFoodQuote(w http.ResponseWriter, r *http.Request, merchant, store uuid.UUID, guest bool) {
 	var body CreateFoodQuoteJSONRequestBody
 	if decode(r, &body) != nil {
 		problem(w, 400, "invalid_request", "A complete food selection is required.", nil)
@@ -59,7 +65,7 @@ func (s *Server) CreateFoodQuote(w http.ResponseWriter, r *http.Request, merchan
 		problem(w, 400, "invalid_request", "Invalid food selection.", nil)
 		return
 	}
-	value, err := persistence.CreateFoodQuote(r.Context(), s.db, merchant, store, body.PublicationGeneration, func(p persistence.PublicOffering) (persistence.QuoteCalculation, error) {
+	calculate := func(p persistence.PublicOffering) (persistence.QuoteCalculation, error) {
 		if p.Model != food.Model {
 			return persistence.QuoteCalculation{}, food.ErrSelection
 		}
@@ -69,7 +75,14 @@ func (s *Server) CreateFoodQuote(w http.ResponseWriter, r *http.Request, merchan
 		}
 		encoded, err := json.Marshal(priced)
 		return persistence.QuoteCalculation{Lines: encoded, Total: total}, err
-	})
+	}
+	var value persistence.FoodQuote
+	var err error
+	if guest {
+		value, err = persistence.CreateGuestFoodQuote(r.Context(), s.db, principal(r), body.PublicationGeneration, calculate)
+	} else {
+		value, err = persistence.CreateFoodQuote(r.Context(), s.db, merchant, store, body.PublicationGeneration, calculate)
+	}
 	if err != nil {
 		write(w, nil, err)
 		return

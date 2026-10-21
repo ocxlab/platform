@@ -1,0 +1,28 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - name: quote_id
+    in: path
+    required: true
+    schema:
+      $ref: ../schemas/common/identifier.yaml
+get:
+  operationId: GetGuestFoodQuote
+  tags: [Customer commerce]
+  summary: Retrieve this guest's retained terms
+  security:
+    - GuestBearerAuth: []
+  x-access: guest
+  x-required-scope: order:read
+  responses:
+    '200':
+      description: Retained quote. Expiry still prevents first placement.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/selection/v1/schema.yaml#/FoodQuote
+    default:
+      $ref: ../components/responses/problem.yaml

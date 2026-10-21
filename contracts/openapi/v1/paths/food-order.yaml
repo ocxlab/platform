@@ -1,0 +1,46 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - $ref: ../components/parameters/order-id.yaml
+get:
+  operationId: GetGuestFoodOrder
+  tags: [Customer commerce]
+  summary: Inspect this guest's pickup order
+  description: >-
+    Only the store-scoped guest that placed the order can read it. Other guests receive 404. Quote and order identifiers are not credentials. Publication withdrawal does not remove access to an existing order.
+  security:
+    - GuestBearerAuth: []
+  x-access: guest
+  x-required-scope: order:read
+  responses:
+    '200':
+      description: Successful operation.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/order/v1/schema.yaml#/FoodOrder
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/quote-capacity.yaml

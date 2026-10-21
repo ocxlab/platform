@@ -32,6 +32,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Place a pickup order using agreed quote terms
+         * @description Records agreement to the complete immutable guest-owned quote for pickup. Requires unexpired terms and current selection availability at a visible store; price-only publication changes do not rewrite issued terms. Same authorized key and complete request return byte-identical 201, including after quote expiry. A different request conflicts; a quote can place only one order, even under different keys. No acceptance, stock reservation, payment, or preparation is performed in this batch.
+         */
+        post: operations["PlaceFoodOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Inspect this guest's pickup order
+         * @description Only the store-scoped guest that placed the order can read it. Other guests receive 404. Quote and order identifiers are not credentials. Publication withdrawal does not remove access to an existing order.
+         */
+        get: operations["GetGuestFoodOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Quote a selection for this guest
+         * @description Create an immutable ten-minute quote bound to this guest. The public preview quote endpoint does not grant placement authority. Repeating a quote creates another preview, not an order.
+         */
+        post: operations["CreateGuestFoodQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                quote_id: components["schemas"]["Identifier"];
+            };
+            cookie?: never;
+        };
+        /** Retrieve this guest's retained terms */
+        get: operations["GetGuestFoodQuote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/merchants/{merchant_id}/stores": {
         parameters: {
             query?: never;
@@ -188,6 +283,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start guest checkout without registering
+         * @description Create a seven-day, store-scoped guest credential for quotes, placement and reading only its own orders. No account, payment or order is created. Store must have a visible publication. Anonymous issuance is non-idempotent and bounded to 1000 unexpired grants per store; this is not internet abuse protection.
+         */
+        post: operations["CreateGuestSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering": {
         parameters: {
             query?: never;
@@ -277,6 +396,26 @@ export interface components {
             name: string;
             options: components["schemas"]["FoodOption"][];
         };
+        FoodOrder: {
+            /** @enum {string} */
+            acceptance: "pending";
+            /** @enum {string} */
+            contract: "ocp.food.order.v1";
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string} */
+            fulfilment: "pickup";
+            /** @enum {string} */
+            fulfilment_progress: "not_started";
+            id: components["schemas"]["Identifier"];
+            merchant_id: components["schemas"]["Identifier"];
+            /** @enum {string} */
+            payment: "not_started";
+            /** @enum {string} */
+            resolution: "open";
+            store_id: components["schemas"]["Identifier"];
+            terms: components["schemas"]["FoodQuote"];
+        };
         FoodQuote: {
             /** Format: date-time */
             created_at: string;
@@ -298,6 +437,13 @@ export interface components {
         };
         FoodQuotedLine: {
             item_name: string;
+            /** @description Retained choice labels for display, including zero-price options. Optional for older preview quotes. */
+            selected_options?: {
+                group_id: components["schemas"]["FoodLocalIdentifier"];
+                group_name: string;
+                option_id: components["schemas"]["FoodLocalIdentifier"];
+                option_name: string;
+            }[];
             selection: components["schemas"]["FoodSelectionLine"];
             /** Format: int64 */
             total_minor: number;
@@ -325,6 +471,12 @@ export interface components {
             name: string;
             /** Format: int64 */
             price_minor: number;
+        };
+        GuestSession: {
+            /** @description Returned once. Keep private; send only as bearer authorization. */
+            access_token: string;
+            /** Format: date-time */
+            expires_at: string;
         };
         Health: {
             /** @enum {string} */
@@ -377,6 +529,11 @@ export interface components {
             state: "draft";
             store_id: components["schemas"]["Identifier"];
         };
+        PlaceFoodOrderRequest: {
+            /** @enum {string} */
+            fulfilment: "pickup";
+            quote_id: components["schemas"]["Identifier"];
+        };
         Problem: {
             /** @description Stable machine-readable error code. */
             code: string;
@@ -428,6 +585,7 @@ export interface components {
             /** @description Provider visibility override; restoring does not change chosen revision. */
             suspended: boolean;
         };
+        SchemasCommonEmptyYaml077e1183: Record<string, never>;
         /** Format: date-time */
         SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627: string;
         SchemasStoresStoreYamlStorePropertiesDisplayNamebb51a2d0: string;
@@ -500,6 +658,7 @@ export interface components {
         };
     };
     parameters: {
+        ComponentsParametersOrderIdYaml294fa0a5: components["schemas"]["Identifier"];
         /** @description Maximum resources per page. Defaults to 50, with an upper bound of 100. */
         ComponentsParametersPageLimitYaml06bb837c: number;
         /** @description Exclusive store-ID cursor from the previous StorePage.next_after. */
@@ -591,6 +750,153 @@ export interface operations {
             422: components["responses"]["ProblemResponse"];
             429: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    PlaceFoodOrder: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceFoodOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful operation. */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodOrder"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ComponentsResponsesQuoteCapacityYaml4bef3f4e"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    GetGuestFoodOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful operation. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodOrder"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ComponentsResponsesQuoteCapacityYaml4bef3f4e"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    CreateGuestFoodQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FoodSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful operation. */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodQuote"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ComponentsResponsesQuoteCapacityYaml4bef3f4e"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    GetGuestFoodQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                quote_id: components["schemas"]["Identifier"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retained quote. Expiry still prevents first placement. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodQuote"];
+                };
+            };
             default: components["responses"]["ProblemResponse"];
         };
     };
@@ -906,6 +1212,46 @@ export interface operations {
                 };
             };
             400: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ComponentsResponsesQuoteCapacityYaml4bef3f4e"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    CreateGuestSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchemasCommonEmptyYaml077e1183"];
+            };
+        };
+        responses: {
+            /** @description Successful operation. */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuestSession"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
             404: components["responses"]["ProblemResponse"];
             409: components["responses"]["ProblemResponse"];
             413: components["responses"]["ProblemResponse"];
