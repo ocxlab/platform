@@ -62,8 +62,12 @@ deliberately recycled. Existing records receive numbers during migration.
 
 These are presentation references, not new global identities or credentials.
 Store names can repeat and change; handles remain stable. The published-store
-directory accepts an exact handle search. API paths and authenticated ownership
-continue to use UUIDs. Editable usernames, custom storefront domains, and
+directory accepts an exact handle search. Customer links now use readable paths,
+for example `/stores/doener-karlsruhe-store-1/orders/O-000042`; the storefront
+is `/stores/doener-karlsruhe-store-1`. The stable handle disambiguates names,
+and the order reference resolves only through the authenticated guest read.
+An old name prefix still resolves by its handle, without losing receipt access.
+UUIDs remain primary API identities. Editable usernames, custom storefront domains, and
 cross-provider naming are separate future work.
 
 Retained placement and idempotency response bodies are not rewritten to add a

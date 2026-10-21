@@ -36,6 +36,11 @@ func (s *Server) GetGuestFoodOrder(w http.ResponseWriter, r *http.Request, merch
 	write(w, value, err)
 }
 
+func (s *Server) GetGuestFoodOrderByReference(w http.ResponseWriter, r *http.Request, merchant, store uuid.UUID, reference string) {
+	value, err := persistence.GetGuestFoodOrderByReference(r.Context(), s.db, principal(r), reference)
+	write(w, value, err)
+}
+
 func (s *Server) GetGuestFoodQuote(w http.ResponseWriter, r *http.Request, merchant, store, quote uuid.UUID) {
 	value, err := persistence.GetGuestFoodQuote(r.Context(), s.db, principal(r), quote)
 	write(w, value, err)

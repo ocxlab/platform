@@ -6,12 +6,26 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
 )
 
 var ErrPublicStoreCursor = errors.New("invalid public store cursor")
+
+func GetPublicStoreByHandle(ctx context.Context, db *sql.DB, handle string) (PublicStore, error) {
+	var store PublicStore
+	number, err := strconv.ParseInt(strings.TrimPrefix(handle, "store-"), 10, 64)
+	if err != nil || number < 1 || handle != "store-"+strconv.FormatInt(number, 10) {
+		return store, ErrNotFound
+	}
+	err = db.QueryRowContext(ctx, `SELECT merchant_id,id,display_name,handle FROM commerce.public_store_by_number($1)`, number).Scan(&store.MerchantID, &store.ID, &store.DisplayName, &store.Handle)
+	if errors.Is(err, sql.ErrNoRows) {
+		return store, ErrNotFound
+	}
+	return store, err
+}
 
 type PublicStore struct {
 	Handle      string    `json:"handle,omitempty"`

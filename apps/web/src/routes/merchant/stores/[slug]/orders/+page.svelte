@@ -3,26 +3,45 @@
   import { money } from '$lib/money';
   import MerchantStoreNav from '$lib/components/MerchantStoreNav.svelte';
   import { merchantStorePath } from '$lib/merchant-paths';
+  import RefreshCw from '@lucide/svelte/icons/refresh-cw';
   const { t, locale } = useI18n();
   let { data } = $props();
   const root = $derived(merchantStorePath(data.store));
+  const dateFormat = $derived(new Intl.DateTimeFormat(locale(), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Berlin' }));
 </script>
 <MerchantStoreNav store={data.store} active="orders" />
-<h2>{t('orders-title')}</h2>
-<p>{t('orders-inbox-help')}</p>
-<p><a href={root}>{t('orders-back')}</a> · <a data-sveltekit-reload href={`${root}/orders`}>{t('orders-refresh')}</a></p>
+<section aria-labelledby="orders-heading">
+<div class="list-heading"><h2 id="orders-heading">{t('orders-title')}</h2>
+<a class="secondary-control" data-sveltekit-reload href={`${root}/orders`}><RefreshCw size={18} aria-hidden="true" />{t('orders-refresh')}</a></div>
+<p class="muted">{t('orders-inbox-help')}</p>
 {#if !data.orders.items.length}<p>{t('orders-empty')}</p>{:else}
-<div class="order-table"><table>
-  <thead><tr><th>{t('receipt-reference')}</th><th>{t('orders-created')}</th><th>{t('orders-total')}</th><th>{t('orders-status')}</th></tr></thead>
+<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to focus and scroll the overflowing table.) -->
+<div class="order-table" role="region" aria-label={t('orders-title')} tabindex="0"><table>
+  <thead><tr><th scope="col">{t('receipt-reference')}</th><th scope="col">{t('orders-created')}</th><th scope="col" class="amount">{t('orders-total')}</th><th scope="col">{t('orders-status')}</th><th scope="col">{t('admin-payment')}</th><th scope="col">{t('fulfilment-title')}</th></tr></thead>
   <tbody>{#each data.orders.items as order}<tr>
     <th scope="row"><a href={`${root}/orders/${order.id}`}><bdi dir="ltr">{order.reference ?? order.id}</bdi></a></th>
-    <td><time datetime={order.created_at}>{new Date(order.created_at).toLocaleString(locale())}</time></td>
-    <td><bdi>{money(order.terms.total_minor, locale())}</bdi></td>
-    <td>{order.resolution === 'cancelled' ? t('orders-event-cancelled') : order.resolution === 'rejected' ? t('orders-event-rejected') : order.acceptance === 'accepted' ? t('orders-event-accepted') : t('orders-awaiting')}<br /><small>{t(`payment-status-${order.payment}`)}</small>
-      {#if order.fulfilment_progress !== 'not_started'}<br /><small>{t(`fulfilment-status-${order.fulfilment_progress}`)}</small>{/if}
-    </td>
+    <td><time datetime={order.created_at}>{dateFormat.format(new Date(order.created_at))}</time></td>
+    <td class="amount"><bdi>{money(order.terms.total_minor, locale())}</bdi></td>
+    <td><span class="badge">{t(`admin-state-${order.resolution === 'open' ? order.acceptance : order.resolution}`)}</span></td>
+    <td>{t(`admin-payment-${order.payment}`)}</td>
+    <td>{t(`admin-fulfilment-${order.fulfilment_progress}`)}</td>
   </tr>{/each}</tbody>
 </table></div>
 {/if}
 {#if data.orders.next_after}<a href={`?after=${data.orders.next_after}`}>{t('orders-next')}</a>{/if}
-<style>.order-table { overflow-x: auto; } th, td { text-align: start; padding: .65rem; } th bdi { overflow-wrap: anywhere; }</style>
+</section>
+<style>
+  .list-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .secondary-control { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; box-sizing: border-box; padding: .55rem .7rem; border: 1px solid #708692; border-radius: .3rem; background: #fff; text-decoration: none; }
+  .secondary-control:hover { background: #edf4f7; }
+  .order-table { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: start; padding: .8rem .75rem; border-block-end: 1px solid #ccd8de; vertical-align: middle; }
+  thead { background: #f1f6f8; color: #20586f; }
+  tbody th { font-weight: 600; }
+  tbody tr:hover { background: #f8fafb; }
+  .amount { text-align: end; white-space: nowrap; }
+  th bdi, time { white-space: nowrap; }
+  .badge { display: inline-block; border: 1px solid #ccd8de; border-radius: .3rem; padding: .2rem .5rem; white-space: nowrap; }
+  th a { display: inline-block; padding-block: .5rem; }
+</style>

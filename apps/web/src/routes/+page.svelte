@@ -3,6 +3,7 @@
   import Notice from '$lib/components/Notice.svelte';
   import ActionButton from '$lib/components/ActionButton.svelte';
   import Search from '@lucide/svelte/icons/search';
+  import { customerStorePath } from '$lib/merchant-paths';
   let { data } = $props();
   const { t } = useI18n();
 </script>
@@ -20,7 +21,7 @@
   {:else if data.stores.length}
     <div class="store-list" role="region" aria-label={t('ui-published-stores')}>
       <ul>{#each data.stores as store (`${store.merchant_id}/${store.id}`)}
-        <li><a href={`/stores/${store.merchant_id}/${store.id}`}><bdi class="store-name" dir="auto">{store.display_name}</bdi></a></li>
+        <li><a href={customerStorePath(store)}><bdi class="store-name" dir="auto">{store.display_name}</bdi></a></li>
       {/each}</ul>
     </div>
     {#if data.next}<p><a href={data.next}>{t('ui-more-stores')}</a></p>{/if}

@@ -58,7 +58,8 @@ test('admin browses paged records and customers select paid and free pizza extra
   const guestContext = await browser.newContext();
   const guest = await guestContext.newPage();
   guest.on('pageerror', error => errors.push(error.message));
-  await guest.goto(`/stores/${fixture.extras_merchant_id}/${store}`);
+  const storefront = await page.getByRole('link', { name: 'Open customer storefront', exact: true }).getAttribute('href');
+  await guest.goto(storefront!);
   await guest.getByRole('combobox', { name: /^Variant/ }).selectOption({ label: 'Large · €10.00' });
   await guest.getByLabel('Extra cheese').check();
   await guest.getByLabel('Garlic').check();

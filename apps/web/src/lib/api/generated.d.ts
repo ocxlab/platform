@@ -121,6 +121,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/by-reference/{order_reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_reference: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Inspect this guest's order using its readable reference
+         * @description The same guest ownership and store scope as the UUID read apply. A reference is not a credential. Reads remain available after publication withdrawal.
+         */
+        get: operations["GetGuestFoodOrderByReference"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}": {
         parameters: {
             query?: never;
@@ -554,6 +579,23 @@ export interface paths {
          * @description Anonymous local directory, not network-wide discovery. Returns only store IDs and display names with a visible published offering. Case-insensitive literal name search. Live pages use ascending merchant/store IDs; refresh to see additions.
          */
         get: operations["ListPublicStores"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/stores/{store_handle}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve a visible store's provider-local handle */
+        get: operations["GetPublicStoreByHandle"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1248,6 +1290,38 @@ export interface operations {
             413: components["responses"]["ProblemResponse"];
             415: components["responses"]["ProblemResponse"];
             422: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    GetGuestFoodOrderByReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current authorized order and history. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodOrder"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };
@@ -1969,6 +2043,33 @@ export interface operations {
                 };
             };
             400: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    GetPublicStoreByHandle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                store_handle: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public metadata for a currently visible store only. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicStore"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { merchantStorePath, storeHandleFromSlug } from './merchant-paths';
+import { merchantStorePath, customerStorePath, storeHandleFromSlug } from './merchant-paths';
 
 describe('readable merchant paths', () => {
+  it('uses the same readable store identity in customer links', () => {
+    expect(customerStorePath({ display_name: 'Döner Karlsruhe', handle: 'store-1' })).toBe('/stores/doener-karlsruhe-store-1');
+  });
   it('uses a readable name and stable disambiguating handle, not UUIDs', () => {
     expect(merchantStorePath({ display_name: 'Döner Karlsruhe', handle: 'store-1' })).toBe('/merchant/stores/doener-karlsruhe-store-1');
     expect(merchantStorePath({ display_name: 'Döner Karlsruhe', handle: 'store-2' })).toBe('/merchant/stores/doener-karlsruhe-store-2');

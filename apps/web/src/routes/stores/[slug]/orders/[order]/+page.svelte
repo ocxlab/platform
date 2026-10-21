@@ -12,13 +12,13 @@
 <h1>{t('receipt-title')}</h1>
 <p>{t('receipt-intro')}</p>
 {#if form?.error}<Notice text={form.error} error />{/if}
-<p><a data-sveltekit-reload href={`/stores/${data.order.merchant_id}/${data.order.store_id}/orders/${data.order.id}`}>{t('orders-refresh')}</a></p>
+<p><a class="refresh-control" data-sveltekit-reload href={data.receipt}>{t('orders-refresh')}</a></p>
 <OrderDetails order={data.order} />
 {#if developmentActions(data.order, data.developmentPayments).length}
 <section aria-label={t('payment-development')}>
   <h2>{t('payment-development')}</h2><p>{t('payment-development-help')}</p>
   {#if data.order.payment === 'awaiting_customer'}
-    <a class="checkout-link" data-sveltekit-reload href={`/stores/${data.order.merchant_id}/${data.order.store_id}/orders/${data.order.id}/checkout`}>{t('payment-resume')}</a>
+    <a class="checkout-link" data-sveltekit-reload href={`${data.receipt}/checkout`}>{t('payment-resume')}</a>
   {:else}
     <form method="POST" action="?/payment">
       <input type="hidden" name="action" value="start" /><input type="hidden" name="revision" value={data.order.revision} />
@@ -35,4 +35,4 @@
   </form>
 {/if}
 <p>{t('receipt-cookie-help')}</p>
-<a href={`/stores/${data.order.merchant_id}/${data.order.store_id}`}>{t('receipt-back')}</a>
+<a href={data.storefront}>{t('receipt-back')}</a>

@@ -1,5 +1,61 @@
 # Development status
 
+## Readable customer links and a usable merchant order table
+
+22 October 2026, Europe/Berlin (UTC+02:00). Customer storefronts now use
+`/stores/doener-karlsruhe-store-1`; receipts and development checkout use
+`/stores/doener-karlsruhe-store-1/orders/O-000042` and its `/checkout` child.
+Homepage, merchant storefront links, placement redirects, refresh, checkout,
+and receipt navigation use these routes. UUIDs remain the primary API identities.
+Old pre-launch UUID web routes are removed by founder request, not redirected.
+
+A new modular public handle-resolution operation reads one indexed, visible
+store projection. Migration 10 retains the narrow definer-function privilege
+boundary: no draft, withdrawn, or suspended store is exposed. A guest-only
+reference lookup retains the existing store/merchant/guest authorization and
+current order/history read. Guest cookies cover `/stores`, with a small HttpOnly
+routing hint so receipts do not depend on public listing or a store-name prefix.
+The hint and readable reference confer no authority. Existing development data
+is preserved; older guest links/cookie paths are not migrated.
+
+The merchant Orders tab now has a card and aligned table matching administration:
+reference, placement time, total, order status, payment, and pickup progress.
+References open details; a visible secondary refresh control returns to the
+latest inbox. Logical-direction alignment, readable status text, and a keyboard-
+focusable horizontal scroll area support narrow screens and Arabic.
+
+Verification: `task check` passed, including generated-contract drift, Go checks,
+real PostgreSQL isolation and alias/withdrawal/revocation tests, 63 web unit tests,
+and zero Svelte errors or warnings. `task smoke` passed. The running local
+API uses migration 10 without resetting its data, and native Vite serves 18181;
+homepage and readable storefront both returned HTTP 200. The initial four
+built-app browser tests passed, including the existing payment/cancellation/pickup
+journey and table geometry. Desktop and narrow Arabic screenshots were inspected.
+All four Vite browser tests also passed on a bounded rerun. The first Vite run
+passed three tests but timed out opening a merchant workspace; the cause was not
+established, and no timeout increase or application workaround was introduced.
+No mutation-testing, real-payment, or native-network result is claimed for this batch.
+
+Next: automatic updates for customer order pages and merchant inbox/detail views,
+then resume pause/resume ordering and manual/automatic acceptance. The UI still
+lacks a multi-item cart: the API supports up to 20 selection lines, but the current
+web form submits one configured item. A cohesive tile/category/cart/checkout UX
+pass is required before a merchant pilot, not just cosmetic work at the end.
+See [the UI backlog](UI-UX-NEXT.md) for these boundaries and refresh behavior.
+
+The implementation remains a single-provider pickup slice with simulated payment,
+not the completed network. `services/onix/` currently contains integration notes,
+not a running native publisher/crawler. The joined-network milestone remains
+two providers, native publication/crawl into discovery, freshness/withdrawal and
+authorized routing, and separately scoped shared payment integration. Real payment
+adapters, own delivery, registered customer journeys, and production authentication
+also remain work. Prior research/POCs do not count as delivered product features.
+
+Valueflows continues to inform the separation between offerings, agreed purchase
+terms/accepted obligations, and reports of actual fulfilment or payment. The
+implementation is not a Valueflows ontology or conformance implementation. A future
+cart remains a revisable selection, not an accepted obligation or economic event.
+
 ## Readable merchant workspaces and aligned administration controls
 
 22 October 2026, Europe/Berlin (UTC+02:00). Open stores from the merchant list

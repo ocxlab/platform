@@ -21,6 +21,10 @@ tags:
 security:
   - BearerAuth: []
 paths:
+  /api/v1/public/stores/{store_handle}:
+    $ref: paths/public-store-handle.yaml
+  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/by-reference/{order_reference}:
+    $ref: paths/food-order-reference.yaml
   /api/v1/admin/stores:
     $ref: paths/admin-stores.yaml
   /api/v1/admin/food/orders:

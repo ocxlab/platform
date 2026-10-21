@@ -164,6 +164,18 @@ tested abuse controls, appropriate limits, and a retention policy.
 
 ## Guest checkout
 
+Readable web navigation uses `/stores/{name}-{handle}/orders/{reference}`.
+`GET /api/v1/public/stores/{store_handle}` resolves one visible store through
+an indexed, narrowly authorized public projection; it never exposes private,
+withdrawn, or suspended stores. The guest-only `food/orders/by-reference/{order_reference}`
+read has the same store scope and guest ownership checks as the UUID read and
+does not depend on publication. Other operations continue to use UUIDs.
+The web retains a small HttpOnly store-routing hint alongside the scoped guest
+credential. This hint supplies identifiers, not authority; the API checks every
+read and mutation. Cookies cover `/stores` so renaming a shop does not lose an
+existing guest session. Custom domains and cross-site processor returns remain
+separate work. Previous pre-launch UUID web routes are not preserved.
+
 Checkout uses a GuestBearerAuth audience and guest-owned
 quotes. Anonymous preview quotes do not confer placement authority. Pickup
 placement retains agreed quote terms, pending acceptance, without payment or

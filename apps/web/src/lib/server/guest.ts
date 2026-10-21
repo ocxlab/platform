@@ -5,7 +5,7 @@ import type { Cookies } from '@sveltejs/kit';
 // The scoped guest bearer lives only in an HttpOnly cookie and server requests.
 // Unlike development staff sessions, checkout survives a web/API process restart.
 export function guestCheckout(cookies: Cookies, merchant: string, store: string) {
-  const path = `/stores/${merchant}/${store}`;
+  const path = '/stores';
   const suffix = `${merchant}_${store}`;
   const options = { path, httpOnly: true, sameSite: 'strict' as const,
     secure: env.OCP_LOCAL_INSECURE_COOKIES !== 'true', maxAge: 7 * 24 * 60 * 60 };

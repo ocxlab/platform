@@ -36,6 +36,17 @@ func TestGuestOrderPlacement(t *testing.T) {
 	first := f.request(t, "POST", path, session.Token, "place-food-order-001", body, 201)
 	var order persistence.FoodOrder
 	must(t, json.Unmarshal(first, &order))
+	byReference := path + "/by-reference/" + order.Reference
+	var resolved persistence.FoodOrder
+	must(t, json.Unmarshal(f.request(t, "GET", byReference, session.Token, "", "", 200), &resolved))
+	if resolved.ID != order.ID {
+		t.Fatal("reference resolved a different order")
+	}
+	f.request(t, "GET", byReference, "", "", "", 401)
+	f.request(t, "GET", byReference, other.Token, "", "", 404)
+	f.request(t, "GET", strings.Replace(byReference, store.ID.String(), store.MerchantID.String(), 1), session.Token, "", "", 403)
+	f.request(t, "GET", path+"/by-reference/O-000000", session.Token, "", "", 404)
+	f.request(t, "GET", path+"/by-reference/O-9999999999999999999", session.Token, "", "", 404)
 	if order.Terms.Total != 1400 || order.Acceptance != "pending" || order.Payment != "not_started" || order.FulfilmentProgress != "not_started" {
 		t.Fatalf("incorrect placement: %+v", order)
 	}
@@ -66,9 +77,11 @@ func TestGuestOrderPlacement(t *testing.T) {
 	if !bytes.Equal(first, f.request(t, "POST", path, session.Token, "place-food-order-001", body, 201)) {
 		t.Fatal("replay depends on ephemeral quote or publication")
 	}
+	f.request(t, "GET", byReference, session.Token, "", "", 200)
 	_, err = f.admin.Exec(`UPDATE commerce.guest_grants SET revoked=true WHERE merchant_id=$1`, store.MerchantID)
 	must(t, err)
 	f.request(t, "GET", path+"/"+order.ID.String(), session.Token, "", "", 401)
+	f.request(t, "GET", byReference, session.Token, "", "", 401)
 	f.request(t, "POST", path, session.Token, "place-food-order-001", body, 401)
 }
 

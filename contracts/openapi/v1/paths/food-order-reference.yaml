@@ -1,0 +1,40 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - name: order_reference
+    in: path
+    required: true
+    schema: { type: string, pattern: '^O-[0-9]{6,19}$' }
+get:
+  operationId: GetGuestFoodOrderByReference
+  tags: [Customer commerce]
+  summary: Inspect this guest's order using its readable reference
+  description: >-
+    The same guest ownership and store scope as the UUID read apply. A reference
+    is not a credential. Reads remain available after publication withdrawal.
+  security:
+    - GuestBearerAuth: []
+  x-access: guest
+  x-required-scope: order:read
+  responses:
+    '200':
+      description: Current authorized order and history.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/order/v1/schema.yaml#/FoodOrder
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    default:
+      $ref: ../components/responses/problem.yaml

@@ -16,7 +16,18 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   const workspace = page.url();
   expect(new URL(workspace).pathname).toMatch(/^\/merchant\/stores\/neighbourhood-kitchen-store-[1-9][0-9]*$/);
   const storefrontLink = await page.getByRole('link', { name: 'Open customer storefront', exact: true }).getAttribute('href');
-  const store = storefrontLink!.split('/').at(-1)!;
+  expect(storefrontLink).toMatch(/^\/stores\/neighbourhood-kitchen-store-[1-9][0-9]*$/);
+  const handle = /store-[1-9][0-9]*$/.exec(storefrontLink!)![0];
+  const listed = await request.get(`http://browser-api:8080/api/v1/merchants/${fixture.merchant_id}/stores?handle=${handle}`, { headers: { Authorization: `Bearer ${fixture.merchant_token}` } });
+  expect(listed.status()).toBe(200);
+  const store = (await listed.json()).items[0].id;
+  async function orderID(receiptURL: string) {
+    const reference = new URL(receiptURL).pathname.split('/').at(-1)!;
+    expect(reference).toMatch(/^O-[0-9]{6,19}$/);
+    const response = await request.get(`http://browser-api:8080/api/v1/merchants/${fixture.merchant_id}/stores/${store}/food/orders`, { headers: { Authorization: `Bearer ${fixture.merchant_token}` } });
+    expect(response.status()).toBe(200);
+    return (await response.json()).items.find((order: { reference: string }) => order.reference === reference).id;
+  }
   const tabs = page.getByRole('navigation', { name: 'Store workspace' });
   await expect(tabs.getByRole('link', { name: 'Menu', exact: true })).toHaveAttribute('aria-current', 'page');
   await tabs.getByRole('link', { name: 'Orders', exact: true }).click();
@@ -50,7 +61,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   }
   await managedStores.getByRole('link', { name: 'Neighbourhood Kitchen', exact: true }).click();
   await expect(page).toHaveURL(workspace);
-  const storefront = `/stores/${fixture.merchant_id}/${store}`;
+  const storefront = storefrontLink!;
   await page.getByRole('button', { name: 'Add menu item', exact: true }).click();
   await page.getByLabel('Item name', { exact: true }).fill('Döner');
   await page.getByLabel('Variant price in EUR', { exact: true }).fill('7');
@@ -110,11 +121,15 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
   await expect(guest.getByRole('heading', { name: 'Pickup order placed' })).toBeVisible();
   const receipt = guest.url();
+  expect(new URL(receipt).pathname).toMatch(/^\/stores\/neighbourhood-kitchen-store-[1-9][0-9]*\/orders\/O-[0-9]+$/);
   await expect(guest.getByRole('region', { name: 'Order details' })).toContainText('15.00');
   await expect(guest.getByRole('region', { name: 'Order details' })).toContainText('Sauce: Garlic');
   await expect(guest.getByText('Awaiting restaurant acceptance.', { exact: false })).toBeVisible();
   await guest.reload();
   await expect(guest).toHaveURL(receipt);
+  await guest.goto(receipt.replace('neighbourhood-kitchen-', 'previous-name-'));
+  await expect(guest.getByRole('region', { name: 'Order details' })).toContainText('15.00');
+  await guest.goto(receipt);
   // Language changes alter presentation, not agreed terms or guest authority.
   const tokenBeforeLanguageChange = (await guestContext.cookies()).find((cookie) => cookie.name.startsWith('ocp_guest_'))!.value;
   await guest.locator('.language-picker summary').click();
@@ -145,9 +160,25 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(unrelated.getByText('Open this order in the browser used at checkout.', { exact: false })).toBeVisible();
   await unrelatedContext.close();
   // Merchant and customer operations use the same durable order through separate APIs.
-  const orderId = new URL(receipt).pathname.split('/').at(-1)!;
+  const orderId = await orderID(receipt);
   await page.getByRole('link', { name: 'Orders', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Pickup orders', exact: true })).toBeVisible();
+  await expect(page.locator('.order-table th[scope="col"]')).toHaveText(['Order reference', 'Placed at', 'Total', 'Status', 'Payment', 'Pickup progress']);
+  await page.screenshot({ path: 'test-results/merchant-orders-desktop.png', fullPage: true });
+  for (const locale of ['ar', 'en']) {
+    await page.locator('.language-picker summary').click();
+    await page.locator(`.language-picker button[value=${locale}]`).click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const table = page.locator('.order-table table');
+    for (const index of [0, 1, 2, 3, 4, 5]) {
+      const heading = await table.locator('thead th').nth(index).boundingBox();
+      const cell = await table.locator('tbody tr').first().locator('th,td').nth(index).boundingBox();
+      expect(Math.abs(heading!.x - cell!.x)).toBeLessThan(1);
+    }
+    if (locale === 'ar') await page.screenshot({ path: 'test-results/merchant-orders-ar-mobile.png', fullPage: true });
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.locator(`a[href$="/orders/${orderId}"]`).click();
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
   await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
@@ -170,11 +201,11 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('7.50');
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
-  await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/[a-f0-9-]+$`));
+  await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/O-[0-9]+$`));
   await expect(guest.getByRole('heading', { name: 'Pickup order placed' })).toBeVisible();
   const payableReceipt = guest.url();
   expect(payableReceipt).not.toBe(receipt);
-  const payableId = new URL(payableReceipt).pathname.split('/').at(-1)!;
+  const payableId = await orderID(payableReceipt);
   await page.goto(`${workspace}/orders/${payableId}`);
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
   await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
@@ -269,11 +300,11 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.goto(storefront); await expect(guest.getByRole('heading', { name: 'Neighbourhood Kitchen' })).toBeVisible();
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
-  await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/[a-f0-9-]+$`));
+  await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/O-[0-9]+$`));
   await expect(guest.getByRole('heading', { name: 'Pickup order placed' })).toBeVisible();
   const declinedReceipt = guest.url();
   expect(declinedReceipt).not.toBe(payableReceipt);
-  const declinedId = new URL(declinedReceipt).pathname.split('/').at(-1)!;
+  const declinedId = await orderID(declinedReceipt);
   await page.goto(`${workspace}/orders/${declinedId}`);
   await page.getByRole('button', { name: 'Decline order', exact: true }).click();
   await expect(page.getByText('The restaurant declined this order.', { exact: false })).toBeVisible();
@@ -284,11 +315,11 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.goto(storefront);
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
-  await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/[a-f0-9-]+$`));
+  await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/O-[0-9]+$`));
   await expect(guest.getByRole('heading', { name: 'Pickup order placed' })).toBeVisible();
   const pickupReceipt = guest.url();
   expect(pickupReceipt).not.toBe(declinedReceipt);
-  const pickupId = new URL(pickupReceipt).pathname.split('/').at(-1)!;
+  const pickupId = await orderID(pickupReceipt);
   await page.goto(`${workspace}/orders/${pickupId}`);
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
   await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();

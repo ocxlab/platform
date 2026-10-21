@@ -17,3 +17,8 @@ func (s *Server) ListPublicStores(w http.ResponseWriter, r *http.Request, params
 	value, err := persistence.ListPublicStores(r.Context(), s.db, query, params.After, limit)
 	write(w, value, err)
 }
+
+func (s *Server) GetPublicStoreByHandle(w http.ResponseWriter, r *http.Request, handle string) {
+	value, err := persistence.GetPublicStoreByHandle(r.Context(), s.db, handle)
+	write(w, value, err)
+}

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -107,6 +109,14 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 }
 
 func GetGuestFoodOrder(ctx context.Context, db *sql.DB, guest Principal, id uuid.UUID) (FoodOrder, error) {
+	return getGuestFoodOrder(ctx, db, guest, id, "")
+}
+
+func GetGuestFoodOrderByReference(ctx context.Context, db *sql.DB, guest Principal, reference string) (FoodOrder, error) {
+	return getGuestFoodOrder(ctx, db, guest, uuid.Nil, reference)
+}
+
+func getGuestFoodOrder(ctx context.Context, db *sql.DB, guest Principal, id uuid.UUID, reference string) (FoodOrder, error) {
 	tx, err := TenantTransaction(ctx, db, guest.MerchantID)
 	if err != nil {
 		return FoodOrder{}, err
@@ -114,6 +124,19 @@ func GetGuestFoodOrder(ctx context.Context, db *sql.DB, guest Principal, id uuid
 	defer tx.Rollback()
 	if err = checkGuest(ctx, tx, guest); err != nil {
 		return FoodOrder{}, err
+	}
+	if reference != "" {
+		number, parseErr := strconv.ParseInt(strings.TrimPrefix(reference, "O-"), 10, 64)
+		if parseErr != nil || number < 1 || orderReference(number) != reference {
+			return FoodOrder{}, ErrNotFound
+		}
+		err = tx.QueryRowContext(ctx, `SELECT id FROM commerce.food_orders WHERE merchant_id=$1 AND store_id=$2 AND guest_id=$3 AND display_number=$4`, guest.MerchantID, guest.StoreID, guest.ID, number).Scan(&id)
+		if errors.Is(err, sql.ErrNoRows) {
+			return FoodOrder{}, ErrNotFound
+		}
+		if err != nil {
+			return FoodOrder{}, err
+		}
 	}
 	order, err := readFoodOrder(ctx, tx, guest, guest.StoreID, id, false)
 	if err != nil {

@@ -18,8 +18,9 @@ usable without turning this into a general dashboard redesign.
   handle, such as `/merchant/stores/doener-karlsruhe-store-1`. Resolution uses an
   exact tenant-scoped API lookup, not a scan of every store or a new database path
   in the UI. UUID API identity remains unchanged. Pre-launch UUID web links are
-  not retained; enter stores through the merchant list. This does not yet change
-  customer storefront or receipt URLs or implement custom domains.
+  not retained; enter stores through the merchant list. Custom domains remain
+  future work. Customer storefront and receipt links now use the same readable
+  store slug and a human-readable order reference; see the completed batch below.
 
 ## Remaining navigation improvements
 
@@ -66,20 +67,37 @@ Primary technical references consulted on 22 October 2026:
 
 ## Readable customer order URLs
 
-Use a readable store slug and human-readable order reference on customer-facing
-receipt/status routes, rather than exposing a chain of merchant/store/order UUIDs.
-For example, `/stores/doener-karlsruhe/orders/O-000042` illustrates the intended
-shape; it is not yet the chosen or implemented route. Resolve these aliases to
-stable internal IDs. Store-name collisions, later renames, redirects from existing
-links, and custom storefront domains need deliberate handling; a display name
-alone is not a unique identifier.
+Implemented shape: `/stores/doener-karlsruhe-store-1/orders/O-000042`, with
+`/stores/doener-karlsruhe-store-1` for the storefront. Exact API lookups resolve
+the provider-local handle and the guest-owned reference to stable IDs. Names
+can repeat or change without changing the handle; old name prefixes still work.
+The user explicitly requested no legacy pre-launch UUID-route compatibility.
+Custom storefront domains and subdomains remain future work.
 
 Readable references are guessable navigation labels, never authorization. Retain
 the current guest/registered-customer access checks and tenant scope. An unrelated
 visitor who guesses the URL must not see private order details. Keep UUID-based
 API identity where appropriate; a friendlier browser URL does not require
-replacing primary keys or weakening the order contract. Add direct-link, refresh,
-rename/old-link, and denied-access regressions when this is implemented.
+replacing primary keys or weakening the order contract. The merchant inbox now
+uses an aligned, horizontally scrollable table with separate order, payment, and
+pickup state columns, following the provider administration table style.
+
+## Simple ordering and a real cart
+
+The storefront currently submits one item configuration at a time to a quote;
+it is not a multi-item cart. The Food selection contract already accepts up to
+20 lines. Add a store-scoped cart with quantities, sizes, paid/free extras,
+edit/remove actions, and a clear total, followed by an authoritative quote before
+placement. Browsing and adding to a cart create no purchase commitment, payment,
+or preparation work. Preserve that distinction when improving the screen.
+
+Plan a cohesive, mobile-first UI/UX pass before a merchant pilot: product tiles,
+simple category navigation, a visible cart, clear checkout/status, and a lean
+merchant workspace. Do not postpone operational usability until final decoration.
+Automatic updates are the next focused UI batch; then resume ordering controls
+(pause/resume and manual/automatic acceptance). Keep native ONIX publication and
+peer discovery as an explicit joined-network milestone, not an indefinite UI
+follow-up or a claim already fulfilled by the local directory.
 
 ## Benchmark the restaurant work before extending the editor
 
