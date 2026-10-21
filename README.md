@@ -11,8 +11,10 @@ use separately authorized JSON APIs backed by PostgreSQL; SvelteKit supplies the
 interfaces and the public storefront. Modular OpenAPI contracts generate Go and
 TypeScript artifacts. Guest pickup-order placement and private receipts are
 available. The restaurant order inbox supports acceptance/rejection and private
-progress; guests can cancel unpaid, unprepared orders. Kitchen operations,
-payment, and native ONIX integration remain next slices; this is not yet a
+progress. A stateful development payment service supports simulated checkout,
+retry, cancellation, and refunds on unprepared orders. Orders and stores also
+have readable references alongside their UUIDs. Kitchen operations,
+real payment adapters, and native ONIX integration remain next slices; this is not yet a
 complete ordering product.
 
 ## Start locally
@@ -80,6 +82,8 @@ credentials out of source control; none are needed for the current checks.
 | `task web:generate` | Regenerate TypeScript API types from the shared OpenAPI bundle |
 | `task check` | Check contracts, formatting, vet, race/SQL tests, web types/components, and runtime builds |
 | `task test:browser` | Run Chromium merchant/guest/admin journeys with disposable PostgreSQL |
+| `task test:mutation:web` | Run Stryker against selected TypeScript rules and session helpers |
+| `task test:mutation:go` | Run Gremlins against Food and development-payment rules |
 | `task web:dev` | Start Docker API/database and local Svelte hot reload on localhost:18181 |
 | `task web:container` | Start the built web app in Docker without hot reload |
 | `task test` | Run unit tests |

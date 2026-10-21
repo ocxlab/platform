@@ -1,5 +1,45 @@
 # Development status
 
+## Reliable refresh, readable references, and local payments
+
+21 October 2026, Europe/Berlin (UTC+02:00). Explicit status refresh now reloads
+the current receipt/order/inbox from the server, including repeated clicks on the
+same URL. The fix is committed as `e904d1f`; subsequent work below builds on it.
+
+Orders now display provider-unique, non-resetting references such as `O-000042`;
+stores receive stable handles such as `store-1`, searchable in the public directory.
+UUIDs remain identity and authorization keys. Migrations preserve records and
+historical idempotency responses. The running development store Döner Karlsruhe
+was retained and now displays `store-1`.
+
+The local Payment module persists simulated checkout, declines, abandonment,
+success, and cancellation/refund outcomes with the order's operational history.
+It is explicitly enabled in local API/web tasks and disabled by default in the
+handler. No real money or processor credentials are used. It does not simulate
+kitchen progress or establish real payment-processor compatibility. See the
+[walkthrough](LOCAL-PAYMENTS-AND-REFERENCES.md).
+
+Executed verification:
+
+- `task check`: modular contract validation/drift, formatting, Go vet/race tests,
+  PostgreSQL integration, Go/web builds, Svelte diagnostics (zero), and 35 web tests.
+- `task test:browser`: all three Chromium journeys passed, including customer and
+  merchant repeated refresh, simulated decline/retry/success/refund, catalog
+  publication/deletion, provider visibility, and English/Arabic UI regressions.
+- `task smoke`: preserved and migrated the local database and checked API liveness,
+  rejected credentials, and SQL connectivity. It is not a commerce readiness check.
+- `task test:mutation:web`: 159 of 160 mutants killed, one survivor, no uncovered
+  mutants/timeouts/errors (99.38%) in four selected TypeScript modules.
+- `task test:mutation:go`: payment rules 6/6 killed; Food 52/55 killed, three
+  survivors and no uncovered mutants. See [mutation scope and survivors](MUTATION-TESTING.md).
+
+The engineering and protocol static reviews found and resolved payment-schema
+runtime ownership checks, extensible provider identifiers, and the risk of
+accidentally granting future real adapters simulated refund semantics. Their
+reports are under `docs/reviews/development-payments-*.md`; these automated reviews
+are not independent implementation evidence. Local Vite was restarted with the
+development-payment flag and continues at `http://localhost:18181`.
+
 ## Public store browsing and table alignment
 
 21 October 2026, Europe/Berlin (UTC+02:00). The homepage now lists this provider's

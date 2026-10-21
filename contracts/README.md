@@ -175,8 +175,10 @@ See `docs/STATUS.md` for executed checks and remaining product boundaries.
 The merchant Food order API provides a newest-first inbox, individual reads,
 and explicit accept/reject decisions. Its operations require `order:read` or
 `order:manage`; a catalog-writing grant alone does not confer order access.
-The placing guest can cancel an open order before payment or preparation,
-including after acceptance. Separate provider `order:inspect` authority permits
+The placing guest can cancel an open, unprepared order, including after acceptance.
+The development adapter also supports cancellation during simulated checkout and
+an atomic simulated refund after simulated payment. These are not real-processor
+refund guarantees. Separate provider `order:inspect` authority permits
 read-only inspection through the administration API, not merchant impersonation.
 
 `expected_revision` refers to operational progress, not the offering revision
@@ -187,15 +189,16 @@ decision or cancellation returns 201. Revision, attributable event, and original
 replay result commit together. A matching successful retry returns its historical
 body, while GET returns current progress and ordered history. Closed orders cannot
 be reopened by later acceptance. Acceptance neither collects money nor starts
-preparation; there is no API for overriding those facts in this slice.
+preparation. The explicitly enabled development-payment operation below adds
+simulated financial progress; kitchen progress remains unimplemented.
 
 Placement bodies and agreed terms remain immutable. Migration 00004 backfills a
 separate operational row for existing orders. Current reads supply `revision`;
 it remains optional in the response schema so retained placement replay bodies
 without it stay valid. `history` is omitted from inbox pages and old placement
-replays. The current state graph permits at most three events; its schema allows
-four. Extend the history contract or add pagination when adding payment/kitchen
-events. The newly expanded state enums require updated consumers: this is a
+replays. The bounded development checkout permits ten attempts, with at most 24
+history entries in the current response schema. Extend the history contract or
+add pagination before adding further events. Expanded state enums require updated consumers: this is a
 coordinated draft-contract increment, not proof that older generated clients
 understand new lifecycle states.
 
@@ -214,6 +217,22 @@ Stable machine errors are owned by module under [errors/](errors/README.md).
 Run `task errors:generate` after catalog changes. English, German, and Arabic Fluent
 resources live with the web application; API problem details remain diagnostic,
 not the source of customer-facing translations.
+
+## Development payments and readable references
+
+`paths/development-payment.yaml` owns the guest-only simulation operation, and
+`schemas/payments/development.yaml` owns its reusable request. It uses the same
+guest scope, expected revision, and idempotency contract as order changes. The
+backend rejects this operation unless explicitly enabled; local composition
+enables it. Clients cannot supply amounts or currency: immutable agreed terms
+supply both. No real processor credentials, funds, or webhook claims are involved.
+The payment-provider identifier is extensible; only `development` is implemented.
+Real adapters require their own settlement, cancellation, and refund behavior.
+
+Store `handle` and order `reference` are optional presentation fields so retained
+historical response bodies remain valid. Current reads overlay persistent,
+provider-unique sequence values; UUIDs continue to define API identity and scope.
+See [the walkthrough](../docs/LOCAL-PAYMENTS-AND-REFERENCES.md).
 
 ## Tooling note
 
