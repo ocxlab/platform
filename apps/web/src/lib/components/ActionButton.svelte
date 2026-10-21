@@ -19,7 +19,7 @@
   let dismissed = $state(false);
   let interactive = $state(false);
   onMount(() => { interactive = true; });
-  const visible = $derived(!disabled && !dismissed && (hovered || focused));
+  const visible = $derived((iconOnly || tooltip !== label) && !disabled && !dismissed && (hovered || focused));
   let button = $state<HTMLButtonElement>();
   let tip = $state<HTMLSpanElement>();
   let tipLeft = $state(0);
@@ -54,5 +54,5 @@
   .action-button { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-width: 44px; min-height: 44px; }
   .icon-only { padding: .55rem; }
   .danger { background: #9f3038; border-color: #9f3038; }
-  .tooltip { position: fixed; z-index: 20; width: max-content; max-width: min(18rem, 75vw); overflow-wrap: anywhere; padding: .45rem .65rem; border-radius: .3rem; background: #1a2b35; color: white; font-size: .85rem; font-weight: 400; line-height: 1.4; box-shadow: 0 2px 6px #0003; }
+  .tooltip { position: fixed; z-index: 20; width: max-content; max-width: min(22rem, 85vw); overflow-wrap: anywhere; padding: .7rem .9rem; border: 1px solid #425a68; border-radius: .5rem; background: #1a2b35; color: white; font-size: 1rem; font-weight: 400; line-height: 1.5; box-shadow: 0 4px 16px #0003; }
 </style>

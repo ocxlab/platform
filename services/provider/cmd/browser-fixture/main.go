@@ -31,8 +31,12 @@ func main() {
 	if err != nil {
 		fail()
 	}
+	additional, additionalToken, err := persistence.Provision(ctx, db, "Extras browser merchant", []string{"store:read", "store:write", "offering:read", "offering:write", "order:read", "order:manage"}, time.Now().Add(time.Hour))
+	if err != nil {
+		fail()
+	}
 	// stdout is piped directly to the browser runner, never a tracked fixture or log.
-	if json.NewEncoder(os.Stdout).Encode(map[string]string{"merchant_id": p.MerchantID.String(), "merchant_token": token, "provider_token": provider}) != nil {
+	if json.NewEncoder(os.Stdout).Encode(map[string]string{"merchant_id": p.MerchantID.String(), "merchant_token": token, "provider_token": provider, "extras_merchant_id": additional.MerchantID.String(), "extras_merchant_token": additionalToken}) != nil {
 		fail()
 	}
 }

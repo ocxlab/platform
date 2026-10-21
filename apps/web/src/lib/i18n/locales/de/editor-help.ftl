@@ -1,0 +1,11 @@
+editor-help-title = So funktionieren Größen und Extras
+editor-help-variants = Varianten sind Alternativen mit eigenem Gesamtpreis, etwa eine kleine Pizza für 8 € oder eine große Pizza für 10 €.
+editor-help-extras = Extras werden zu diesem Preis addiert. Extra Käse kann 1 € kosten und Knoblauch 0 €. Kunden können mehrere Extras wählen, wenn die Auswahlregeln der Gruppe dies erlauben.
+editor-variants-heading = Größen und Varianten
+editor-variants-help = Legen Sie den vollständigen Preis für jede Größe oder Ausführung fest
+editor-extras-heading = Extras und Ergänzungen
+editor-extras-help = Fügen Sie kostenpflichtige oder kostenlose Extras getrennt vom Grundpreis hinzu
+editor-no-extras = Noch keine Extras. Fügen Sie eine Extras-Gruppe hinzu und tragen Sie etwa Käse oder Knoblauch ein.
+editor-choice-rules = Auswahlregeln
+editor-choice-rules-help = Mit einer Mindestauswahl von 0 sind Extras optional. Die Höchstauswahl begrenzt die Anzahl verschiedener Extras.
+editor-remove-group = Extras-Gruppe { $name } entfernen

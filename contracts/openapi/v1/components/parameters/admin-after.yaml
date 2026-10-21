@@ -1,0 +1,4 @@
+name: after
+in: query
+description: Opaque continuation bound to resource, trimmed query and status. Omit when changing filters. Live pages, not a snapshot; return to the first page for new records.
+schema: { $ref: ../../schemas/admin/directory.yaml#/Cursor }

@@ -1,0 +1,52 @@
+StoreSummary:
+  type: object
+  additionalProperties: false
+  required: [id, merchant_id, display_name, merchant_name, handle, draft_revision, publication_status, updated_at]
+  properties:
+    id: { $ref: ../common/identifier.yaml }
+    merchant_id: { $ref: ../common/identifier.yaml }
+    display_name: { type: string }
+    merchant_name: { type: string }
+    handle: { type: string }
+    draft_revision: { type: integer, format: int64, minimum: 0 }
+    publication_status: { type: string, enum: [unpublished, published, suspended] }
+    updated_at: { type: string, format: date-time }
+OrderSummary:
+  type: object
+  additionalProperties: false
+  required: [id, merchant_id, store_id, store_name, reference, created_at, acceptance, resolution, payment, fulfilment_progress]
+  properties:
+    id: { $ref: ../common/identifier.yaml }
+    merchant_id: { $ref: ../common/identifier.yaml }
+    store_id: { $ref: ../common/identifier.yaml }
+    store_name: { type: string }
+    reference: { type: string }
+    created_at: { type: string, format: date-time }
+    acceptance: { type: string, enum: [pending, accepted, rejected] }
+    resolution: { type: string, enum: [open, rejected, cancelled] }
+    payment: { type: string, enum: [not_started, awaiting_customer, failed, paid, refunded] }
+    fulfilment_progress: { type: string, enum: [not_started, preparing, ready, collected] }
+StorePage:
+  type: object
+  additionalProperties: false
+  required: [items]
+  properties:
+    items:
+      type: array
+      maxItems: 100
+      items: { $ref: '#/StoreSummary' }
+    next_after: { $ref: '#/Cursor' }
+OrderPage:
+  type: object
+  additionalProperties: false
+  required: [items]
+  properties:
+    items:
+      type: array
+      maxItems: 100
+      items: { $ref: '#/OrderSummary' }
+    next_after: { $ref: '#/Cursor' }
+Cursor:
+  type: string
+  maxLength: 84
+  pattern: '^[0-9a-f]{64}:[0-9]{1,19}$'

@@ -1,5 +1,56 @@
 # Development status
 
+## Browse administration and make menu extras discoverable
+
+22 October 2026, Europe/Berlin (UTC+02:00). Provider administration now has
+Stores and Orders navigation, searchable/status-filtered tables, configurable
+page sizes, forward/backward navigation, and row actions. Inspecting a record
+no longer requires copying UUIDs. Orders remain read-only in administration;
+visibility changes retain their reason, generation, and idempotency protections.
+The new OpenAPI list operations expose bounded summaries under the separate
+provider credential audience. Migration 9 uses narrowly scoped read-only SQL
+functions without weakening tenant RLS. See [contracts](../contracts/README.md#provider-administration-browsing).
+
+The menu editor now separates sizes/variants from extras/additions, explicitly
+labels creation actions, and offers visible hints plus an expandable explanation.
+Extra cheese can add EUR 1 while garlic adds EUR 0; free prices are also explicit
+on the storefront. New extras groups are optional by default. Selection limits
+remain available under Selection rules. Tooltips have larger text and no longer
+repeat visible button labels. Important guidance does not depend on tooltips.
+English, German, and Arabic are included. [Interface conventions](UI-UX.md)
+record these patterns for subsequent screens; this is not a complete UI redesign.
+
+The existing engineering and protocol reviewers completed automated static
+reviews. Their requested SQL-function ACL assertions and explicit error-response
+contracts are implemented; see [engineering](reviews/admin-browse-engineering.md)
+and [protocol](reviews/admin-browse-protocol.md). These reviews are not independent
+human usability or security certification.
+
+`task check` passed: generated-contract drift, Go formatting/vet/race checks,
+PostgreSQL integration, API/web builds, 48 web tests, and zero Svelte diagnostics.
+All four built-app and all four Vite Chromium journeys passed. Coverage includes
+unfiltered and filtered admin tables, forward/backward pages, preserved filters
+after inspection, read-only orders, RTL table alignment, narrow-screen containment,
+no-JavaScript admin navigation, and a pizza with paid cheese and free garlic.
+The wider publication/checkout/pickup regression captures page errors and hydration
+warnings; none were captured on its final run. Screenshot inspection covered the
+desktop extras editor/admin tables and mobile order list. The in-app browser
+connection was unavailable, so verification used the project's Docker Playwright
+runner. This is not an accessibility certification. Mutation tools were not rerun
+for this UX batch; prior scores do not measure these new components or SQL.
+
+Regression testing exposed an empty optional search parameter being rejected by
+the API. Unfiltered web reads now omit it, and both initial tabs have regression
+assertions. The actual local database migrated to version 9 without resetting
+development records, and `task smoke` passed. Local Vite still serves port 18181.
+No real processor calls or money are involved. Production search-load testing,
+rate limiting, real payment adapters, and joined-network integration remain work.
+The proposed main restaurant batch after this UX detour is ordering controls
+(pause/resume and manual/automatic acceptance), not another admin redesign.
+The user's subsequent UX feedback is queued in [UI follow-ups](UI-UX-NEXT.md):
+merchant tabs, toolbar alignment/action styling, automatic status updates, order
+history presentation, and a primary-source restaurant-tool workflow comparison.
+
 ## Separate checkout and merchant pickup progress
 
 22 October 2026, Europe/Berlin (UTC+02:00). Public store cards now show the

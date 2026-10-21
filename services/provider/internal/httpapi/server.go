@@ -57,7 +57,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:cancel": true, "order:manage": true, "order:inspect": true}
 	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true}
 	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true, "ChangeDevelopmentPayment": true}
-	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true}
+	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true, "AdminListStores": true, "AdminListFoodOrders": true}
 	for _, path := range spec.Paths.Map() {
 		for _, operation := range path.Operations() {
 			expectedAccess := "merchant"
@@ -153,7 +153,12 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 				problem(w, 503, "unavailable", "Credential service is temporarily unavailable.", nil)
 				return
 			}
-			merchant, err := uuid.Parse(pathParams["merchant_id"])
+			merchant := uuid.Nil
+			if value, ok := pathParams["merchant_id"]; ok {
+				merchant, err = uuid.Parse(value)
+			} else if !provider[route.Operation.OperationID] {
+				err = errors.New("merchant scope required")
+			}
 			if err != nil {
 				problem(w, 400, "invalid_request", "Merchant identifier must be a UUID.", nil)
 				return

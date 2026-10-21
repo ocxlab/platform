@@ -1,0 +1,4 @@
+name: q
+in: query
+description: Case-insensitive literal substring. Stores match store name, merchant name or handle; orders match store name or readable order reference.
+schema: { type: string, maxLength: 160 }

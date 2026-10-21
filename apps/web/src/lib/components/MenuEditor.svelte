@@ -15,26 +15,38 @@
   function removeItem(id: string) {
     menu.items = menu.items.filter((item) => item.id !== id);
   }
+  function addOption(group: Menu['items'][number]['option_groups'][number]) {
+    const allAllowed = group.max_selected === group.options.length;
+    group.options.push({ id: identifier(), name: t('editor-default-option'), price_minor: 0 });
+    if (allAllowed) group.max_selected = group.options.length;
+  }
 </script>
 <input type="hidden" name="document" value={JSON.stringify(menu)} />
 <input type="hidden" name="base" value={base} />
 <p class="muted">{t('editor-removal-help')}</p>
+<details class="editor-help"><summary>{t('editor-help-title')}</summary><p>{t('editor-help-variants')}</p><p>{t('editor-help-extras')}</p></details>
 {#each menu.items as item (item.id)}
   <fieldset><legend>{t('editor-item')}</legend>
     <label>{t('editor-name')}<input dir="auto" bind:value={item.name} required maxlength="160" /></label>
     <label><input type="checkbox" bind:checked={item.available} />{t('editor-available')}</label>
+    <h3>{t('editor-variants-heading')}</h3>
+    <p class="muted">{t('editor-variants-help')}</p>
     {#each item.variants as choice (choice.id)}
       <div class="row"><label>{t('editor-variant')}<input dir="auto" bind:value={choice.name} required maxlength="80" /></label><label>{t('editor-variant-price')}<input type="number" min="0" step="0.01" max="10000000" required value={choice.price_minor / 100} oninput={(e) => choice.price_minor = Math.round(e.currentTarget.valueAsNumber * 100)} /></label></div>
     {/each}
     <ActionButton type="button" icon={Plus} label={t('editor-add-variant')} onclick={() => item.variants.push(variant())} disabled={item.variants.length >= 30} />
+    <h3>{t('editor-extras-heading')}</h3>
+    <p class="muted">{t('editor-extras-help')}</p>
+    {#if !item.option_groups.length}<p class="extras-empty">{t('editor-no-extras')}</p>{/if}
     {#each item.option_groups as group (group.id)}
       <fieldset><legend>{t('editor-extras')}</legend>
         <label>{t('editor-group-name')}<input dir="auto" bind:value={group.name} required maxlength="80" /></label>
-        <div class="row"><label>{t('editor-min')}<input type="number" min="0" max="30" bind:value={group.min_selected} required /></label><label>{t('editor-max')}<input type="number" min="1" max="30" bind:value={group.max_selected} required /></label></div>
+        <details class="choice-rules"><summary>{t('editor-choice-rules')}</summary><p class="muted">{t('editor-choice-rules-help')}</p><div class="row"><label>{t('editor-min')}<input type="number" min="0" max="30" bind:value={group.min_selected} required /></label><label>{t('editor-max')}<input type="number" min="1" max="30" bind:value={group.max_selected} required /></label></div></details>
         {#each group.options as option (option.id)}
           <div class="row"><label>{t('editor-option')}<input dir="auto" bind:value={option.name} required maxlength="80" /></label><label>{t('editor-option-price')}<input type="number" min="0" step="0.01" max="10000000" required value={option.price_minor / 100} oninput={(e) => option.price_minor = Math.round(e.currentTarget.valueAsNumber * 100)} /></label></div>
         {/each}
-        <ActionButton type="button" icon={Plus} label={t('editor-add-option')} onclick={() => group.options.push({ id: identifier(), name: t('editor-default-option'), price_minor: 0 })} disabled={group.options.length >= 30} />
+        <ActionButton type="button" icon={Plus} label={t('editor-add-option')} onclick={() => addOption(group)} disabled={group.options.length >= 30} />
+        <ActionButton type="button" icon={Trash2} label={t('editor-remove-group', { name: group.name })} onclick={() => item.option_groups = item.option_groups.filter(candidate => candidate.id !== group.id)} />
       </fieldset>
     {/each}
     <ActionButton type="button" icon={Plus} label={t('editor-add-group')} onclick={() => item.option_groups.push({ id: identifier(), name: t('editor-default-group'), min_selected: 0, max_selected: 1, options: [{ id: identifier(), name: t('editor-default-extra'), price_minor: 0 }] })} disabled={item.option_groups.length >= 20} />
@@ -45,3 +57,11 @@
   <p>{t('editor-empty')}</p>
 {/if}
 <ActionButton type="button" icon={Plus} label={t('editor-add-item')} onclick={addItem} disabled={menu.items.length >= 200} />
+<style>
+  h3 { margin-block: 1.5rem .35rem; }
+  h3 + p { margin-block-start: .35rem; }
+  .editor-help { border-inline-start: 3px solid #20586f; padding: 1rem 1.2rem; background: #edf4f7; border-radius: .4rem; }
+  summary { cursor: pointer; font-weight: 600; color: #20586f; min-height: 2rem; }
+  .choice-rules { margin-block: .75rem; }
+  .extras-empty { padding: .75rem 1rem; border: 1px dashed #93a8b3; border-radius: .35rem; color: #526671; }
+</style>

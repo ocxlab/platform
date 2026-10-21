@@ -1,0 +1,11 @@
+editor-help-title = How sizes and extras work
+editor-help-variants = Variants are alternatives with their own full price, such as a small pizza for €8 or a large pizza for €10.
+editor-help-extras = Extras are added to that price. Extra cheese can cost €1 and garlic can cost €0. Customers can choose more than one extra when the group's limits allow it.
+editor-variants-heading = Sizes and variants
+editor-variants-help = Set the full price for each size or version of this item
+editor-extras-heading = Extras and additions
+editor-extras-help = Add paid or free extras separately from the item's base price
+editor-no-extras = No extras yet. Add an extras group, then enter options such as cheese or garlic.
+editor-choice-rules = Selection rules
+editor-choice-rules-help = Use a minimum of 0 for optional extras. The maximum controls how many different extras customers can select.
+editor-remove-group = Remove extras group { $name }

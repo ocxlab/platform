@@ -21,6 +21,10 @@ tags:
 security:
   - BearerAuth: []
 paths:
+  /api/v1/admin/stores:
+    $ref: paths/admin-stores.yaml
+  /api/v1/admin/food/orders:
+    $ref: paths/admin-orders.yaml
   /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/development-payment:
     $ref: paths/development-payment.yaml
   /api/v1/public/stores:
@@ -87,6 +91,10 @@ components:
     ProviderBearerAuth:
       $ref: components/security/provider-bearer.yaml
   schemas:
+    AdminStorePage:
+      $ref: schemas/admin/directory.yaml#/StorePage
+    AdminOrderPage:
+      $ref: schemas/admin/directory.yaml#/OrderPage
     DevelopmentPaymentRequest:
       $ref: schemas/payments/development.yaml#/DevelopmentPaymentRequest
     PublicStore:

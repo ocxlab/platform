@@ -1,0 +1,30 @@
+get:
+  operationId: AdminListStores
+  tags: [Provider administration]
+  summary: Browse private store summaries across this provider
+  description: Includes unpublished and suspended stores. Descending immutable display sequence; summaries exclude catalog documents and credentials. Updated time is the last draft save or store creation, not moderation time.
+  security: [{ ProviderBearerAuth: [] }]
+  x-access: provider
+  x-required-scope: publication:read
+  parameters:
+    - $ref: ../components/parameters/admin-query.yaml
+    - $ref: ../components/parameters/admin-after.yaml
+    - name: status
+      in: query
+      schema: { type: string, enum: [unpublished, published, suspended] }
+    - name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+  responses:
+    '200':
+      description: Bounded store summaries or an empty list.
+      headers:
+        X-Request-ID: { $ref: ../components/headers/request-id.yaml }
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin/directory.yaml#/StorePage }
+    '400': { $ref: ../components/responses/problem.yaml }
+    '401': { $ref: ../components/responses/problem.yaml }
+    '403': { $ref: ../components/responses/problem.yaml }
+    '503': { $ref: ../components/responses/problem.yaml }
+    default: { $ref: ../components/responses/problem.yaml }

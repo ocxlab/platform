@@ -40,3 +40,22 @@ test('can remove the last item and add a replacement before saving', async () =>
   expect(screen.getByLabelText('Item name')).toHaveValue('New item');
   expect(screen.queryByText(/Add at least one item before saving/)).not.toBeInTheDocument();
 });
+
+test('makes optional paid and free extras distinct from size prices and allows both', async () => {
+  const { container } = render(MenuEditor, { initial: { ...menu(), items: menu().items.slice(0, 1) }, base: 1 });
+  expect(screen.getByRole('heading', { name: 'Sizes and variants' })).toBeVisible();
+  expect(screen.getByRole('heading', { name: 'Extras and additions' })).toBeVisible();
+  await fireEvent.click(screen.getByRole('button', { name: 'Add extras group' }));
+  await fireEvent.input(screen.getByLabelText('Extra name'), { target: { value: 'Extra cheese' } });
+  await fireEvent.input(screen.getByLabelText('Extra price in EUR'), { target: { value: '1' } });
+  await fireEvent.click(screen.getByRole('button', { name: 'Add extra' }));
+  await fireEvent.input(screen.getAllByLabelText('Extra name')[1], { target: { value: 'Garlic' } });
+  const saved = JSON.parse(container.querySelector<HTMLInputElement>('input[name="document"]')!.value) as components['schemas']['FoodMenu'];
+  const group = saved.items[0].option_groups[0];
+  expect(group.min_selected).toBe(0);
+  expect(group.max_selected).toBe(2);
+  expect(group.options.map(option => [option.name, option.price_minor])).toEqual([['Extra cheese',100],['Garlic',0]]);
+  expect(saved.items[0].variants[0].price_minor).toBe(700);
+  await fireEvent.click(screen.getByRole('button', { name: /Remove extras group.*Extras/ }));
+  expect(screen.getByText(/No extras yet/)).toBeVisible();
+});

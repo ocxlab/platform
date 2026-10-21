@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/v1/admin/food/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Browse read-only Food order summaries across this provider
+         * @description Descending immutable display sequence. No guest credentials, agreed terms or payment details are returned. No administrative acceptance or financial overrides.
+         */
+        get: operations["AdminListFoodOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}": {
         parameters: {
             query?: never;
@@ -50,6 +70,26 @@ export interface paths {
          * @description Requires expected_generation and a nonblank internal reason. Every command advances generation; restoration preserves merchant-selected revision. Audit and idempotent response commit atomically. Does not impersonate merchant. Maximum body 262144 bytes.
          */
         put: operations["AdminSuspendPublication"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Browse private store summaries across this provider
+         * @description Includes unpublished and suspended stores. Descending immutable display sequence; summaries exclude catalog documents and credentials. Updated time is the last draft save or store creation, not moderation time.
+         */
+        get: operations["AdminListStores"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -543,6 +583,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminOrderPage: {
+            items: components["schemas"]["SchemasAdminDirectoryYamlOrderSummaryaab78eaf"][];
+            next_after?: components["schemas"]["SchemasAdminDirectoryYamlCursore845fa77"];
+        };
+        AdminStorePage: {
+            items: components["schemas"]["SchemasAdminDirectoryYamlStoreSummary92c13051"][];
+            next_after?: components["schemas"]["SchemasAdminDirectoryYamlCursore845fa77"];
+        };
         CancelFoodOrderRequest: {
             /** Format: int64 */
             expected_revision: number;
@@ -843,6 +891,37 @@ export interface components {
             /** @description Provider visibility override; restoring does not change chosen revision. */
             suspended: boolean;
         };
+        SchemasAdminDirectoryYamlCursore845fa77: string;
+        SchemasAdminDirectoryYamlOrderSummaryaab78eaf: {
+            /** @enum {string} */
+            acceptance: "pending" | "accepted" | "rejected";
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string} */
+            fulfilment_progress: "not_started" | "preparing" | "ready" | "collected";
+            id: components["schemas"]["Identifier"];
+            merchant_id: components["schemas"]["Identifier"];
+            /** @enum {string} */
+            payment: "not_started" | "awaiting_customer" | "failed" | "paid" | "refunded";
+            reference: string;
+            /** @enum {string} */
+            resolution: "open" | "rejected" | "cancelled";
+            store_id: components["schemas"]["Identifier"];
+            store_name: string;
+        };
+        SchemasAdminDirectoryYamlStoreSummary92c13051: {
+            display_name: string;
+            /** Format: int64 */
+            draft_revision: number;
+            handle: string;
+            id: components["schemas"]["Identifier"];
+            merchant_id: components["schemas"]["Identifier"];
+            merchant_name: string;
+            /** @enum {string} */
+            publication_status: "unpublished" | "published" | "suspended";
+            /** Format: date-time */
+            updated_at: string;
+        };
         SchemasCommonEmptyYaml077e1183: Record<string, never>;
         /** Format: date-time */
         SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627: string;
@@ -942,6 +1021,10 @@ export interface components {
         };
     };
     parameters: {
+        /** @description Opaque continuation bound to resource, trimmed query and status. Omit when changing filters. Live pages, not a snapshot; return to the first page for new records. */
+        ComponentsParametersAdminAfterYaml1d0e5be5: components["schemas"]["SchemasAdminDirectoryYamlCursore845fa77"];
+        /** @description Case-insensitive literal substring. Stores match store name, merchant name or handle; orders match store name or readable order reference. */
+        ComponentsParametersAdminQueryYaml6ee53b16: string;
         ComponentsParametersOrderIdYaml294fa0a5: components["schemas"]["Identifier"];
         /** @description Maximum resources per page. Defaults to 50, with an upper bound of 100. */
         ComponentsParametersPageLimitYaml06bb837c: number;
@@ -962,6 +1045,40 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    AdminListFoodOrders: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive literal substring. Stores match store name, merchant name or handle; orders match store name or readable order reference. */
+                q?: components["parameters"]["ComponentsParametersAdminQueryYaml6ee53b16"];
+                /** @description Opaque continuation bound to resource, trimmed query and status. Omit when changing filters. Live pages, not a snapshot; return to the first page for new records. */
+                after?: components["parameters"]["ComponentsParametersAdminAfterYaml1d0e5be5"];
+                /** @description Cancelled or rejected resolution takes precedence over acceptance. */
+                status?: "pending" | "accepted" | "rejected" | "cancelled";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded order summaries or an empty list. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOrderPage"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
     AdminGetFoodOrder: {
         parameters: {
             query?: never;
@@ -1056,6 +1173,39 @@ export interface operations {
             415: components["responses"]["ProblemResponse"];
             422: components["responses"]["ProblemResponse"];
             429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    AdminListStores: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive literal substring. Stores match store name, merchant name or handle; orders match store name or readable order reference. */
+                q?: components["parameters"]["ComponentsParametersAdminQueryYaml6ee53b16"];
+                /** @description Opaque continuation bound to resource, trimmed query and status. Omit when changing filters. Live pages, not a snapshot; return to the first page for new records. */
+                after?: components["parameters"]["ComponentsParametersAdminAfterYaml1d0e5be5"];
+                status?: "unpublished" | "published" | "suspended";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded store summaries or an empty list. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStorePage"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };

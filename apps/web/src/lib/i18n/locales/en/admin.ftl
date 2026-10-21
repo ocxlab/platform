@@ -1,5 +1,5 @@
 admin-title = Provider administration
-admin-intro = Inspect a store's publication and manage public visibility without editing the merchant's menu.
+admin-intro = Find stores and orders, inspect their details, and manage store visibility without acting as a merchant.
 admin-connect-heading = Connect a development provider credential
 admin-connect-help = Run task dev:admin-credential. Merchant credentials are not accepted. Permissions are verified by the API when an operation is performed.
 admin-token = Temporary provider credential

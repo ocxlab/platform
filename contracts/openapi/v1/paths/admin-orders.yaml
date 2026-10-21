@@ -1,0 +1,31 @@
+get:
+  operationId: AdminListFoodOrders
+  tags: [Provider administration]
+  summary: Browse read-only Food order summaries across this provider
+  description: Descending immutable display sequence. No guest credentials, agreed terms or payment details are returned. No administrative acceptance or financial overrides.
+  security: [{ ProviderBearerAuth: [] }]
+  x-access: provider
+  x-required-scope: order:inspect
+  parameters:
+    - $ref: ../components/parameters/admin-query.yaml
+    - $ref: ../components/parameters/admin-after.yaml
+    - name: status
+      in: query
+      description: Cancelled or rejected resolution takes precedence over acceptance.
+      schema: { type: string, enum: [pending, accepted, rejected, cancelled] }
+    - name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+  responses:
+    '200':
+      description: Bounded order summaries or an empty list.
+      headers:
+        X-Request-ID: { $ref: ../components/headers/request-id.yaml }
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin/directory.yaml#/OrderPage }
+    '400': { $ref: ../components/responses/problem.yaml }
+    '401': { $ref: ../components/responses/problem.yaml }
+    '403': { $ref: ../components/responses/problem.yaml }
+    '503': { $ref: ../components/responses/problem.yaml }
+    default: { $ref: ../components/responses/problem.yaml }

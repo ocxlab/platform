@@ -32,7 +32,7 @@
     <label>{t('storefront-variant')}<select name="variant_id" dir="auto">{#each item.variants as variant}<option dir="auto" value={variant.id}>{variant.name} · {money(variant.price_minor, locale())}</option>{/each}</select></label>
     {#each item.option_groups as group}
       <fieldset><legend><bdi dir="auto">{group.name}</bdi> · {t('storefront-options', { min: group.min_selected, max: group.max_selected })}</legend>
-      {#each group.options as option}<label><input type="checkbox" name="option" value={group.id + ':' + option.id} /><bdi dir="auto">{option.name}</bdi>{#if option.price_minor} · +<bdi>{money(option.price_minor, locale())}</bdi>{/if}</label>{/each}
+      {#each group.options as option}<label><input type="checkbox" name="option" value={group.id + ':' + option.id} /><bdi dir="auto">{option.name}</bdi> · {option.price_minor ? '+' : ''}<bdi>{money(option.price_minor, locale())}</bdi></label>{/each}
       </fieldset>
     {/each}
     <label>{t('storefront-quantity')}<input name="quantity" type="number" min="1" max="99" value="1" required /></label>

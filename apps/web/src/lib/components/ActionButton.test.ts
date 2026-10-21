@@ -58,3 +58,13 @@ test('keeps labels alongside icons for less obvious actions', () => {
   render(ActionButton, { label: 'Withdraw menu', icon: Trash2 });
   expect(screen.getByRole('button', { name: 'Withdraw menu' })).toHaveTextContent('Withdraw menu');
 });
+
+test('does not repeat a visible label in a tooltip but preserves distinct supplementary help', async () => {
+  const { unmount } = render(ActionButton, { label: 'Save draft' });
+  await fireEvent.focus(screen.getByRole('button'));
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  unmount();
+  render(ActionButton, { label: 'Save draft', tooltip: 'Customers see changes only after publication' });
+  await fireEvent.focus(screen.getByRole('button'));
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Customers see changes only after publication');
+});

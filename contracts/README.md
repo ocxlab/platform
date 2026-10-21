@@ -258,6 +258,30 @@ not independent physical proof. Own delivery, cash payment conditions, automatic
 acceptance, preparation deadlines, and post-preparation support/refunds remain
 separate work. No ingredient inventory is required by this progression.
 
+## Provider administration browsing
+
+`GET /api/v1/admin/stores` uses `publication:read`; `GET /api/v1/admin/food/orders`
+uses `order:inspect`. Both require the separate provider credential audience and
+return bounded summaries across this provider's merchants. Store results include
+unpublished and suspended stores and identify the owning merchant by name. Order
+results omit agreed terms, guest authority, and payment details; existing scoped
+detail reads serve deliberate inspection. No order write authority is added.
+
+The shared query and continuation parameters live under `components/parameters/`;
+summary/page schemas live under `schemas/admin/`. Literal substring search and
+status filtering precede pagination. Pages default to 25 and cap at 100, ordered
+by immutable display sequence descending. Sequence order is not a strict commit
+timestamp ordering. Cursors bind resource, trimmed query, and status, not page
+size or grant identity; every request authenticates and authorizes again. Live
+pages are not snapshots. Return to the first page for new records. Draft update
+times do not represent publication/moderation update times.
+
+Migration 9 exposes only narrow read-only projection functions with fixed search
+paths, no PUBLIC execution, and a fresh provider-grant scope/expiry/revocation check.
+It neither gives the runtime a cross-tenant table-read role nor weakens tenant RLS.
+Query size and page size are bounded; production request throttling and larger-
+dataset search plans remain release work, not something pagination alone solves.
+
 ## Tooling note
 
 The pinned kin-openapi v0.133.0 default internal-reference naming resolver looped on

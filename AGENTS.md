@@ -53,6 +53,11 @@ access. Record consequential administrative actions, preserve tenant scope, and
 test denied access as well as supported management actions. Do not introduce
 unrestricted impersonation, secret exposure, or mandatory extra deployments.
 
+Read `docs/UI-UX.md` before changing application screens. Keep essential guidance
+visible, use progressive disclosure for optional explanations, and prefer named
+records with searchable tables over manual identifier entry. Check narrow screens,
+keyboard interaction, and supported LTR/RTL languages alongside the happy path.
+
 Edit modular source under `contracts/openapi/v1/`, not the ignored bundle or
 generated Go. Keep reusable resource definitions, parameters, headers, and errors
 in their owning files and expose stable root component names. After changes, run

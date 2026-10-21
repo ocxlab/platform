@@ -3,8 +3,38 @@ import { randomUUID } from 'node:crypto';
 import type { Actions, PageServerLoad } from './$types';
 import { api, message, text } from '$lib/server/api';
 import { connect, disconnect, session } from '$lib/server/sessions';
+import type { components } from '$lib/api/generated';
+import { adminNavigation } from '$lib/server/admin-navigation';
 const uuid = /^[0-9a-f-]{36}$/i;
-export const load: PageServerLoad = ({ cookies }) => ({ connected: Boolean(session(cookies, 'provider')), request_key:randomUUID() });
+export const load: PageServerLoad = async ({ cookies, url }) => {
+  const current = session(cookies, 'provider');
+  const navigation = adminNavigation(url);
+  let stores: components['schemas']['AdminStorePage']['items'] = [];
+  let orders: components['schemas']['AdminOrderPage']['items'] = [];
+  let list_error = navigation.invalid ? text('error-common-invalid-request') : undefined;
+  let next: string | undefined;
+  if (current && !list_error) {
+    try {
+      const params = { q: navigation.q || undefined, limit: navigation.limit, after: navigation.after || undefined };
+      if (navigation.tab === 'orders') {
+        const result = await api(current.token).GET('/api/v1/admin/food/orders', { params: { query: { ...params, status: navigation.status as 'pending' | 'accepted' | 'rejected' | 'cancelled' || undefined } } });
+        if (result.data) { orders = result.data.items; next = result.data.next_after; }
+        else list_error = message(result.error);
+      } else {
+        const result = await api(current.token).GET('/api/v1/admin/stores', { params: { query: { ...params, status: navigation.status as 'unpublished' | 'published' | 'suspended' || undefined } } });
+        if (result.data) { stores = result.data.items; next = result.data.next_after; }
+        else list_error = message(result.error);
+      }
+    } catch {
+      list_error = text('error-common-unavailable');
+    }
+  }
+  return { connected: Boolean(current), request_key: randomUUID(), stores, orders, list_error,
+    tab: navigation.tab, q: navigation.q, status: navigation.status, limit: navigation.limit,
+    first_url: navigation.first, previous_url: navigation.previous,
+    next_url: next ? navigation.next(next) : undefined, list_query: navigation.query,
+    paged: Boolean(navigation.after), refresh_url: `/admin?${navigation.query}` };
+};
 export const actions: Actions = {
   connect: async ({ request, cookies }) => {
     const form = await request.formData(); const token = String(form.get('token') ?? '');

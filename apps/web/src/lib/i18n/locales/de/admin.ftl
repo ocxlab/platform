@@ -1,5 +1,5 @@
 admin-title = Anbieterverwaltung
-admin-intro = Prüfen Sie die Veröffentlichung eines Standorts und verwalten Sie die Sichtbarkeit, ohne die Speisekarte des Händlers zu ändern.
+admin-intro = Finden Sie Geschäfte und Bestellungen, prüfen Sie ihre Details und verwalten Sie die Sichtbarkeit, ohne als Händler zu handeln.
 admin-connect-heading = Entwicklungszugang des Anbieters verbinden
 admin-connect-help = Führen Sie task dev:admin-credential aus. Händlerzugänge werden nicht akzeptiert. Die API prüft Berechtigungen bei jeder Aktion.
 admin-token = Temporärer Anbieterzugang
