@@ -6,7 +6,9 @@ offering and requests quotes, and `/admin` manages publication visibility. They
 share components, not authorization. Business rules remain in the Go API, with no
 direct database access from this application.
 
-The merchant workspace lists managed stores by name, including unpublished stores.
+The merchant workspace lists managed stores in a table, including unpublished stores.
+Columns show linked store names, latest draft menu-item counts, draft revisions,
+and last draft-save times (or creation before the first save), in Europe/Berlin.
 Choose a store link to reopen its editor; remembering an identifier is unnecessary.
 The same authorized, paginated list operation is available to other API clients.
 

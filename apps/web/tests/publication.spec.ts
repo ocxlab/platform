@@ -18,6 +18,11 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(page.getByRole('heading', { name: 'Second Kitchen' })).toBeVisible();
   await page.goto('/merchant');
   const managedStores = page.getByRole('region', { name: 'Your stores' });
+  await expect(managedStores.getByRole('columnheader')).toHaveText(['Store name', 'Menu items', 'Draft revision', 'Last updated']);
+  const storeRow = page.getByRole('row').filter({ has: page.getByRole('link', { name: 'Neighbourhood Kitchen', exact: true }) });
+  await expect(storeRow.getByRole('cell').nth(0)).toHaveText('0');
+  await expect(storeRow.getByRole('cell').nth(1)).toHaveText('No draft');
+  await expect(storeRow.locator('time')).toHaveAttribute('datetime', /.+/);
   await expect(managedStores.getByRole('link')).toHaveCount(2);
   await expect(managedStores.getByRole('link', { name: 'Second Kitchen', exact: true })).toBeVisible();
   await managedStores.getByRole('link', { name: 'Neighbourhood Kitchen', exact: true }).click();
@@ -35,6 +40,10 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await page.getByLabel('Item name', { exact: true }).last().fill('Falafel');
   await page.getByRole('button', { name: 'Save private draft' }).click();
   await expect(page.getByRole('status')).toContainText('Draft saved');
+  await page.goto('/merchant');
+  await expect(storeRow.getByRole('cell').nth(0)).toHaveText('2');
+  await expect(storeRow.getByRole('cell').nth(1)).toHaveText('1');
+  await storeRow.getByRole('link').click();
   const guestContext = await browser.newContext(); const guest = await guestContext.newPage();
   await guest.goto(storefront); await expect(guest.getByText('This store has no public menu available.')).toBeVisible();
   await page.getByRole('button', { name: 'Publish saved draft' }).click();
@@ -54,6 +63,10 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(page.getByRole('status')).toContainText('Draft saved');
   await page.reload();
   await expect(page.getByLabel('Item name', { exact: true })).toHaveValue('Falafel');
+  await page.goto('/merchant');
+  await expect(storeRow.getByRole('cell').nth(0)).toHaveText('1');
+  await expect(storeRow.getByRole('cell').nth(1)).toHaveText('2');
+  await storeRow.getByRole('link').click();
   await guest.goto(storefront);
   await expect(guest.getByRole('option', { name: 'Döner', exact: true })).toBeAttached();
   await page.getByRole('button', { name: 'Publish saved draft' }).click();

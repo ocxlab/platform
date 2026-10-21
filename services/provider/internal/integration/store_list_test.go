@@ -51,6 +51,9 @@ func TestManagedStoreList(t *testing.T) {
 			t.Fatalf("page %d: %+v", i, page)
 		}
 		store := page.Items[0]
+		if store.DraftRevision != 0 || store.MenuItemCount == nil || *store.MenuItemCount != 0 || !store.UpdatedAt.Equal(store.CreatedAt) {
+			t.Fatalf("new store summary: %+v", store)
+		}
 		if !wanted[store.ID] || seen[store.ID] || store.MerchantID != f.principal.MerchantID || store.ID.String() <= previous {
 			t.Fatal("store pagination leaked, duplicated, or reordered records")
 		}
@@ -92,6 +95,38 @@ func TestManagedStoreList(t *testing.T) {
 	_, err = f.admin.Exec(`UPDATE auth.grants SET scopes=ARRAY['store:write'] WHERE id=$1`, f.principal.ID)
 	must(t, err)
 	f.request(t, "GET", f.merchantPath, f.token, "", "", 403)
+}
+
+func TestManagedStoreDraftSummary(t *testing.T) {
+	f := setup(t)
+	store := preparedStore(t, f)
+	path := f.merchantPath + "/" + store.ID.String()
+	f.request(t, "PUT", path+"/publication", f.token, "summary-publish-001", `{"expected_generation":0,"revision":1}`, 201)
+	var first persistence.StorePage
+	must(t, json.Unmarshal(f.request(t, "GET", f.merchantPath, f.token, "", "", 200), &first))
+	if len(first.Items) != 1 || first.Items[0].DraftRevision != 1 || first.Items[0].MenuItemCount == nil || *first.Items[0].MenuItemCount != 1 {
+		t.Fatalf("first draft summary: %+v", first)
+	}
+	doc := menu(t)
+	items := doc["items"].([]any)
+	copyItem := map[string]any{}
+	for key, value := range items[0].(map[string]any) {
+		copyItem[key] = value
+	}
+	copyItem["id"] = "second-item"
+	doc["items"] = append(items, copyItem)
+	f.request(t, "PUT", path+"/offering", f.token, "summary-draft-update-001", offeringBody(t, 1, doc, "ocp.food.menu"), 201)
+	var page persistence.StorePage
+	must(t, json.Unmarshal(f.request(t, "GET", f.merchantPath, f.token, "", "", 200), &page))
+	summary := page.Items[0]
+	if summary.DraftRevision != 2 || summary.MenuItemCount == nil || *summary.MenuItemCount != 2 || !summary.UpdatedAt.After(first.Items[0].UpdatedAt) {
+		t.Fatalf("summary must describe latest private draft, not older publication: %+v", summary)
+	}
+	// A summary is store-management metadata, not permission to read the full menu.
+	_, err := f.admin.Exec(`UPDATE auth.grants SET scopes=ARRAY['store:read'] WHERE id=$1`, f.principal.ID)
+	must(t, err)
+	f.request(t, "GET", f.merchantPath, f.token, "", "", 200)
+	f.request(t, "GET", path+"/offering", f.token, "", "", 403)
 }
 
 func TestGeneratedStoreListClient(t *testing.T) {

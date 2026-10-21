@@ -1,6 +1,7 @@
 <script lang="ts">
   import Notice from '$lib/components/Notice.svelte';
   let { data, form } = $props();
+  const dateFormat = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Berlin' });
 </script>
 <h1>Merchant workspace</h1>
 <p>Prepare your offering privately, then publish a revision for customers.</p>
@@ -13,9 +14,21 @@
   <section><h2>Create a store</h2><form method="POST" action="?/create"><input type="hidden" name="key" value={data.request_key} /><label>Store name<input name="name" required maxlength="160" /></label><button>Create store</button></form></section>
   <section aria-labelledby="managed-stores"><h2 id="managed-stores">Your stores</h2>
     {#if data.stores.length}
-      <ul>{#each data.stores as store (store.id)}
-        <li><a href={`/merchant/stores/${data.merchant}/${store.id}`}>{store.display_name}</a></li>
-      {/each}</ul>
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to scroll the table on narrow screens.) -->
+      <div class="store-table" role="region" aria-label="Managed stores table" tabindex="0">
+        <table>
+          <caption>Latest saved drafts, including unpublished changes. Updated times use Europe/Berlin and fall back to store creation before the first save.</caption>
+          <thead><tr><th scope="col">Store name</th><th scope="col">Menu items</th><th scope="col">Draft revision</th><th scope="col">Last updated</th></tr></thead>
+          <tbody>{#each data.stores as store (store.id)}
+            <tr>
+              <th scope="row"><a href={`/merchant/stores/${data.merchant}/${store.id}`}>{store.display_name}</a></th>
+              <td>{store.menu_item_count ?? '—'}</td>
+              <td>{store.draft_revision || 'No draft'}</td>
+              <td><time datetime={store.updated_at}>{dateFormat.format(new Date(store.updated_at))}</time></td>
+            </tr>
+          {/each}</tbody>
+        </table>
+      </div>
     {:else if !data.stores_error}
       <p>{data.after ? 'There are no more stores on this page.' : 'You have no stores yet. Create your first store above.'}</p>
     {/if}
@@ -26,3 +39,12 @@
   </section>
   <form method="POST" action="?/disconnect"><button>Disconnect merchant</button></form>
 {/if}
+<style>
+  .store-table { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; text-align: left; }
+  caption { text-align: left; color: #52636d; font-size: .9rem; padding-bottom: .75rem; }
+  th, td { padding: .75rem; border-bottom: 1px solid #ccd8de; }
+  thead { background: #f1f6f8; color: #20586f; }
+  tbody th { font-weight: 500; }
+  td:last-child { white-space: nowrap; }
+</style>

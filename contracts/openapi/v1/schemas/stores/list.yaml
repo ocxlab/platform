@@ -7,6 +7,34 @@ StorePage:
       type: array
       maxItems: 100
       items:
-        $ref: store.yaml#/Store
+        $ref: '#/ManagedStore'
     next_after:
       $ref: ../common/identifier.yaml
+ManagedStore:
+  type: object
+  additionalProperties: false
+  required: [id, merchant_id, display_name, created_at, draft_revision, menu_item_count, updated_at]
+  description: Private store-management summary authorized by store:read. Full offering documents still require offering:read.
+  properties:
+    id:
+      $ref: store.yaml#/Store/properties/id
+    merchant_id:
+      $ref: store.yaml#/Store/properties/merchant_id
+    display_name:
+      $ref: store.yaml#/Store/properties/display_name
+    created_at:
+      $ref: store.yaml#/Store/properties/created_at
+    draft_revision:
+      type: integer
+      format: int64
+      minimum: 0
+      description: Latest saved offering revision, or zero before the first save. Not the published revision.
+    menu_item_count:
+      type: integer
+      nullable: true
+      minimum: 0
+      description: Item count in the latest ocp.food.menu 1.0.0 draft, zero before the first save, or null for an unsupported model. Variants and extras are not separate items.
+    updated_at:
+      type: string
+      format: date-time
+      description: Latest draft save time, falling back to store creation. Publication and visibility changes do not change this timestamp.

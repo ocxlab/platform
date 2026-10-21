@@ -111,7 +111,13 @@ material-specific reuse rights rather than copying an ecosystem wholesale.
 `GET /api/v1/merchants/{merchant_id}/stores` requires the merchant's `store:read`
 grant and returns private managed stores, including unpublished stores. The web
 workspace uses this same API to offer store-name links instead of ID entry.
-`StorePage` lives with the store resources and reuses `Store`; pagination parameters
+The table shows latest draft item counts, revision numbers, and update times.
+These summaries are authorized store-management metadata under `store:read`;
+full offering documents still require `offering:read`. Counts exclude variants
+and extras, are zero before the first save, and are null for unsupported models.
+Update times reflect the latest draft save (or store creation), not publication
+or moderation. `StorePage` uses `ManagedStore`, reusing Store property definitions;
+pagination parameters
 are separate reusable definitions. The default page size is 50, capped at 100.
 Pass `next_after` as `after` to continue in ascending immutable store-ID order.
 These are live pages, not a multi-request snapshot; return to the first page to

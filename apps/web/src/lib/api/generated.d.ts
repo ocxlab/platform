@@ -337,6 +337,25 @@ export interface components {
          * @description Durable opaque identifier; not a display name or hostname.
          */
         Identifier: string;
+        /** @description Private store-management summary authorized by store:read. Full offering documents still require offering:read. */
+        ManagedStore: {
+            created_at: components["schemas"]["SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627"];
+            display_name: components["schemas"]["SchemasStoresStoreYamlStorePropertiesDisplayNamebb51a2d0"];
+            /**
+             * Format: int64
+             * @description Latest saved offering revision, or zero before the first save. Not the published revision.
+             */
+            draft_revision: number;
+            id: components["schemas"]["SchemasStoresStoreYamlStorePropertiesIdd2fe41a1"];
+            /** @description Item count in the latest ocp.food.menu 1.0.0 draft, zero before the first save, or null for an unsupported model. Variants and extras are not separate items. */
+            menu_item_count: number | null;
+            merchant_id: components["schemas"]["SchemasStoresStoreYamlStorePropertiesMerchantId58ef2281"];
+            /**
+             * Format: date-time
+             * @description Latest draft save time, falling back to store creation. Publication and visibility changes do not change this timestamp.
+             */
+            updated_at: string;
+        };
         Model: {
             id: string;
             version: string;
@@ -409,6 +428,19 @@ export interface components {
             /** @description Provider visibility override; restoring does not change chosen revision. */
             suspended: boolean;
         };
+        /** Format: date-time */
+        SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627: string;
+        SchemasStoresStoreYamlStorePropertiesDisplayNamebb51a2d0: string;
+        /**
+         * Format: uuid
+         * @description Durable opaque identifier; not a display name or hostname.
+         */
+        SchemasStoresStoreYamlStorePropertiesIdd2fe41a1: string;
+        /**
+         * Format: uuid
+         * @description Durable opaque identifier; not a display name or hostname.
+         */
+        SchemasStoresStoreYamlStorePropertiesMerchantId58ef2281: string;
         Store: {
             /** Format: date-time */
             created_at: string;
@@ -417,7 +449,7 @@ export interface components {
             merchant_id: components["schemas"]["Identifier"];
         };
         StorePage: {
-            items: components["schemas"]["Store"][];
+            items: components["schemas"]["ManagedStore"][];
             next_after?: components["schemas"]["Identifier"];
         };
         SuspendPublicationRequest: {

@@ -65,6 +65,8 @@ components:
       $ref: schemas/stores/store.yaml#/Store
     StorePage:
       $ref: schemas/stores/list.yaml#/StorePage
+    ManagedStore:
+      $ref: schemas/stores/list.yaml#/ManagedStore
     CreateStoreRequest:
       $ref: schemas/stores/store.yaml#/CreateStoreRequest
     WriteOfferingRequest:

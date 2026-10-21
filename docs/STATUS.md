@@ -1,5 +1,27 @@
 # Development status
 
+## Managed store table
+
+21 October 2026, Europe/Berlin (UTC+02:00). The merchant workspace now shows
+linked store names, menu-item counts, draft revisions, and update times in a
+scrollable semantic table. Counts and revisions describe the latest saved draft,
+including unpublished changes; variants and extras do not count as menu items.
+Before the first save, the table shows zero items, No draft, and store creation
+time. Update times use Europe/Berlin and exclude publication/moderation changes.
+
+The authorized store list obtains summaries in one tenant-scoped query; the UI
+does not fetch each full menu. The modular ManagedStore schema reuses Store
+property definitions and has regenerated Go/TypeScript artifacts. Store summaries
+remain available under store:read; full documents still require offering:read.
+No database migration or persistent seed changes were required.
+
+`task check`, the regenerated-contract drift check, and `task test:browser` passed.
+PostgreSQL checks cover initial summaries, latest private revisions over older
+publications, timestamps, and scope separation. The browser checks table headings,
+new-store values, two-item revision 1, and one-item revision 2 after deletion.
+The development stack is rebuilt with `task web:dev`; restarting the web process
+clears development sessions, not stored data or credential validity.
+
 ## Managed store navigation
 
 21 October 2026, Europe/Berlin (UTC+02:00). Replaced the merchant workspace's

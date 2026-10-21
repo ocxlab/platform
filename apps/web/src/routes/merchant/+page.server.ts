@@ -6,7 +6,7 @@ import { connect, disconnect, session } from '$lib/server/sessions';
 export const load: PageServerLoad = async ({ cookies, url }) => {
   const current = session(cookies, 'merchant');
   const base = { merchant: current?.merchant ?? '', request_key: randomUUID(),
-    stores: [] as import('$lib/api/generated').components['schemas']['Store'][],
+    stores: [] as import('$lib/api/generated').components['schemas']['StorePage']['items'],
     next_after: undefined as string | undefined, after: url.searchParams.get('after') ?? '', stores_error: '' };
   if (!current) return base;
   const result = await api(current.token).GET('/api/v1/merchants/{merchant_id}/stores', {
