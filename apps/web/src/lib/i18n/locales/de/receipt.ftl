@@ -1,0 +1,10 @@
+receipt-title = Abholbestellung aufgegeben
+receipt-intro = Bestätigung des Restaurants steht aus. Diese Entwicklungsbestellung wurde weder berechnet noch an die Küche gesendet.
+receipt-details = Bestelldetails
+receipt-selection = Ihre vereinbarte Auswahl
+receipt-progress = Erfüllung: Abholung · Zahlung: nicht begonnen · Zubereitung: nicht begonnen
+receipt-reference = Bestellkennung
+receipt-cookie-help = Sie können diese Seite in diesem Browser sieben Tage ab Beginn der Gastbestellung öffnen. Bewahren Sie das Bestell-Cookie auf; beim Löschen geht der Gastzugang verloren. Es wurde kein Konto erstellt.
+receipt-back = Zurück zur Speisekarte
+receipt-browser-required = Öffnen Sie diese Bestellung im Browser der Gastbestellung. Die Kennung allein gewährt keinen Zugriff.
+receipt-not-available = Diese Bestellung ist für diese Bestellsitzung nicht verfügbar.

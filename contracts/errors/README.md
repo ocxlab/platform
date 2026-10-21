@@ -20,16 +20,17 @@ The HTTP boundary verifies code/status consistency and falls back to a safe
 unavailable error for an invalid mapping; tests also check literal call sites.
 
 The web app uses the official `@fluent/bundle` runtime and module-owned files under
-`apps/web/src/lib/i18n/locales/{en,de}/`. Fluent identifiers use hyphens. Tests require
-a translation for every registered code in both languages. Locale selection follows
-the request's supported Accept-Language preferences, not a mutable process-wide
+`apps/web/src/lib/i18n/locales/{en,de,ar}/`. Fluent identifiers use hyphens. Tests require
+a translation for every registered code in all supported languages. Locale selection follows
+an explicit web preference, then supported Accept-Language preferences, not a mutable process-wide
 locale, so concurrent users cannot change each other's messages. Unknown failures
 receive a generic translation; raw SQL, provider messages, and exception text are
 never displayed by the API error renderer.
 
-This is an error-localization foundation, not a claim that the entire UI is
-translated. Labels, local form errors, emails, and domain content can adopt Fluent
-incrementally in their own modules. Translate messages, not store names or catalog
+The current web screens also use module-owned Fluent resources for their labels,
+form feedback, and instructions. See [web localization](../../docs/LOCALIZATION.md)
+for preference, RTL, and verification conventions. Future screens and emails can
+adopt these conventions incrementally. Translate messages, not store names or catalog
 content automatically. Structured public error arguments can be added when needed;
 permit only declared safe values such as limits or durations, never credentials,
 addresses, or raw provider payloads. Preserve Retry-After as protocol metadata.

@@ -2,7 +2,8 @@ import createClient from 'openapi-fetch';
 import { env } from '$env/dynamic/private';
 import type { paths } from '$lib/api/generated';
 import { getRequestEvent } from '$app/server';
-import { errorText, localeFor } from '$lib/i18n/messages';
+import { errorText, translate } from '$lib/i18n/messages';
+import type { Locale } from '$lib/i18n/locales';
 
 // Server-only: one configured internal origin, never a browser-selected proxy URL.
 export function api(token?: string) {
@@ -12,7 +13,9 @@ export function api(token?: string) {
   });
 }
 export function message(error: unknown): string {
-  let language = '';
-  try { language = getRequestEvent().request.headers.get('Accept-Language') ?? ''; } catch { /* No request context in standalone tests. */ }
-  return errorText(error, localeFor(language));
+  return errorText(error, requestLocale());
 }
+function requestLocale(): Locale {
+  try { return getRequestEvent().locals.locale ?? 'en'; } catch { return 'en'; }
+}
+export function text(key: string, args?: Parameters<typeof translate>[2]): string { return translate(key, requestLocale(), args); }

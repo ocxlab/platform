@@ -1,5 +1,23 @@
 # Development status
 
+## Web languages and bidirectional text
+
+21 October 2026, Europe/Berlin (UTC+02:00). The current web screens now offer
+German, English, and Arabic through a persistent header language selector. Each
+language name retains its own text direction, including Latin names inside the
+Arabic layout. Initial server rendering and navigation set the page direction;
+merchant content remains unchanged. See [localization](LOCALIZATION.md).
+
+All three browser journeys passed, covering mixed-direction text, mobile bounds,
+no-JavaScript selection, independent browser preferences, and the existing
+publication/order/receipt flow. The development app was rebuilt and is running
+at http://localhost:18181/. No development data was reset. Arabic translations
+still need native-speaker review; these checks are not a full accessibility audit.
+
+The current `task web:dev` starts a built Docker image, not a Vite hot-reload
+server. Source edits therefore require another rebuild before they appear.
+Full `task check` passed, including 22 web unit tests and the runtime build.
+
 ## Guest order placement and module-owned errors
 
 21 October 2026, Europe/Berlin (UTC+02:00). Batch 1 is complete at the bounded

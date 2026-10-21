@@ -1,4 +1,8 @@
-<h1>Independent businesses. Connected communities.</h1>
-<p>Maintain a menu, publish it, and let customers explore your offering.</p>
-<section><h2>For merchants</h2><p>Create a store and prepare a menu before making it public.</p><a href="/merchant">Open merchant workspace</a></section>
-<section><h2>Browse a store</h2><p>Use the storefront link from the merchant workspace. Network-wide discovery follows in the joined-network slice.</p></section>
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context';
+  const { t } = useI18n();
+</script>
+<h1>{t('ui-home-title')}</h1>
+<p>{t('ui-home-intro')}</p>
+<section><h2>{t('ui-for-merchants')}</h2><p>{t('ui-home-merchant')}</p><a href="/merchant">{t('ui-open-workspace')}</a></section>
+<section><h2>{t('ui-browse-store')}</h2><p>{t('ui-home-browse')}</p></section>

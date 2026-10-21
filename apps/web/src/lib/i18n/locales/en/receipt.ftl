@@ -1,0 +1,10 @@
+receipt-title = Pickup order placed
+receipt-intro = Awaiting restaurant acceptance. This development order has not been charged or sent to the kitchen.
+receipt-details = Order details
+receipt-selection = Your agreed selection
+receipt-progress = Fulfilment: pickup · Payment: not started · Preparation: not started
+receipt-reference = Order reference
+receipt-cookie-help = You can return to this page in this browser for seven days from the start of guest checkout. Keep the checkout cookie; deleting it removes guest access. No account was created.
+receipt-back = Back to the menu
+receipt-browser-required = Open this order in the browser used at checkout. Its identifier alone does not grant access.
+receipt-not-available = This order is not available to this checkout session.

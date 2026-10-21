@@ -1,12 +1,12 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import type { components } from '$lib/api/generated';
-import { api, message } from '$lib/server/api';
+import { api, message, text } from '$lib/server/api';
 import { guestCheckout } from '$lib/server/guest';
 export const load: PageServerLoad = async ({ params, cookies }) => {
   const result = await api().GET('/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering', { params: { path: { merchant_id: params.merchant, store_id: params.store } } });
-  if (!result.data) error(result.response.status, result.response.status === 404 ? 'This store has no public menu available.' : message(result.error));
-  if (result.data.model.id !== 'ocp.food.menu' || result.data.model.version !== '1.0.0') error(422, 'This storefront does not support this offering model yet.');
+  if (!result.data) error(result.response.status, result.response.status === 404 ? text('storefront-no-menu') : message(result.error));
+  if (result.data.model.id !== 'ocp.food.menu' || result.data.model.version !== '1.0.0') error(422, text('storefront-unsupported'));
   const guest = guestCheckout(cookies, params.merchant, params.store);
   const intent = guest.intent();
   let quote: components['schemas']['FoodQuote'] | undefined;
@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 export const actions: Actions = {
   quote: async ({ params, request, cookies }) => {
     const form = await request.formData(); let body: components['schemas']['FoodSelectionRequest'];
-    try { body = JSON.parse(String(form.get('selection'))) as typeof body; } catch { return fail(400, { error: 'Select an item, variant, and any required options.' }); }
+    try { body = JSON.parse(String(form.get('selection'))) as typeof body; } catch { return fail(400, { error: text('storefront-select-required') }); }
     const guest = guestCheckout(cookies, params.merchant, params.store);
     const path = { merchant_id: params.merchant, store_id: params.store };
     let token = guest.token();
@@ -41,8 +41,8 @@ export const actions: Actions = {
     const guest = guestCheckout(cookies, params.merchant, params.store);
     const intent = guest.intent();
     const form = await request.formData();
-    if (!guest.token() || !intent) return fail(401, { error: 'Your checkout session has ended. Check your selection price again.' });
-    if (form.get('quote') !== intent.quote || form.get('key') !== intent.key) return fail(409, { error: 'This checkout has changed in another tab. Refresh and review the selection before placing it.' });
+    if (!guest.token() || !intent) return fail(401, { error: text('storefront-session-ended') });
+    if (form.get('quote') !== intent.quote || form.get('key') !== intent.key) return fail(409, { error: text('storefront-intent-changed') });
     let result;
     try {
       result = await api(guest.token()).POST('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders', {
@@ -50,7 +50,7 @@ export const actions: Actions = {
         body: { quote_id: intent.quote, fulfilment: 'pickup' },
       });
     } catch {
-      return fail(503, { error: 'The order result could not be retrieved. Retry this placement to recover its result without creating another order.' });
+      return fail(503, { error: text('storefront-retry') });
     }
     if (!result.data) return fail(result.response.status, { error: message(result.error) });
     redirect(303, `/stores/${params.merchant}/${params.store}/orders/${result.data.id}`);

@@ -1,0 +1,14 @@
+ui-language = Sprache
+ui-main = Hauptnavigation
+ui-merchant = Händler
+ui-admin = Anbieterverwaltung
+ui-footer = OCP Lab · Lokale Entwicklung · Keine echten Bestellungen oder Zahlungen
+ui-home-title = Unabhängige Unternehmen. Verbundene Gemeinschaften.
+ui-home-intro = Pflegen und veröffentlichen Sie Ihre Speisekarte, damit Kunden Ihr Angebot entdecken können.
+ui-for-merchants = Für Händler
+ui-home-merchant = Erstellen Sie einen Standort und bereiten Sie die Speisekarte vor der Veröffentlichung vor.
+ui-open-workspace = Händlerbereich öffnen
+ui-browse-store = Angebot ansehen
+ui-home-browse = Nutzen Sie den Storefront-Link im Händlerbereich. Die netzwerkweite Suche folgt in einem späteren Entwicklungsschritt.
+ui-error-heading = Anfrage konnte nicht abgeschlossen werden
+ui-back-home = Zur Startseite

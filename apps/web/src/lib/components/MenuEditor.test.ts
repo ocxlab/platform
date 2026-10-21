@@ -20,7 +20,7 @@ function menu(): components['schemas']['FoodMenu'] {
 test('removes the selected item from the submitted draft without changing its source', async () => {
   const initial = menu();
   const { container } = render(MenuEditor, { initial, base: 4 });
-  const remove = screen.getByRole('button', { name: 'Remove menu item Döner' });
+  const remove = screen.getByRole('button', { name: /Remove menu item.*Döner/ });
   expect(remove).toHaveAttribute('type', 'button');
   await fireEvent.click(remove);
   expect(screen.getByLabelText('Item name')).toHaveValue('Falafel');
@@ -33,7 +33,7 @@ test('removes the selected item from the submitted draft without changing its so
 
 test('can remove the last item and add a replacement before saving', async () => {
   render(MenuEditor, { initial: { ...menu(), items: menu().items.slice(0, 1) }, base: 1 });
-  await fireEvent.click(screen.getByRole('button', { name: 'Remove menu item Döner' }));
+  await fireEvent.click(screen.getByRole('button', { name: /Remove menu item.*Döner/ }));
   expect(screen.queryByLabelText('Item name')).not.toBeInTheDocument();
   expect(screen.getByText(/Add at least one item before saving/)).toBeVisible();
   await fireEvent.click(screen.getByRole('button', { name: 'Add menu item' }));

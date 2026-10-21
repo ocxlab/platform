@@ -1,0 +1,14 @@
+ui-language = Language
+ui-main = Main
+ui-merchant = Merchant
+ui-admin = Provider admin
+ui-footer = OCP Lab · Local development · No live orders or payments
+ui-home-title = Independent businesses. Connected communities.
+ui-home-intro = Maintain a menu, publish it, and let customers explore your offering.
+ui-for-merchants = For merchants
+ui-home-merchant = Create a store and prepare a menu before making it public.
+ui-open-workspace = Open merchant workspace
+ui-browse-store = Browse a store
+ui-home-browse = Use the storefront link from the merchant workspace. Network-wide discovery follows in the joined-network slice.
+ui-error-heading = Request could not be completed
+ui-back-home = Back to home
