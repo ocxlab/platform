@@ -11,6 +11,11 @@ the commerce, network, and payment behavior established by the research.
 
 ## Foundation prepared now
 
+The 21 October handoff in [FOUNDATION-DECISIONS.md](FOUNDATION-DECISIONS.md)
+carries the founder's latest offering, resource, addressing, and fulfilment
+clarifications and defines the bounded contract/persistence slice. Its current
+acceptance record supersedes the original scaffold status below as work completes.
+
 Task is the command interface, and Docker supplies compilers, runtime checks, and
 local services. There is no CI configuration or production cloud dependency.
 The Go module under `services/provider/` and PostgreSQL service leave room for a monorepo containing
