@@ -56,6 +56,23 @@ Primary technical references consulted on 22 October 2026:
   describes one-way server-to-browser events; it does not establish an OCP
   deployment-cost advantage over polling.
 
+## Readable customer order URLs
+
+Use a readable store slug and human-readable order reference on customer-facing
+receipt/status routes, rather than exposing a chain of merchant/store/order UUIDs.
+For example, `/stores/doener-karlsruhe/orders/O-000042` illustrates the intended
+shape; it is not yet the chosen or implemented route. Resolve these aliases to
+stable internal IDs. Store-name collisions, later renames, redirects from existing
+links, and custom storefront domains need deliberate handling; a display name
+alone is not a unique identifier.
+
+Readable references are guessable navigation labels, never authorization. Retain
+the current guest/registered-customer access checks and tenant scope. An unrelated
+visitor who guesses the URL must not see private order details. Keep UUID-based
+API identity where appropriate; a friendlier browser URL does not require
+replacing primary keys or weakening the order contract. Add direct-link, refresh,
+rename/old-link, and denied-access regressions when this is implemented.
+
 ## Benchmark the restaurant work before extending the editor
 
 Review primary merchant guides and public interface examples from Lieferando,
