@@ -58,6 +58,13 @@ tasks:
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps web-tools npm ci --ignore-scripts'
 
+  web:add:
+    desc: Add an exact web dependency inside Docker (task web:add PACKAGE=name)
+    requires:
+      vars: [PACKAGE]
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps web-tools npm install --save-exact --ignore-scripts {{.PACKAGE}}'
+
   web:generate:
     desc: Generate committed TypeScript API types from the same OpenAPI bundle as Go
     cmds:

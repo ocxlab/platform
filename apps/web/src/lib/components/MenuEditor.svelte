@@ -1,5 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import Plus from '@lucide/svelte/icons/plus';
+  import Trash2 from '@lucide/svelte/icons/trash-2';
+  import ActionButton from './ActionButton.svelte';
   import type { components } from '$lib/api/generated';
   type Menu = components['schemas']['FoodMenu'];
   let { initial, base }: { initial: Menu; base: number } = $props();
@@ -21,7 +24,7 @@
     {#each item.variants as choice (choice.id)}
       <div class="row"><label>Variant name<input bind:value={choice.name} required maxlength="80" /></label><label>Variant price in EUR<input type="number" min="0" step="0.01" max="10000000" required value={choice.price_minor / 100} oninput={(e) => choice.price_minor = Math.round(e.currentTarget.valueAsNumber * 100)} /></label></div>
     {/each}
-    <button type="button" onclick={() => item.variants.push(variant())} disabled={item.variants.length >= 30}>Add variant</button>
+    <ActionButton type="button" icon={Plus} label="Add variant" onclick={() => item.variants.push(variant())} disabled={item.variants.length >= 30} />
     {#each item.option_groups as group (group.id)}
       <fieldset><legend>Extras or required choices</legend>
         <label>Choice group name<input bind:value={group.name} required maxlength="80" /></label>
@@ -29,14 +32,14 @@
         {#each group.options as option (option.id)}
           <div class="row"><label>Option name<input bind:value={option.name} required maxlength="80" /></label><label>Extra price in EUR<input type="number" min="0" step="0.01" max="10000000" required value={option.price_minor / 100} oninput={(e) => option.price_minor = Math.round(e.currentTarget.valueAsNumber * 100)} /></label></div>
         {/each}
-        <button type="button" onclick={() => group.options.push({ id: identifier(), name: 'New option', price_minor: 0 })} disabled={group.options.length >= 30}>Add option</button>
+        <ActionButton type="button" icon={Plus} label="Add option" onclick={() => group.options.push({ id: identifier(), name: 'New option', price_minor: 0 })} disabled={group.options.length >= 30} />
       </fieldset>
     {/each}
-    <button type="button" onclick={() => item.option_groups.push({ id: identifier(), name: 'Choose an extra', min_selected: 0, max_selected: 1, options: [{ id: identifier(), name: 'Extra', price_minor: 0 }] })} disabled={item.option_groups.length >= 20}>Add choice group</button>
-    <button type="button" aria-label={`Remove menu item ${item.name}`} onclick={() => removeItem(item.id)}>Remove item</button>
+    <ActionButton type="button" icon={Plus} label="Add choice group" onclick={() => item.option_groups.push({ id: identifier(), name: 'Choose an extra', min_selected: 0, max_selected: 1, options: [{ id: identifier(), name: 'Extra', price_minor: 0 }] })} disabled={item.option_groups.length >= 20} />
+    <ActionButton type="button" icon={Trash2} iconOnly danger label={`Remove menu item ${item.name}`} onclick={() => removeItem(item.id)} />
   </fieldset>
 {/each}
 {#if menu.items.length === 0}
   <p>Add at least one item before saving. To hide an existing published menu instead, use Withdraw menu.</p>
 {/if}
-<button type="button" onclick={addItem} disabled={menu.items.length >= 200}>Add menu item</button>
+<ActionButton type="button" icon={Plus} label="Add menu item" onclick={addItem} disabled={menu.items.length >= 200} />

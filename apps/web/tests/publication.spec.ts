@@ -57,7 +57,23 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('15,00');
   await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('not an order');
   // Deletion is a draft edit, survives reload, and only reaches customers on publish.
-  await page.getByRole('button', { name: 'Remove menu item Döner', exact: true }).click();
+  const removeItem = page.getByRole('button', { name: 'Remove menu item Döner', exact: true });
+  const viewport = page.viewportSize();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(removeItem.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+  await removeItem.focus();
+  await expect(page.getByRole('tooltip')).toHaveText('Remove menu item Döner');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  await removeItem.hover();
+  await expect(page.getByRole('tooltip')).toHaveText('Remove menu item Döner');
+  await page.getByRole('tooltip').hover();
+  await expect(page.getByRole('tooltip')).toBeVisible();
+  const tooltipBounds = await page.getByRole('tooltip').boundingBox();
+  expect(tooltipBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(tooltipBounds!.x + tooltipBounds!.width).toBeLessThanOrEqual(390);
+  await removeItem.click();
+  if (viewport) await page.setViewportSize(viewport);
   await expect(page.getByLabel('Item name', { exact: true })).toHaveValue('Falafel');
   await page.getByRole('button', { name: 'Save private draft' }).click();
   await expect(page.getByRole('status')).toContainText('Draft saved');

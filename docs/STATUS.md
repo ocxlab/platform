@@ -1,5 +1,29 @@
 # Development status
 
+## Lucide action buttons
+
+21 October 2026, Europe/Berlin (UTC+02:00). Added pinned `@lucide/svelte` 1.61.0
+to the Svelte 5 application. Shared ActionButton components now serve merchant,
+customer, and provider-admin actions. Menu-item deletion uses an icon-only trash
+button with the item's name in its accessible label and tooltip. Other actions
+retain visible labels alongside their icons; a button without an icon retains
+its label as well. Native form submission, disabled states, and handlers remain
+unchanged, with no API or storage changes.
+
+Tooltips support pointer hover, keyboard focus, Escape dismissal, and hovering
+the tooltip itself. Their position follows the button and stays within the
+horizontal viewport; icons are decorative for assistive technology. The shared
+component uses a 44-pixel minimum target and a distinct deletion color. Future
+dependency additions can use `task web:add PACKAGE=name` inside Docker.
+
+`task check` passed, including 13 focused web tests (five new ActionButton tests),
+real PostgreSQL integration checks, generated-contract drift, type checks with
+zero warnings, and runtime builds. `task test:browser` passed, exercising deletion
+tooltip focus/hover/Escape and horizontal bounds at a 390-pixel viewport alongside
+the existing merchant/publication/guest/admin journey. These are targeted checks,
+not a comprehensive accessibility audit. `task web:dev` rebuilds the running app
+without resetting persisted data; its restart clears development web sessions.
+
 ## Managed store table
 
 21 October 2026, Europe/Berlin (UTC+02:00). The merchant workspace now shows

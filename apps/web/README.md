@@ -12,6 +12,19 @@ and last draft-save times (or creation before the first save), in Europe/Berlin.
 Choose a store link to reopen its editor; remembering an identifier is unnecessary.
 The same authorized, paginated list operation is available to other API clients.
 
+## Action buttons
+
+`ActionButton.svelte` provides Lucide icons, explicit accessible names, and
+tooltips on pointer hover or keyboard focus. Escape dismisses a tooltip; it stays
+available while the pointer is over it. Familiar deletion actions can be icon-only;
+less obvious actions retain visible labels. Buttons without icons also retain
+their labels. Icons are decorative for assistive technology, and native form
+submission, disabled states, and event handlers are preserved.
+
+The exact `@lucide/svelte` version is pinned in package.json and its lockfile.
+Use direct per-icon imports following the [Lucide Svelte guide](https://lucide.dev/guide/svelte/getting-started).
+Add future dependencies through `task web:add PACKAGE=name` inside Docker.
+
 ## Development and verification
 
 Use root `task web:dev` to build and start the application on localhost:18181.

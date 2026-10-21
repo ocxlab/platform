@@ -1,6 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import Notice from '$lib/components/Notice.svelte';
+  import ActionButton from '$lib/components/ActionButton.svelte';
+  import Calculator from '@lucide/svelte/icons/calculator';
   import { money } from '$lib/money';
   let { data, form } = $props();
   let itemId = $state(untrack(() => data.menu.items[0]?.id ?? ''));
@@ -35,7 +37,7 @@
     {/each}
     <label>Quantity<input type="number" min="1" max="99" bind:value={quantity} required /></label>
     <input type="hidden" name="selection" value={JSON.stringify(selection)} />
-    <button disabled={!item.available}>Check selection price</button>
+    <ActionButton icon={Calculator} label="Check selection price" disabled={!item.available} />
   {/if}
 </form></section>
 {#if form?.quote}
