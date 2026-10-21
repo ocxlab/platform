@@ -2,15 +2,16 @@
 
 This increment gives restaurants an inbox for purchases already placed by guests.
 Staff inspect the agreed selection and accept or decline it. Customers see the
-result on their private receipt and can cancel while an order is open, unpaid,
-and unprepared. The same operations are available through the authorized JSON
+result on their private receipt and can cancel while an order is open and
+unprepared, subject to the implemented payment method's cancellation rules.
+The development method supports simulated refunds. The same operations are available through the authorized JSON
 APIs; the web application does not have a privileged alternative path.
 
 ## Ownership and state
 
 The Food domain owns acceptance and resolution. The existing placement body and
 quoted terms remain immutable; a separate operational row holds the current
-revision, acceptance, and resolution. Merchant decisions and guest cancellations
+revision, acceptance, resolution, and fulfilment progress. Merchant decisions and guest cancellations
 lock that row, check its revision, and commit their event and replay result in
 one PostgreSQL transaction. Read-side shared locks keep progress and its event
 history consistent even when an action arrives during a read.
@@ -19,7 +20,10 @@ history consistent even when an action arrives during a read.
 | --- | --- | --- |
 | Merchant accepts | Open, pending acceptance, payment/preparation not started | Accepted, still open |
 | Merchant declines | Open, pending acceptance, payment/preparation not started | Rejected and closed |
-| Placing guest cancels | Open, payment/preparation not started | Cancelled and closed; prior acceptance is retained |
+| Placing guest cancels | Open, preparation not started; unpaid or development payment | Cancelled and closed; simulated payment is refunded when applicable |
+| Merchant starts preparation | Open, accepted, paid pickup order, preparation not started | Preparing |
+| Merchant reports ready | Open, accepted, paid pickup order, preparing | Ready for pickup |
+| Merchant records pickup | Open, accepted, paid pickup order, ready | Collected; fulfilment ends |
 
 Each action requires the current operational revision and a scoped retry key.
 Repeated successful attempts return their original result, not a reconstructed
@@ -49,11 +53,13 @@ rollout strategy; production migration compatibility remains a release concern.
 
 ## Deliberate next-slice boundaries
 
-Acceptance is not payment evidence or a kitchen instruction. This increment has
-no kitchen start/ready/collected operation and does not take money. The payment
-and preparation slice must preserve the same per-order serialization, retain
-unfinished work alongside decisions, and reconcile uncertain external effects.
-Before adding more events, extend or paginate the currently bounded history.
+Acceptance is not payment evidence or a kitchen instruction. Merchant-reported
+preparation/readiness/collection now complements the development checkout; it
+does not move real money or independently prove physical work. See the
+[local payment and pickup walkthrough](LOCAL-PAYMENTS-AND-REFERENCES.md).
+Real payment adapters must retain unfinished work and reconcile uncertain
+external effects rather than inherit simulated atomic refunds. Before adding
+more events, reconsider the 32-entry history bound.
 
 Automatic acceptance, store opening/ordering controls, preparation estimates,
 timeouts, merchant delivery, customer notifications, and support beyond the
@@ -67,8 +73,8 @@ order or substitute for the merchant's fulfilment decision.
 
 Real PostgreSQL coverage includes audience/action/tenant boundaries, guest
 ownership, stale revisions, immutable terms, matching and conflicting retries,
-concurrent acceptance versus cancellation, atomic replay/event rollback, restart,
+concurrent acceptance/preparation versus cancellation, atomic replay/event rollback, restart,
 newest-first pagination, and receipt access after withdrawal. The browser journey
-joins merchant acceptance, guest cancellation, merchant rejection, and read-only
-administration. See [status](STATUS.md) for the checks actually completed and the
+joins merchant acceptance, checkout, guest cancellation, merchant rejection,
+preparation through pickup, and read-only administration. See [status](STATUS.md) for the checks actually completed and the
 two automated technical review reports under [reviews](reviews/).

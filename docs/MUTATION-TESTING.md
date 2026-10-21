@@ -35,6 +35,15 @@ Sandbox directories and reports are also excluded from Docker build context.
 
 ## Executed results
 
+22 October 2026, Europe/Berlin (UTC+02:00). After adding pickup-action eligibility,
+the same four-module Stryker scope killed **188/189 (99.47%)** mutants, with one
+session-cleanup survivor and no uncovered mutants, timeouts, or errors. Order
+eligibility now kills 88/88 mutants, including 29 for pickup-action guards.
+Gremlins was rerun: payment rules remain 6/6 killed and Food 52/55 killed, with
+no uncovered mutants. The survivor analysis below is unchanged. These runs do
+not mutate the new PostgreSQL pickup transitions, HTML form/origin helpers, or Svelte
+components; integration, parser unit, and browser tests cover those separately.
+
 21 October 2026, Europe/Berlin (UTC+02:00). The final completed runs produced:
 
 | Mutation scope | Killed | Survived | No coverage | Result |

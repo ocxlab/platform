@@ -1,5 +1,58 @@
 # Development status
 
+## Separate checkout and merchant pickup progress
+
+22 October 2026, Europe/Berlin (UTC+02:00). Public store cards now show the
+business name without a dangling internal handle (`838e542`). The local simulator
+uses **Pay order → development checkout → receipt**. Returning without choosing
+an outcome does not pay; customers can resume checkout. This remains a first-party
+simulation, not an embedded Stripe/Mollie implementation. See the updated
+[walkthrough and real-provider boundary](LOCAL-PAYMENTS-AND-REFERENCES.md).
+The checkout, hydration hardening, and pickup slice are committed as `7a779cd`.
+
+Merchants can now start preparation, mark readiness, and record customer pickup
+for accepted, paid, open pickup orders. The same authorized, modular OpenAPI
+operation serves the UI and API clients. Progress, attributable history, revisions,
+and idempotent responses commit together. Cancellation races against preparation
+under the same order lock; preparation stops automatic cancellation. These are
+merchant reports, not independent proof of physical work. Cash payment, own
+delivery, and real-processor adapters remain separate slices.
+
+Vite regression testing exposed pre-hydration interaction races that the faster
+built app did not reveal. JavaScript-only editor buttons now wait for mounting;
+the storefront submits native named controls instead of hydration-dependent hidden
+JSON, and its initial effect no longer resets customer selections. Lucide is
+excluded from dependency prebundling to keep it in the Svelte compiler pipeline.
+The exact original `undefined.call` stack was not reproduced and is not claimed
+as an established root cause. Browser tests capture hydration warnings and page
+exceptions rather than relying only on a root hydration marker.
+
+The development-mode run also found SvelteKit's built-in form-origin check is
+skipped in Vite. An explicit web hook now applies the same unsafe-form origin
+boundary locally; the real local Vite probe rejects a foreign-origin form with
+403 while allowing same-origin forms to reach validation. No production check
+was disabled. Browser failure diagnostics persist in ignored `apps/web/test-results/`.
+
+The full `task check` passed after the native-form projection follow-up: generated
+contract drift, Go formatting/vet/race tests, PostgreSQL integration, API/web
+builds, 40 web tests, and zero Svelte errors/warnings. After the final native-control
+and origin-guard refinements, `task web:check` passed with **43 web tests**, clean
+generated drift, zero diagnostics, and a successful build. All three final built-app
+and all three Vite browser journeys passed, including no-JavaScript initial-item selection/quote, checkout
+return/resume/decline/retry/payment/refund, and preparation through pickup.
+`task smoke` also passed. No hydration warnings or page exceptions were captured
+in the final merchant/customer browser workflow. Chrome
+opened the preserved local Döner Karlsruhe storefront without captured
+browser exceptions or hydration warnings. The actual API/database migrated to
+version 8 without resetting development records; local Vite remains on port 18181.
+
+Both engineering and protocol static review reports are in
+`docs/reviews/checkout-pickup-*.md`. Their requested neutral event-helper ownership,
+same-revision cancellation/preparation race, and retained pickup-action replays
+are implemented. Stryker and Gremlins were rerun; their bounded results and
+remaining survivors are recorded in [mutation testing](MUTATION-TESTING.md).
+No real payment credentials, processor calls, or money were used in this batch.
+
 ## Reliable refresh, readable references, and local payments
 
 21 October 2026, Europe/Berlin (UTC+02:00). Explicit status refresh now reloads
