@@ -4,7 +4,7 @@
   import { money } from '$lib/money';
   let { order }: { order: components['schemas']['FoodOrder'] } = $props();
   const { t, locale } = useI18n();
-  const events = { placed: 'orders-event-placed', accepted: 'orders-event-accepted', rejected: 'orders-event-rejected', cancelled: 'orders-event-cancelled' };
+  const events = { placed: 'orders-event-placed', accepted: 'orders-event-accepted', rejected: 'orders-event-rejected', cancelled: 'orders-event-cancelled', payment_started: 'payment-event-started', payment_paid: 'payment-event-paid', payment_failed: 'payment-event-failed', payment_abandoned: 'payment-event-abandoned', cancelled_refunded: 'payment-event-refunded' };
 </script>
 <section aria-label={t('receipt-details')}>
   <h2>{t('receipt-selection')}</h2>
@@ -17,8 +17,10 @@
   {:else if order.resolution === 'rejected'}<p role="status">{t('orders-rejected')}</p>
   {:else if order.acceptance === 'accepted'}<p role="status">{t('orders-accepted')}</p>
   {:else}<p role="status">{t('orders-pending')}</p>{/if}
-  <p>{t('receipt-progress')}</p>
-  <p class="muted">{t('receipt-reference')} <bdi dir="ltr">{order.id}</bdi></p>
+  <p>{t(`payment-status-${order.payment}`)}</p>
+  {#if order.payment_provider === 'development'}<p class="muted">{t('payment-development-help')}</p>{/if}
+  <p>{t('payment-preparation')}</p>
+  <p class="muted">{t('receipt-reference')} <bdi dir="ltr">{order.reference ?? order.id}</bdi></p>
   {#if order.history?.length}
     <h3>{t('orders-history')}</h3>
     <ol>{#each order.history as event}<li>{t(events[event.event])} · <time datetime={event.created_at}>{new Date(event.created_at).toLocaleString(locale())}</time></li>{/each}</ol>

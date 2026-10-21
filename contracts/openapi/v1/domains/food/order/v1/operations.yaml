@@ -30,7 +30,7 @@ FoodOrderEvent:
       minimum: 1
     event:
       type: string
-      enum: [placed, accepted, rejected, cancelled]
+      enum: [placed, accepted, rejected, cancelled, payment_started, payment_paid, payment_failed, payment_abandoned, cancelled_refunded]
     created_at:
       type: string
       format: date-time

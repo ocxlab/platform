@@ -12,10 +12,10 @@
 <div class="order-table"><table>
   <thead><tr><th>{t('receipt-reference')}</th><th>{t('orders-created')}</th><th>{t('orders-total')}</th><th>{t('orders-status')}</th></tr></thead>
   <tbody>{#each data.orders.items as order}<tr>
-    <th scope="row"><a href={`${root}/orders/${order.id}`}><bdi dir="ltr">{order.id}</bdi></a></th>
+    <th scope="row"><a href={`${root}/orders/${order.id}`}><bdi dir="ltr">{order.reference ?? order.id}</bdi></a></th>
     <td><time datetime={order.created_at}>{new Date(order.created_at).toLocaleString(locale())}</time></td>
     <td><bdi>{money(order.terms.total_minor, locale())}</bdi></td>
-    <td>{order.resolution === 'cancelled' ? t('orders-event-cancelled') : order.resolution === 'rejected' ? t('orders-event-rejected') : order.acceptance === 'accepted' ? t('orders-event-accepted') : t('orders-awaiting')}</td>
+    <td>{order.resolution === 'cancelled' ? t('orders-event-cancelled') : order.resolution === 'rejected' ? t('orders-event-rejected') : order.acceptance === 'accepted' ? t('orders-event-accepted') : t('orders-awaiting')}<br /><small>{t(`payment-status-${order.payment}`)}</small></td>
   </tr>{/each}</tbody>
 </table></div>
 {/if}

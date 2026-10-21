@@ -46,7 +46,12 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
-	handler, err := httpapi.NewHandler(db)
+	var options []httpapi.Option
+	if os.Getenv("OCP_DEVELOPMENT_PAYMENTS") == "true" {
+		options = append(options, httpapi.WithDevelopmentPayments())
+		slog.Warn("development payments enabled; no real money is moved")
+	}
+	handler, err := httpapi.NewHandler(db, options...)
 	if err != nil {
 		slog.Error("contract startup failed")
 		os.Exit(1)

@@ -10,6 +10,7 @@
   let { data, form } = $props();
 </script>
 <h1><bdi dir="auto">{data.store.display_name}</bdi></h1>
+{#if data.store.handle}<p><bdi dir="ltr">{data.store.handle}</bdi></p>{/if}
 <p>{t('merchant-edit-intro')}</p>
 <p><a href={`/merchant/stores/${data.store.merchant_id}/${data.store.id}/orders`}>{t('orders-inbox')}</a></p>
 {#if form?.error}<Notice text={form.error} error />{/if}

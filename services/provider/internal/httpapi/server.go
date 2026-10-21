@@ -23,13 +23,19 @@ import (
 
 type principalKey struct{}
 type Server struct {
-	db     *sql.DB
-	models *offering.Registry
+	db                  *sql.DB
+	models              *offering.Registry
+	developmentPayments bool
 }
+
+type Option func(*Server)
+
+// Disabled by default. Enable only in explicit local/test composition.
+func WithDevelopmentPayments() Option { return func(s *Server) { s.developmentPayments = true } }
 
 // NewHandler installs the generated routing and contract validation around the
 // application operations. Administrative grants are never accepted as DB roles.
-func NewHandler(db *sql.DB) (http.Handler, error) {
+func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	spec, err := GetSwagger()
 	if err != nil {
 		return nil, err
@@ -41,13 +47,16 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 	server := &Server{db: db, models: offering.NewRegistry(map[offering.Model]offering.Validator{
 		food.Model: food.Validator(spec.Components.Schemas["FoodMenu"].Value),
 	}, map[offering.Model]offering.Validator{food.Model: food.Project})}
+	for _, option := range options {
+		option(server)
+	}
 	generated := HandlerWithOptions(server, StdHTTPServerOptions{ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 		problem(w, 400, "invalid_request", "Request does not match the API contract.", nil)
 	}})
 	scopes := map[string]string{}
 	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:cancel": true, "order:manage": true, "order:inspect": true}
 	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true}
-	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true}
+	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true, "ChangeDevelopmentPayment": true}
 	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true}
 	for _, path := range spec.Paths.Map() {
 		for _, operation := range path.Operations() {

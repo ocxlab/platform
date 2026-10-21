@@ -1,4 +1,5 @@
 {
+  "development_payments_disabled": { "status": 503, "title": "Development payments disabled", "message_key": "error-orders-development-payments-disabled" },
   "order_revision_conflict": { "status": 409, "title": "Order revision changed", "message_key": "error-orders-order-revision-conflict" },
   "order_transition_conflict": { "status": 409, "title": "Order action unavailable", "message_key": "error-orders-order-transition-conflict" }
 }

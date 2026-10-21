@@ -10,6 +10,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "build": "vite build",
     "test": "vitest run",
+    "test:mutation": "svelte-kit sync && stryker run",
     "test:browser": "playwright test",
     "contracts:generate": "openapi-typescript ../../contracts/build/provider.openapi.json -o src/lib/api/generated.d.ts",
     "contracts:check": "openapi-typescript ../../contracts/build/provider.openapi.json -o /tmp/ocp-generated.d.ts && diff -u src/lib/api/generated.d.ts /tmp/ocp-generated.d.ts"
@@ -21,6 +22,8 @@
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
     "@sveltejs/adapter-node": "5.5.7",
     "@sveltejs/kit": "2.70.3",
     "@sveltejs/vite-plugin-svelte": "6.2.4",

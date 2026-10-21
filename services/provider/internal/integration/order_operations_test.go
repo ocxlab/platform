@@ -28,7 +28,12 @@ func placedOrderFixture(t *testing.T) (*fixture, persistence.Store, string, stri
 
 func TestFoodOrderProgressMigrationPreservesLegacyReplay(t *testing.T) {
 	f := setupAtVersion(t, 3)
-	store := preparedStore(t, f)
+	// Exercise the historical schema without asking current store creation to
+	// return display references that did not exist at version 3.
+	store := persistence.Store{ID: uuid.New(), MerchantID: f.principal.MerchantID, DisplayName: "Legacy restaurant"}
+	_, seedErr := f.admin.Exec(`INSERT INTO commerce.stores(merchant_id,id,display_name) VALUES($1,$2,$3)`, store.MerchantID, store.ID, store.DisplayName)
+	must(t, seedErr)
+	f.request(t, "PUT", f.merchantPath+"/"+store.ID.String()+"/offering", f.token, "legacy-menu-draft-001", offeringBody(t, 0, menu(t), "ocp.food.menu"), 201)
 	private := f.merchantPath + "/" + store.ID.String()
 	public := strings.Replace(private, "/api/v1/", "/api/v1/public/", 1)
 	guest := strings.Replace(private, "/api/v1/", "/api/v1/guest/", 1)
@@ -64,7 +69,7 @@ func TestFoodOrderProgressMigrationPreservesLegacyReplay(t *testing.T) {
 	must(t, persistence.Migrate(context.Background(), f.admin))
 	var got persistence.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", guest+"/food/orders/"+legacy.ID.String(), session.Token, "", "", 200), &got))
-	if got.Revision != 1 || len(got.History) != 1 {
+	if got.Revision != 1 || len(got.History) != 1 || got.Reference == "" {
 		t.Fatal("legacy order was not backfilled")
 	}
 	if string(f.request(t, "POST", guest+"/food/orders", session.Token, "legacy-placement-key-001", requestBody, 201)) != string(result.Body) {

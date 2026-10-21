@@ -12,3 +12,5 @@ working
 **/build
 **/test-results
 **/playwright-report
+**/.stryker-tmp
+**/reports

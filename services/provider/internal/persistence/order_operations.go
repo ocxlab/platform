@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/payment"
 )
 
 type OrderRevisionConflict struct{ Current int64 }
@@ -61,7 +62,7 @@ func parseOrderCursor(cursor string) (time.Time, uuid.UUID, error) {
 func readFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.UUID, lock bool) (FoodOrder, error) {
 	var order FoodOrder
 	var body []byte
-	query := `SELECT o.body,s.revision,s.acceptance,s.resolution FROM commerce.food_orders o
+	query := `SELECT o.body,s.revision,s.acceptance,s.resolution,o.display_number FROM commerce.food_orders o
  JOIN commerce.food_order_operations s ON (s.merchant_id,s.store_id,s.order_id)=(o.merchant_id,o.store_id,o.id)
  WHERE o.merchant_id=$1 AND o.store_id=$2 AND o.id=$3 AND ($4::uuid IS NULL OR o.guest_id=$4)`
 	if lock {
@@ -74,8 +75,9 @@ func readFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.
 		guest = &p.ID
 	}
 	var revision int64
+	var number int64
 	var acceptance, resolution string
-	err := tx.QueryRowContext(ctx, query, p.MerchantID, store, id, guest).Scan(&body, &revision, &acceptance, &resolution)
+	err := tx.QueryRowContext(ctx, query, p.MerchantID, store, id, guest).Scan(&body, &revision, &acceptance, &resolution, &number)
 	if errors.Is(err, sql.ErrNoRows) {
 		return order, ErrNotFound
 	}
@@ -86,6 +88,17 @@ func readFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.
 		return order, err
 	}
 	order.Revision, order.Acceptance, order.Resolution = revision, acceptance, resolution
+	order.Reference = orderReference(number)
+	// Read financial state only after acquiring the order lock. A join evaluated
+	// before waiting for that lock can otherwise retain an older payment snapshot.
+	operation, err := paymentOperation(ctx, tx, order)
+	if err != nil {
+		return order, err
+	}
+	order.Payment = operation.State
+	if operation.Attempts > 0 {
+		order.PaymentProvider = "development"
+	}
 	rows, err := tx.QueryContext(ctx, `SELECT sequence,event,created_at FROM commerce.food_order_events WHERE merchant_id=$1 AND store_id=$2 AND order_id=$3 ORDER BY sequence`, p.MerchantID, store, id)
 	if err != nil {
 		return order, err
@@ -125,7 +138,7 @@ func ChangeFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uui
 	if order.Revision != expected {
 		return order, &OrderRevisionConflict{Current: order.Revision}
 	}
-	if order.Resolution != "open" || order.Payment != "not_started" || order.FulfilmentProgress != "not_started" {
+	if order.Resolution != "open" || (order.Payment != "not_started" && (action != "cancel" || order.PaymentProvider != "development")) || order.FulfilmentProgress != "not_started" {
 		return order, ErrOrderTransition
 	}
 	event := ""
@@ -149,21 +162,28 @@ func ChangeFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uui
 		}
 		order.Resolution = "cancelled"
 		event = "cancelled"
+		if order.PaymentProvider == "development" {
+			operation, paymentErr := paymentOperation(ctx, tx, order)
+			if paymentErr != nil {
+				return order, paymentErr
+			}
+			next, paymentErr := payment.DevelopmentTransition(operation, "cancel_order")
+			if paymentErr != nil {
+				return order, ErrOrderTransition
+			}
+			if paymentErr = savePayment(ctx, tx, order, next); paymentErr != nil {
+				return order, paymentErr
+			}
+			order.Payment = next.State
+			if next.State == "refunded" {
+				event = "cancelled_refunded"
+			}
+		}
 	default:
 		return order, ErrOrderTransition
 	}
-	order.Revision++
-	_, err = tx.ExecContext(ctx, `UPDATE commerce.food_order_operations SET revision=$4,acceptance=$5,resolution=$6 WHERE merchant_id=$1 AND store_id=$2 AND order_id=$3`, p.MerchantID, store, id, order.Revision, order.Acceptance, order.Resolution)
-	if err != nil {
-		return order, err
-	}
-	var at time.Time
-	err = tx.QueryRowContext(ctx, `INSERT INTO commerce.food_order_events(merchant_id,store_id,order_id,sequence,event,actor_id,request_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING created_at`, p.MerchantID, store, id, order.Revision, event, p.ID, requestID).Scan(&at)
-	if err != nil {
-		return order, err
-	}
-	order.History = append(order.History, FoodOrderEvent{order.Revision, event, at})
-	return order, nil
+	err = changeOrderEvent(ctx, tx, p, &order, event, requestID)
+	return order, err
 }
 
 func ListFoodOrders(ctx context.Context, db *sql.DB, p Principal, store uuid.UUID, after *string, limit int) (FoodOrderPage, error) {
@@ -192,8 +212,9 @@ func ListFoodOrders(ctx context.Context, db *sql.DB, p Principal, store uuid.UUI
 	if !exists {
 		return page, ErrNotFound
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT o.body,s.revision,s.acceptance,s.resolution FROM commerce.food_orders o
+	rows, err := tx.QueryContext(ctx, `SELECT o.body,s.revision,s.acceptance,s.resolution,o.display_number,coalesce(p.state,'not_started'),p.state IS NOT NULL FROM commerce.food_orders o
  JOIN commerce.food_order_operations s ON (s.merchant_id,s.store_id,s.order_id)=(o.merchant_id,o.store_id,o.id)
+ LEFT JOIN payment.development_operations p ON (p.merchant_id,p.store_id,p.order_id)=(o.merchant_id,o.store_id,o.id)
  WHERE o.merchant_id=$1 AND o.store_id=$2 AND ($3::timestamptz IS NULL OR (o.created_at,o.id)<($3,$4::uuid)) ORDER BY o.created_at DESC,o.id DESC LIMIT $5`, p.MerchantID, store, at, id, limit+1)
 	if err != nil {
 		return page, err
@@ -203,14 +224,22 @@ func ListFoodOrders(ctx context.Context, db *sql.DB, p Principal, store uuid.UUI
 		var order FoodOrder
 		var body []byte
 		var revision int64
+		var number int64
 		var acceptance, resolution string
-		if err = rows.Scan(&body, &revision, &acceptance, &resolution); err != nil {
+		var paymentState string
+		var development bool
+		if err = rows.Scan(&body, &revision, &acceptance, &resolution, &number, &paymentState, &development); err != nil {
 			return page, err
 		}
 		if err = json.Unmarshal(body, &order); err != nil {
 			return page, err
 		}
 		order.Revision, order.Acceptance, order.Resolution = revision, acceptance, resolution
+		order.Reference = orderReference(number)
+		order.Payment = paymentState
+		if development {
+			order.PaymentProvider = "development"
+		}
 		page.Items = append(page.Items, order)
 	}
 	if err = rows.Err(); err != nil {

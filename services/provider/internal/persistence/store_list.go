@@ -39,7 +39,7 @@ func ListStores(ctx context.Context, db *sql.DB, merchant uuid.UUID, after *uuid
  WHEN r.model_id='ocp.food.menu' AND r.model_version='1.0.0'
  AND jsonb_typeof(r.document->'items')='array' THEN jsonb_array_length(r.document->'items')
  ELSE NULL END,
- COALESCE(r.created_at,s.created_at)
+ COALESCE(r.created_at,s.created_at),'store-'||s.display_number
  FROM commerce.stores s LEFT JOIN commerce.offering_revisions r
  ON r.merchant_id=s.merchant_id AND r.store_id=s.id AND r.revision=s.offering_revision
  WHERE s.merchant_id=$1 AND ($2::uuid IS NULL OR s.id>$2)
@@ -50,7 +50,7 @@ func ListStores(ctx context.Context, db *sql.DB, merchant uuid.UUID, after *uuid
 	defer rows.Close()
 	for rows.Next() {
 		var store ManagedStore
-		if err = rows.Scan(&store.ID, &store.MerchantID, &store.DisplayName, &store.CreatedAt, &store.DraftRevision, &store.MenuItemCount, &store.UpdatedAt); err != nil {
+		if err = rows.Scan(&store.ID, &store.MerchantID, &store.DisplayName, &store.CreatedAt, &store.DraftRevision, &store.MenuItemCount, &store.UpdatedAt, &store.Handle); err != nil {
 			return page, err
 		}
 		page.Items = append(page.Items, store)

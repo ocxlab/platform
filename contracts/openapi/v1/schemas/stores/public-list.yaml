@@ -3,6 +3,8 @@ PublicStore:
   additionalProperties: false
   required: [merchant_id, id, display_name]
   properties:
+    handle:
+      $ref: store.yaml#/Store/properties/handle
     merchant_id:
       $ref: ../common/identifier.yaml
     id:

@@ -16,6 +16,7 @@ var ErrQuoteUsed = errors.New("quote already placed")
 
 // Food owns these state names. They are not a universal commerce lifecycle.
 type FoodOrder struct {
+	Reference          string           `json:"reference,omitempty"`
 	ID                 uuid.UUID        `json:"id"`
 	MerchantID         uuid.UUID        `json:"merchant_id"`
 	StoreID            uuid.UUID        `json:"store_id"`
@@ -24,6 +25,7 @@ type FoodOrder struct {
 	Fulfilment         string           `json:"fulfilment"`
 	Acceptance         string           `json:"acceptance"`
 	Payment            string           `json:"payment"`
+	PaymentProvider    string           `json:"payment_provider,omitempty"`
 	FulfilmentProgress string           `json:"fulfilment_progress"`
 	Resolution         string           `json:"resolution"`
 	CreatedAt          time.Time        `json:"created_at"`
@@ -89,7 +91,8 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	if err != nil {
 		return order, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_orders(merchant_id,store_id,id,guest_id,quote_id,body,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)`, guest.MerchantID, guest.StoreID, order.ID, guest.ID, quoteID, string(body), now)
+	var number int64
+	err = tx.QueryRowContext(ctx, `INSERT INTO commerce.food_orders(merchant_id,store_id,id,guest_id,quote_id,body,created_at) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING display_number`, guest.MerchantID, guest.StoreID, order.ID, guest.ID, quoteID, string(body), now).Scan(&number)
 	if err != nil {
 		return order, err
 	}
@@ -98,6 +101,7 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 		return order, err
 	}
 	order.Revision = 1
+	order.Reference = orderReference(number)
 	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_order_events(merchant_id,store_id,order_id,sequence,event,actor_id,request_id) VALUES($1,$2,$3,1,'placed',$4,$5)`, guest.MerchantID, guest.StoreID, order.ID, guest.ID, requestID)
 	return order, err
 }

@@ -18,7 +18,9 @@ test('renders agreed terms and pending progress with a durable history', () => {
 });
 test('shows acceptance without suggesting payment or kitchen progress', () => {
   render(OrderDetails, { order: { ...order(), acceptance: 'accepted', revision: 2 } });
-  expect(screen.getByRole('status')).toHaveTextContent('Payment and preparation have not started');
+  expect(screen.getByRole('status')).toHaveTextContent('Accepted by the restaurant.');
+  expect(screen.getByText('Payment has not started.')).toBeVisible();
+  expect(screen.getByText('Preparation has not started.')).toBeVisible();
 });
 test('gives a closed resolution precedence over prior acceptance', () => {
   render(OrderDetails, { order: { ...order(), acceptance: 'accepted', resolution: 'cancelled', revision: 3 } });

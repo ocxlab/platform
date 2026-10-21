@@ -9,11 +9,12 @@ post:
   x-access: guest
   x-required-scope: order:cancel
   tags: [Customer commerce]
-  summary: Cancel this guest's unpaid, unprepared pickup order
+  summary: Cancel this guest's unprepared pickup order
   description: >-
-    Only the placing guest can cancel. Requires current revision, open resolution, payment not_started
-    and fulfilment_progress not_started. Works before or after merchant acceptance. No payment or refund
-    effect is implied. Cancellation closes the order; late acceptance cannot reopen it.
+    Only the placing guest can cancel. Requires current revision, open resolution,
+    and fulfilment_progress not_started. Works before or after merchant acceptance.
+    Development checkout is abandoned atomically, or a simulated paid operation is refunded atomically.
+    This does not implement real processor refunds. Cancellation closes the order; late outcomes cannot reopen it.
     State, history and replay result commit atomically. Matching retries return the original 201 body.
   parameters:
     - $ref: ../components/parameters/idempotency-key.yaml

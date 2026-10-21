@@ -126,7 +126,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   const orderId = new URL(receipt).pathname.split('/').at(-1)!;
   await page.getByRole('link', { name: 'Order inbox', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Pickup orders', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: orderId, exact: true }).click();
+  await page.locator(`a[href$="/orders/${orderId}"]`).click();
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
   await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Accept order', exact: true })).toHaveCount(0);
@@ -142,6 +142,30 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await page.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Cancelled');
   await expect(page.getByRole('region', { name: 'Order details' }).getByRole('listitem')).toHaveCount(3);
+  // Development payment goes through the same authorized API and retained order.
+  await guest.goto(storefront);
+    await guest.getByLabel('Garlic').check();
+  await guest.getByRole('button', { name: 'Check selection price' }).click();
+  await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
+  const payableReceipt = guest.url();
+  const payableId = new URL(payableReceipt).pathname.split('/').at(-1)!;
+  await page.goto(`${workspace}/orders/${payableId}`);
+  await page.getByRole('button', { name: 'Accept order', exact: true }).click();
+  await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
+  await guest.getByRole('button', { name: 'Open development checkout', exact: true }).click();
+  await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
+  await expect(guest.getByText('Checkout is waiting for the customer.', { exact: false })).toBeVisible();
+  await guest.getByRole('button', { name: 'Simulate declined payment', exact: true }).click();
+  await expect(guest.getByText('Payment failed. You can try again.', { exact: true })).toBeVisible();
+  await guest.getByRole('button', { name: 'Open development checkout', exact: true }).click();
+  await guest.getByRole('button', { name: 'Simulate successful payment', exact: true }).click();
+  await expect(guest.getByText('Paid in the development simulation.', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Refresh status', exact: true }).click();
+  await expect(page.getByText('Paid in the development simulation.', { exact: true })).toBeVisible();
+  await guest.getByRole('button', { name: 'Cancel order', exact: true }).click();
+  await expect(guest.getByText('Refunded in the development simulation.', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Refresh status', exact: true }).click();
+  await expect(page.getByText('Refunded in the development simulation.', { exact: true })).toBeVisible();
   await page.goto(workspace);
   // Deletion is a draft edit, survives reload, and only reaches customers on publish.
   const removeItem = page.getByRole('button', { name: /Remove menu item.*Döner/ });

@@ -20,7 +20,7 @@
   {:else if data.stores.length}
     <div class="store-list" role="region" aria-label={t('ui-published-stores')}>
       <ul>{#each data.stores as store (`${store.merchant_id}/${store.id}`)}
-        <li><a href={`/stores/${store.merchant_id}/${store.id}`}><bdi dir="auto">{store.display_name}</bdi></a></li>
+        <li><a href={`/stores/${store.merchant_id}/${store.id}`}><bdi dir="auto">{store.display_name}</bdi></a>{#if store.handle} <small><bdi dir="ltr">{store.handle}</bdi></small>{/if}</li>
       {/each}</ul>
     </div>
     {#if data.next}<p><a href={data.next}>{t('ui-more-stores')}</a></p>{/if}

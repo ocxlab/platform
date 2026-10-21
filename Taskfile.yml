@@ -43,6 +43,18 @@ tasks:
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./...'
 
+  test:mutation:web:
+    desc: Run Stryker on checkout/session TypeScript logic and write local reports
+    cmds:
+      - task: web:install
+      - '{{.COMPOSE}} build web-mutation'
+      - '{{.COMPOSE}} run --rm --no-deps web-mutation pnpm run test:mutation'
+
+  test:mutation:go:
+    desc: Run pinned Gremlins on Food and development-payment rules in an isolated source copy
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/mutation-go.sh'
+
   vet:
     desc: Run Go static checks inside Docker
     cmds:
@@ -94,6 +106,7 @@ tasks:
     env:
       OCP_API_URL: http://127.0.0.1:18180
       OCP_LOCAL_INSECURE_COOKIES: 'true'
+      OCP_DEVELOPMENT_PAYMENTS: 'true'
     cmds:
       - pnpm install --frozen-lockfile --ignore-scripts
       - pnpm run dev

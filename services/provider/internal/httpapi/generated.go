@@ -30,6 +30,30 @@ const (
 	ProviderBearerAuthScopes = "ProviderBearerAuth.Scopes"
 )
 
+// Defines values for DevelopmentPaymentRequestAction.
+const (
+	Abandon DevelopmentPaymentRequestAction = "abandon"
+	Decline DevelopmentPaymentRequestAction = "decline"
+	Start   DevelopmentPaymentRequestAction = "start"
+	Succeed DevelopmentPaymentRequestAction = "succeed"
+)
+
+// Valid indicates whether the value is a known member of the DevelopmentPaymentRequestAction enum.
+func (e DevelopmentPaymentRequestAction) Valid() bool {
+	switch e {
+	case Abandon:
+		return true
+	case Decline:
+		return true
+	case Start:
+		return true
+	case Succeed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FoodMenuAvailabilityMode.
 const (
 	Manual FoodMenuAvailabilityMode = "manual"
@@ -128,13 +152,25 @@ func (e FoodOrderFulfilmentProgress) Valid() bool {
 
 // Defines values for FoodOrderPayment.
 const (
-	FoodOrderPaymentNotStarted FoodOrderPayment = "not_started"
+	FoodOrderPaymentAwaitingCustomer FoodOrderPayment = "awaiting_customer"
+	FoodOrderPaymentFailed           FoodOrderPayment = "failed"
+	FoodOrderPaymentNotStarted       FoodOrderPayment = "not_started"
+	FoodOrderPaymentPaid             FoodOrderPayment = "paid"
+	FoodOrderPaymentRefunded         FoodOrderPayment = "refunded"
 )
 
 // Valid indicates whether the value is a known member of the FoodOrderPayment enum.
 func (e FoodOrderPayment) Valid() bool {
 	switch e {
+	case FoodOrderPaymentAwaitingCustomer:
+		return true
+	case FoodOrderPaymentFailed:
+		return true
 	case FoodOrderPaymentNotStarted:
+		return true
+	case FoodOrderPaymentPaid:
+		return true
+	case FoodOrderPaymentRefunded:
 		return true
 	default:
 		return false
@@ -182,10 +218,15 @@ func (e FoodOrderDecisionDecision) Valid() bool {
 
 // Defines values for FoodOrderEventEvent.
 const (
-	Accepted  FoodOrderEventEvent = "accepted"
-	Cancelled FoodOrderEventEvent = "cancelled"
-	Placed    FoodOrderEventEvent = "placed"
-	Rejected  FoodOrderEventEvent = "rejected"
+	Accepted          FoodOrderEventEvent = "accepted"
+	Cancelled         FoodOrderEventEvent = "cancelled"
+	CancelledRefunded FoodOrderEventEvent = "cancelled_refunded"
+	PaymentAbandoned  FoodOrderEventEvent = "payment_abandoned"
+	PaymentFailed     FoodOrderEventEvent = "payment_failed"
+	PaymentPaid       FoodOrderEventEvent = "payment_paid"
+	PaymentStarted    FoodOrderEventEvent = "payment_started"
+	Placed            FoodOrderEventEvent = "placed"
+	Rejected          FoodOrderEventEvent = "rejected"
 )
 
 // Valid indicates whether the value is a known member of the FoodOrderEventEvent enum.
@@ -194,6 +235,16 @@ func (e FoodOrderEventEvent) Valid() bool {
 	case Accepted:
 		return true
 	case Cancelled:
+		return true
+	case CancelledRefunded:
+		return true
+	case PaymentAbandoned:
+		return true
+	case PaymentFailed:
+		return true
+	case PaymentPaid:
+		return true
+	case PaymentStarted:
 		return true
 	case Placed:
 		return true
@@ -297,6 +348,19 @@ type CreateStoreRequest struct {
 	DisplayName string `json:"display_name"`
 }
 
+// DevelopmentPaymentRequest defines model for DevelopmentPaymentRequest.
+type DevelopmentPaymentRequest struct {
+	// Action Explicit development simulation only. Amount and currency come from agreed terms, never from this request.
+	Action           DevelopmentPaymentRequestAction                                                          `json:"action"`
+	ExpectedRevision DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0 `json:"expected_revision"`
+}
+
+// DevelopmentPaymentRequestAction Explicit development simulation only. Amount and currency come from agreed terms, never from this request.
+type DevelopmentPaymentRequestAction string
+
+// DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0 defines model for DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0.
+type DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0 = int64
+
 // FoodLocalIdentifier defines model for FoodLocalIdentifier.
 type FoodLocalIdentifier = string
 
@@ -356,8 +420,14 @@ type FoodOrder struct {
 	Id Identifier `json:"id"`
 
 	// MerchantId Durable opaque identifier; not a display name or hostname.
-	MerchantId Identifier          `json:"merchant_id"`
-	Payment    FoodOrderPayment    `json:"payment"`
+	MerchantId Identifier       `json:"merchant_id"`
+	Payment    FoodOrderPayment `json:"payment"`
+
+	// PaymentProvider Opaque provider identifier. Only development is currently emitted; its paid/refunded outcomes never represent real money. Other adapters remain unimplemented.
+	PaymentProvider *string `json:"payment_provider,omitempty"`
+
+	// Reference Immutable, provider-local display reference. Never resets or grants access. Optional only for historical replay bodies.
+	Reference  *string             `json:"reference,omitempty"`
 	Resolution FoodOrderResolution `json:"resolution"`
 
 	// Revision Current operational revision. Optional for compatibility with retained placement replay bodies; current reads always supply it.
@@ -513,6 +583,9 @@ type ManagedStore struct {
 	// DraftRevision Latest saved offering revision, or zero before the first save. Not the published revision.
 	DraftRevision int64 `json:"draft_revision"`
 
+	// Handle Immutable, provider-local readable reference; never authorization. Optional for historical replay responses. Names and UUID routes remain independent.
+	Handle *SchemasStoresStoreYamlStorePropertiesHandlecb2ff22f `json:"handle,omitempty"`
+
 	// Id Durable opaque identifier; not a display name or hostname.
 	Id SchemasStoresStoreYamlStorePropertiesIdd2fe41a1 `json:"id"`
 
@@ -606,6 +679,9 @@ type PublicOffering struct {
 type PublicStore struct {
 	DisplayName string `json:"display_name"`
 
+	// Handle Immutable, provider-local readable reference; never authorization. Optional for historical replay responses. Names and UUID routes remain independent.
+	Handle *SchemasStoresStoreYamlStorePropertiesHandlecb2ff22f `json:"handle,omitempty"`
+
 	// Id Durable opaque identifier; not a display name or hostname.
 	Id Identifier `json:"id"`
 
@@ -645,6 +721,9 @@ type SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627 = time.Time
 // SchemasStoresStoreYamlStorePropertiesDisplayNamebb51a2d0 defines model for SchemasStoresStoreYamlStorePropertiesDisplayNamebb51a2d0.
 type SchemasStoresStoreYamlStorePropertiesDisplayNamebb51a2d0 = string
 
+// SchemasStoresStoreYamlStorePropertiesHandlecb2ff22f Immutable, provider-local readable reference; never authorization. Optional for historical replay responses. Names and UUID routes remain independent.
+type SchemasStoresStoreYamlStorePropertiesHandlecb2ff22f = string
+
 // SchemasStoresStoreYamlStorePropertiesIdd2fe41a1 Durable opaque identifier; not a display name or hostname.
 type SchemasStoresStoreYamlStorePropertiesIdd2fe41a1 = openapi_types.UUID
 
@@ -655,6 +734,9 @@ type SchemasStoresStoreYamlStorePropertiesMerchantId58ef2281 = openapi_types.UUI
 type Store struct {
 	CreatedAt   time.Time `json:"created_at"`
 	DisplayName string    `json:"display_name"`
+
+	// Handle Immutable, provider-local readable reference; never authorization. Optional for historical replay responses. Names and UUID routes remain independent.
+	Handle *string `json:"handle,omitempty"`
 
 	// Id Durable opaque identifier; not a display name or hostname.
 	Id Identifier `json:"id"`
@@ -738,6 +820,12 @@ type CancelGuestFoodOrderParams struct {
 	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
 }
 
+// ChangeDevelopmentPaymentParams defines parameters for ChangeDevelopmentPayment.
+type ChangeDevelopmentPaymentParams struct {
+	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
 // ListStoresParams defines parameters for ListStores.
 type ListStoresParams struct {
 	// Limit Maximum resources per page. Defaults to 50, with an upper bound of 100.
@@ -795,6 +883,9 @@ type PlaceFoodOrderJSONRequestBody = PlaceFoodOrderRequest
 
 // CancelGuestFoodOrderJSONRequestBody defines body for CancelGuestFoodOrder for application/json ContentType.
 type CancelGuestFoodOrderJSONRequestBody = CancelFoodOrderRequest
+
+// ChangeDevelopmentPaymentJSONRequestBody defines body for ChangeDevelopmentPayment for application/json ContentType.
+type ChangeDevelopmentPaymentJSONRequestBody = DevelopmentPaymentRequest
 
 // CreateGuestFoodQuoteJSONRequestBody defines body for CreateGuestFoodQuote for application/json ContentType.
 type CreateGuestFoodQuoteJSONRequestBody = FoodSelectionRequest
@@ -913,6 +1004,11 @@ type ClientInterface interface {
 	CancelGuestFoodOrderWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	CancelGuestFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, body CancelGuestFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ChangeDevelopmentPaymentWithBody request with any body
+	ChangeDevelopmentPaymentWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ChangeDevelopmentPayment(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, body ChangeDevelopmentPaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateGuestFoodQuoteWithBody request with any body
 	CreateGuestFoodQuoteWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1081,6 +1177,30 @@ func (c *Client) CancelGuestFoodOrderWithBody(ctx context.Context, merchantId Me
 
 func (c *Client) CancelGuestFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, body CancelGuestFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCancelGuestFoodOrderRequest(c.Server, merchantId, storeId, orderId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ChangeDevelopmentPaymentWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewChangeDevelopmentPaymentRequestWithBody(c.Server, merchantId, storeId, orderId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ChangeDevelopmentPayment(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, body ChangeDevelopmentPaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewChangeDevelopmentPaymentRequest(c.Server, merchantId, storeId, orderId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1704,6 +1824,80 @@ func NewCancelGuestFoodOrderRequestWithBody(server string, merchantId MerchantID
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/guest/merchants/%s/stores/%s/food/orders/%s/cancellation", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Idempotency-Key", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewChangeDevelopmentPaymentRequest calls the generic ChangeDevelopmentPayment builder with application/json body
+func NewChangeDevelopmentPaymentRequest(server string, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, body ChangeDevelopmentPaymentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewChangeDevelopmentPaymentRequestWithBody(server, merchantId, storeId, orderId, params, "application/json", bodyReader)
+}
+
+// NewChangeDevelopmentPaymentRequestWithBody generates requests for ChangeDevelopmentPayment with any type of body
+func NewChangeDevelopmentPaymentRequestWithBody(server string, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/guest/merchants/%s/stores/%s/food/orders/%s/development-payment", pathParam0, pathParam1, pathParam2)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -2800,6 +2994,11 @@ type ClientWithResponsesInterface interface {
 
 	CancelGuestFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, body CancelGuestFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelGuestFoodOrderResponse, error)
 
+	// ChangeDevelopmentPaymentWithBodyWithResponse request with any body
+	ChangeDevelopmentPaymentWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ChangeDevelopmentPaymentResponse, error)
+
+	ChangeDevelopmentPaymentWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, body ChangeDevelopmentPaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*ChangeDevelopmentPaymentResponse, error)
+
 	// CreateGuestFoodQuoteWithBodyWithResponse request with any body
 	CreateGuestFoodQuoteWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGuestFoodQuoteResponse, error)
 
@@ -3048,6 +3247,37 @@ func (r CancelGuestFoodOrderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CancelGuestFoodOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ChangeDevelopmentPaymentResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *ComponentsResponsesFoodOrderYamlfe02b813
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ChangeDevelopmentPaymentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ChangeDevelopmentPaymentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3652,6 +3882,23 @@ func (c *ClientWithResponses) CancelGuestFoodOrderWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseCancelGuestFoodOrderResponse(rsp)
+}
+
+// ChangeDevelopmentPaymentWithBodyWithResponse request with arbitrary body returning *ChangeDevelopmentPaymentResponse
+func (c *ClientWithResponses) ChangeDevelopmentPaymentWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ChangeDevelopmentPaymentResponse, error) {
+	rsp, err := c.ChangeDevelopmentPaymentWithBody(ctx, merchantId, storeId, orderId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseChangeDevelopmentPaymentResponse(rsp)
+}
+
+func (c *ClientWithResponses) ChangeDevelopmentPaymentWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ChangeDevelopmentPaymentParams, body ChangeDevelopmentPaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*ChangeDevelopmentPaymentResponse, error) {
+	rsp, err := c.ChangeDevelopmentPayment(ctx, merchantId, storeId, orderId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseChangeDevelopmentPaymentResponse(rsp)
 }
 
 // CreateGuestFoodQuoteWithBodyWithResponse request with arbitrary body returning *CreateGuestFoodQuoteResponse
@@ -4319,6 +4566,95 @@ func ParseCancelGuestFoodOrderResponse(rsp *http.Response) (*CancelGuestFoodOrde
 	}
 
 	response := &CancelGuestFoodOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ComponentsResponsesFoodOrderYamlfe02b813
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseChangeDevelopmentPaymentResponse parses an HTTP response from a ChangeDevelopmentPaymentWithResponse call
+func ParseChangeDevelopmentPaymentResponse(rsp *http.Response) (*ChangeDevelopmentPaymentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ChangeDevelopmentPaymentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -5766,9 +6102,12 @@ type ServerInterface interface {
 	// Inspect this guest's pickup order
 	// (GET /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id})
 	GetGuestFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5)
-	// Cancel this guest's unpaid, unprepared pickup order
+	// Cancel this guest's unprepared pickup order
 	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation)
 	CancelGuestFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params CancelGuestFoodOrderParams)
+	// Exercise a development-only payment for the placing guest's accepted order
+	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/development-payment)
+	ChangeDevelopmentPayment(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params ChangeDevelopmentPaymentParams)
 	// Quote a selection for this guest
 	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes)
 	CreateGuestFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
@@ -6176,6 +6515,83 @@ func (siw *ServerInterfaceWrapper) CancelGuestFoodOrder(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CancelGuestFoodOrder(w, r, merchantId, storeId, orderId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ChangeDevelopmentPayment operation middleware
+func (siw *ServerInterfaceWrapper) ChangeDevelopmentPayment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "order_id" -------------
+	var orderId ComponentsParametersOrderIdYaml294fa0a5
+
+	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, GuestBearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ChangeDevelopmentPaymentParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ChangeDevelopmentPayment(w, r, merchantId, storeId, orderId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7158,6 +7574,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders", wrapper.PlaceFoodOrder)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.GetGuestFoodOrder)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation", wrapper.CancelGuestFoodOrder)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/development-payment", wrapper.ChangeDevelopmentPayment)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes", wrapper.CreateGuestFoodQuote)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}", wrapper.GetGuestFoodQuote)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores", wrapper.ListStores)
@@ -7183,147 +7600,159 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

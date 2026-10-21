@@ -16,6 +16,8 @@ ManagedStore:
   required: [id, merchant_id, display_name, created_at, draft_revision, menu_item_count, updated_at]
   description: Private store-management summary authorized by store:read. Full offering documents still require offering:read.
   properties:
+    handle:
+      $ref: store.yaml#/Store/properties/handle
     id:
       $ref: store.yaml#/Store/properties/id
     merchant_id:

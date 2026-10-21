@@ -5,6 +5,9 @@
 .pnpm-store/
 build/
 coverage/
+reports/
+.stryker-tmp/
+.gremlins-cache/
 working/
 *.log
 *.test

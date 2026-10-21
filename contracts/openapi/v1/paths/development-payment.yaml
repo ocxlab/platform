@@ -1,0 +1,48 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - $ref: ../components/parameters/order-id.yaml
+post:
+  operationId: ChangeDevelopmentPayment
+  security:
+    - GuestBearerAuth: []
+  x-access: guest
+  x-required-scope: order:create
+  tags: [Customer commerce]
+  summary: Exercise a development-only payment for the placing guest's accepted order
+  description: >-
+    Requires explicit development-mode enablement. No real money or processor API.
+    Start opens a simulated checkout; succeed, decline, or abandon resolves that attempt.
+    Requires an accepted, open, unprepared order and its current revision. Ten attempts maximum.
+    Payment state, amount/currency from immutable terms, order event, and replay commit together.
+    Outcomes after cancellation cannot reopen the order. No preparation is triggered.
+    Matching successful retries return the historical result, not current order state.
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/payments/development.yaml#/DevelopmentPaymentRequest
+  responses:
+    '201':
+      $ref: ../components/responses/food-order.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    default:
+      $ref: ../components/responses/problem.yaml

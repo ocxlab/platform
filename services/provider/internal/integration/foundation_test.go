@@ -85,7 +85,7 @@ func setupAtVersion(t *testing.T, version int64) *fixture {
 	}
 	p, token, err := persistence.Provision(ctx, admin, "Example restaurant", []string{"store:read", "store:write", "offering:read", "offering:write", "order:read", "order:manage"}, time.Now().Add(time.Hour))
 	must(t, err)
-	handler, err := httpapi.NewHandler(app)
+	handler, err := httpapi.NewHandler(app, httpapi.WithDevelopmentPayments())
 	must(t, err)
 	server := httptest.NewServer(handler)
 	t.Cleanup(server.Close)
@@ -436,6 +436,25 @@ func TestFoundation(t *testing.T) {
 			t.Fatal("table-owning runtime accepted")
 		}
 		_, err = f.admin.Exec(`ALTER TABLE commerce.stores OWNER TO ` + quoted)
+		must(t, err)
+		_, err = f.admin.Exec(`ALTER TABLE payment.development_operations OWNER TO ocp_app`)
+		must(t, err)
+		defer func() {
+			_, err := f.admin.Exec(`ALTER TABLE payment.development_operations OWNER TO ` + quoted)
+			must(t, err)
+		}()
+		if persistence.CheckRuntimeRole(ctx, f.app) == nil {
+			t.Fatal("payment-table-owning runtime accepted")
+		}
+		_, err = f.admin.Exec(`ALTER TABLE payment.development_operations OWNER TO ` + quoted)
+		must(t, err)
+		_, err = f.admin.Exec(`ALTER SCHEMA payment OWNER TO ocp_app`)
+		must(t, err)
+		defer func() { _, err := f.admin.Exec(`ALTER SCHEMA payment OWNER TO ` + quoted); must(t, err) }()
+		if persistence.CheckRuntimeRole(ctx, f.app) == nil {
+			t.Fatal("payment-schema-owning runtime accepted")
+		}
+		_, err = f.admin.Exec(`ALTER SCHEMA payment OWNER TO ` + quoted)
 		must(t, err)
 		_, err = f.admin.Exec(`GRANT ` + quoted + ` TO ocp_app`)
 		must(t, err)

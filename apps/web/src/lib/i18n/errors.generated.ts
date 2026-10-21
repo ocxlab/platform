@@ -102,6 +102,12 @@ export const errorCodes = {
     "title": "Publication conflict",
     "message_key": "error-offering-publication-conflict"
   },
+  "development_payments_disabled": {
+    "module": "orders",
+    "status": 503,
+    "title": "Development payments disabled",
+    "message_key": "error-orders-development-payments-disabled"
+  },
   "order_revision_conflict": {
     "module": "orders",
     "status": 409,

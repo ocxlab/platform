@@ -21,6 +21,7 @@ type RevisionConflict struct{ Current int64 }
 func (e *RevisionConflict) Error() string { return "revision conflict" }
 
 type Store struct {
+	Handle      string    `json:"handle,omitempty"`
 	ID          uuid.UUID `json:"id"`
 	MerchantID  uuid.UUID `json:"merchant_id"`
 	DisplayName string    `json:"display_name"`
@@ -114,7 +115,7 @@ func Mutate(ctx context.Context, db *sql.DB, principal Principal, operation, res
 func CreateStore(ctx context.Context, tx *sql.Tx, merchant uuid.UUID, name string) (Store, error) {
 	store := Store{ID: uuid.New(), MerchantID: merchant, DisplayName: name}
 	err := tx.QueryRowContext(ctx, `INSERT INTO commerce.stores(merchant_id,id,display_name)
-  VALUES ($1,$2,$3) RETURNING created_at`, merchant, store.ID, name).Scan(&store.CreatedAt)
+  VALUES ($1,$2,$3) RETURNING created_at,'store-'||display_number`, merchant, store.ID, name).Scan(&store.CreatedAt, &store.Handle)
 	return store, err
 }
 
@@ -125,7 +126,7 @@ func GetStore(ctx context.Context, db *sql.DB, merchant, id uuid.UUID) (Store, e
 	}
 	defer tx.Rollback()
 	var store Store
-	err = tx.QueryRowContext(ctx, `SELECT id,merchant_id,display_name,created_at FROM commerce.stores WHERE merchant_id=$1 AND id=$2`, merchant, id).Scan(&store.ID, &store.MerchantID, &store.DisplayName, &store.CreatedAt)
+	err = tx.QueryRowContext(ctx, `SELECT id,merchant_id,display_name,created_at,'store-'||display_number FROM commerce.stores WHERE merchant_id=$1 AND id=$2`, merchant, id).Scan(&store.ID, &store.MerchantID, &store.DisplayName, &store.CreatedAt, &store.Handle)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Store{}, ErrNotFound
 	}

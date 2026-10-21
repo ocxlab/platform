@@ -144,8 +144,8 @@ func CheckRuntimeRole(ctx context.Context, db *sql.DB) error {
    (elevated.rolsuper OR elevated.rolbypassrls OR elevated.rolcreaterole OR elevated.rolcreatedb)
    AND pg_has_role(current_user::regrole, elevated.oid, 'MEMBER'))
  AND NOT EXISTS (SELECT FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-   WHERE n.nspname IN ('auth','commerce') AND pg_has_role(current_user::regrole,c.relowner,'MEMBER'))
- AND NOT EXISTS (SELECT FROM pg_namespace n WHERE n.nspname IN ('auth','commerce')
+   WHERE n.nspname IN ('auth','commerce','payment') AND pg_has_role(current_user::regrole,c.relowner,'MEMBER'))
+ AND NOT EXISTS (SELECT FROM pg_namespace n WHERE n.nspname IN ('auth','commerce','payment')
    AND pg_has_role(current_user::regrole,n.nspowner,'MEMBER'))
  AND NOT EXISTS (SELECT FROM pg_database d WHERE d.datname=current_database()
    AND pg_has_role(current_user::regrole,d.datdba,'MEMBER'))

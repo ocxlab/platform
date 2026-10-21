@@ -27,7 +27,7 @@
           <thead><tr><th scope="col">{t('merchant-store-name')}</th><th scope="col">{t('merchant-menu-count')}</th><th scope="col">{t('merchant-draft-revision')}</th><th scope="col">{t('merchant-updated')}</th></tr></thead>
           <tbody>{#each data.stores as store (store.id)}
             <tr>
-              <th scope="row"><a href={`/merchant/stores/${data.merchant}/${store.id}`}><bdi dir="auto">{store.display_name}</bdi></a></th>
+              <th scope="row"><a href={`/merchant/stores/${data.merchant}/${store.id}`}><bdi dir="auto">{store.display_name}</bdi></a>{#if store.handle}<br /><small><bdi dir="ltr">{store.handle}</bdi></small>{/if}</th>
               <td>{store.menu_item_count ?? '—'}</td>
               <td>{store.draft_revision || t('merchant-no-draft')}</td>
               <td><time datetime={store.updated_at}>{dateFormat.format(new Date(store.updated_at))}</time></td>

@@ -14,6 +14,7 @@ import (
 var ErrPublicStoreCursor = errors.New("invalid public store cursor")
 
 type PublicStore struct {
+	Handle      string    `json:"handle,omitempty"`
 	MerchantID  uuid.UUID `json:"merchant_id"`
 	ID          uuid.UUID `json:"id"`
 	DisplayName string    `json:"display_name"`
@@ -44,14 +45,14 @@ func ListPublicStores(ctx context.Context, db *sql.DB, query string, after *stri
 	if limit < 1 || limit > 100 {
 		return page, ErrPublicStoreCursor
 	}
-	rows, err := db.QueryContext(ctx, `SELECT merchant_id,id,display_name FROM commerce.list_public_stores($1,$2,$3,$4)`, strings.TrimSpace(query), merchant, store, limit+1)
+	rows, err := db.QueryContext(ctx, `SELECT merchant_id,id,display_name,handle FROM commerce.list_public_stores($1,$2,$3,$4)`, strings.TrimSpace(query), merchant, store, limit+1)
 	if err != nil {
 		return page, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var entry PublicStore
-		if err = rows.Scan(&entry.MerchantID, &entry.ID, &entry.DisplayName); err != nil {
+		if err = rows.Scan(&entry.MerchantID, &entry.ID, &entry.DisplayName, &entry.Handle); err != nil {
 			return page, err
 		}
 		page.Items = append(page.Items, entry)

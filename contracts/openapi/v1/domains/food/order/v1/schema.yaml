@@ -13,6 +13,10 @@ FoodOrder:
   additionalProperties: false
   required: [id, merchant_id, store_id, contract, terms, fulfilment, acceptance, payment, fulfilment_progress, resolution, created_at]
   properties:
+    reference:
+      type: string
+      pattern: '^O-[0-9]{6,19}$'
+      description: Immutable, provider-local display reference. Never resets or grants access. Optional only for historical replay bodies.
     id:
       $ref: ../../../../schemas/common/identifier.yaml
     merchant_id:
@@ -34,7 +38,13 @@ FoodOrder:
       enum: [pending, accepted, rejected]
     payment:
       type: string
-      enum: [not_started]
+      enum: [not_started, awaiting_customer, failed, paid, refunded]
+    payment_provider:
+      type: string
+      minLength: 1
+      maxLength: 128
+      pattern: '^[a-z0-9][a-z0-9._:-]*$'
+      description: Opaque provider identifier. Only development is currently emitted; its paid/refunded outcomes never represent real money. Other adapters remain unimplemented.
     fulfilment_progress:
       type: string
       enum: [not_started]
@@ -49,7 +59,7 @@ FoodOrder:
     history:
       description: Ordered durable history on individual order reads. Omitted from bounded inbox pages and old placement replays. Contains no credentials or actor identifiers.
       type: array
-      maxItems: 4
+      maxItems: 24
       items:
         $ref: operations.yaml#/FoodOrderEvent
     created_at:

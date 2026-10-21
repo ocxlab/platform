@@ -121,10 +121,35 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Cancel this guest's unpaid, unprepared pickup order
-         * @description Only the placing guest can cancel. Requires current revision, open resolution, payment not_started and fulfilment_progress not_started. Works before or after merchant acceptance. No payment or refund effect is implied. Cancellation closes the order; late acceptance cannot reopen it. State, history and replay result commit atomically. Matching retries return the original 201 body.
+         * Cancel this guest's unprepared pickup order
+         * @description Only the placing guest can cancel. Requires current revision, open resolution, and fulfilment_progress not_started. Works before or after merchant acceptance. Development checkout is abandoned atomically, or a simulated paid operation is refunded atomically. This does not implement real processor refunds. Cancellation closes the order; late outcomes cannot reopen it. State, history and replay result commit atomically. Matching retries return the original 201 body.
          */
         post: operations["CancelGuestFoodOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/development-payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exercise a development-only payment for the placing guest's accepted order
+         * @description Requires explicit development-mode enablement. No real money or processor API. Start opens a simulated checkout; succeed, decline, or abandon resolves that attempt. Requires an accepted, open, unprepared order and its current revision. Ten attempts maximum. Payment state, amount/currency from immutable terms, order event, and replay commit together. Outcomes after cancellation cannot reopen the order. No preparation is triggered. Matching successful retries return the historical result, not current order state.
+         */
+        post: operations["ChangeDevelopmentPayment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -509,6 +534,16 @@ export interface components {
         CreateStoreRequest: {
             display_name: string;
         };
+        DevelopmentPaymentRequest: {
+            /**
+             * @description Explicit development simulation only. Amount and currency come from agreed terms, never from this request.
+             * @enum {string}
+             */
+            action: "start" | "succeed" | "decline" | "abandon";
+            expected_revision: components["schemas"]["DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0"];
+        };
+        /** Format: int64 */
+        DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0: number;
         FoodLocalIdentifier: string;
         FoodMenu: {
             /** @enum {string} */
@@ -557,7 +592,11 @@ export interface components {
             id: components["schemas"]["Identifier"];
             merchant_id: components["schemas"]["Identifier"];
             /** @enum {string} */
-            payment: "not_started";
+            payment: "not_started" | "awaiting_customer" | "failed" | "paid" | "refunded";
+            /** @description Opaque provider identifier. Only development is currently emitted; its paid/refunded outcomes never represent real money. Other adapters remain unimplemented. */
+            payment_provider?: string;
+            /** @description Immutable, provider-local display reference. Never resets or grants access. Optional only for historical replay bodies. */
+            reference?: string;
             /** @enum {string} */
             resolution: "open" | "rejected" | "cancelled";
             /**
@@ -579,7 +618,7 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             /** @enum {string} */
-            event: "placed" | "accepted" | "rejected" | "cancelled";
+            event: "placed" | "accepted" | "rejected" | "cancelled" | "payment_started" | "payment_paid" | "payment_failed" | "payment_abandoned" | "cancelled_refunded";
             /** Format: int64 */
             sequence: number;
         };
@@ -670,6 +709,7 @@ export interface components {
              * @description Latest saved offering revision, or zero before the first save. Not the published revision.
              */
             draft_revision: number;
+            handle?: components["schemas"]["SchemasStoresStoreYamlStorePropertiesHandlecb2ff22f"];
             id: components["schemas"]["SchemasStoresStoreYamlStorePropertiesIdd2fe41a1"];
             /** @description Item count in the latest ocp.food.menu 1.0.0 draft, zero before the first save, or null for an unsupported model. Variants and extras are not separate items. */
             menu_item_count: number | null;
@@ -751,6 +791,7 @@ export interface components {
         };
         PublicStore: {
             display_name: string;
+            handle?: components["schemas"]["SchemasStoresStoreYamlStorePropertiesHandlecb2ff22f"];
             id: components["schemas"]["Identifier"];
             merchant_id: components["schemas"]["Identifier"];
         };
@@ -775,6 +816,8 @@ export interface components {
         /** Format: date-time */
         SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627: string;
         SchemasStoresStoreYamlStorePropertiesDisplayNamebb51a2d0: string;
+        /** @description Immutable, provider-local readable reference; never authorization. Optional for historical replay responses. Names and UUID routes remain independent. */
+        SchemasStoresStoreYamlStorePropertiesHandlecb2ff22f: string;
         /**
          * Format: uuid
          * @description Durable opaque identifier; not a display name or hostname.
@@ -789,6 +832,8 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             display_name: string;
+            /** @description Immutable, provider-local readable reference; never authorization. Optional for historical replay responses. Names and UUID routes remain independent. */
+            handle?: string;
             id: components["schemas"]["Identifier"];
             merchant_id: components["schemas"]["Identifier"];
         };
@@ -1080,6 +1125,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CancelFoodOrderRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["ComponentsResponsesFoodOrderYamlfe02b813"];
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    ChangeDevelopmentPayment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevelopmentPaymentRequest"];
             };
         };
         responses: {

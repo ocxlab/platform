@@ -1,0 +1,11 @@
+DevelopmentPaymentRequest:
+  type: object
+  additionalProperties: false
+  required: [expected_revision, action]
+  properties:
+    expected_revision:
+      $ref: ../../domains/food/order/v1/operations.yaml#/CancelFoodOrderRequest/properties/expected_revision
+    action:
+      type: string
+      enum: [start, succeed, decline, abandon]
+      description: Explicit development simulation only. Amount and currency come from agreed terms, never from this request.
