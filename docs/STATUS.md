@@ -1,5 +1,21 @@
 # Development status
 
+## Menu item removal
+
+21 October 2026, Europe/Berlin (UTC+02:00). Added a labelled, non-submitting
+Remove item button to each draft menu item. Removal uses the existing complete
+revision API; it does not delete retained revisions or immediately change the
+published offering. An empty editor explains that saving requires at least one
+item and points to Withdraw menu for hiding the whole menu.
+
+`task check` passed, including eight focused web tests. Two new component tests
+cover exact-item removal, unchanged source data/base revision, and replacing the
+last item. The expanded `task test:browser` journey passed against real API/SQL:
+removal survives save/reload, the old item stays public until republishing, and
+the remaining item is preserved. `task web:dev` rebuilds/restarts the running web
+application without resetting merchant/store data. A web restart clears its
+development sessions, so existing credentials may need reconnecting.
+
 ## Completed publication and guest-selection slice
 
 21 October 2026, Europe/Berlin (UTC+02:00). See

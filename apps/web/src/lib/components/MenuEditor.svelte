@@ -7,9 +7,13 @@
   const identifier = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('');
   const variant = () => ({ id: identifier(), name: 'Regular', price_minor: 0 });
   function addItem() { menu.items.push({ id: identifier(), name: 'New item', available: true, variants: [variant()], option_groups: [] }); }
+  function removeItem(id: string) {
+    menu.items = menu.items.filter((item) => item.id !== id);
+  }
 </script>
 <input type="hidden" name="document" value={JSON.stringify(menu)} />
 <input type="hidden" name="base" value={base} />
+<p class="muted">Removing an item changes this draft only. Save and publish the draft to update the customer menu.</p>
 {#each menu.items as item (item.id)}
   <fieldset><legend>Menu item</legend>
     <label>Item name<input bind:value={item.name} required maxlength="160" /></label>
@@ -29,6 +33,10 @@
       </fieldset>
     {/each}
     <button type="button" onclick={() => item.option_groups.push({ id: identifier(), name: 'Choose an extra', min_selected: 0, max_selected: 1, options: [{ id: identifier(), name: 'Extra', price_minor: 0 }] })} disabled={item.option_groups.length >= 20}>Add choice group</button>
+    <button type="button" aria-label={`Remove menu item ${item.name}`} onclick={() => removeItem(item.id)}>Remove item</button>
   </fieldset>
 {/each}
+{#if menu.items.length === 0}
+  <p>Add at least one item before saving. To hide an existing published menu instead, use Withdraw menu.</p>
+{/if}
 <button type="button" onclick={addItem} disabled={menu.items.length >= 200}>Add menu item</button>

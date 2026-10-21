@@ -18,6 +18,8 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await page.getByLabel('Minimum choices').fill('1');
   await page.getByLabel('Option name', { exact: true }).fill('Garlic');
   await page.getByLabel('Extra price in EUR', { exact: true }).fill('0.5');
+  await page.getByRole('button', { name: 'Add menu item', exact: true }).click();
+  await page.getByLabel('Item name', { exact: true }).last().fill('Falafel');
   await page.getByRole('button', { name: 'Save private draft' }).click();
   await expect(page.getByRole('status')).toContainText('Draft saved');
   const guestContext = await browser.newContext(); const guest = await guestContext.newPage();
@@ -32,6 +34,20 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('15,00');
   await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('not an order');
+  // Deletion is a draft edit, survives reload, and only reaches customers on publish.
+  await page.getByRole('button', { name: 'Remove menu item Döner', exact: true }).click();
+  await expect(page.getByLabel('Item name', { exact: true })).toHaveValue('Falafel');
+  await page.getByRole('button', { name: 'Save private draft' }).click();
+  await expect(page.getByRole('status')).toContainText('Draft saved');
+  await page.reload();
+  await expect(page.getByLabel('Item name', { exact: true })).toHaveValue('Falafel');
+  await guest.goto(storefront);
+  await expect(guest.getByRole('option', { name: 'Döner', exact: true })).toBeAttached();
+  await page.getByRole('button', { name: 'Publish saved draft' }).click();
+  await expect(page.getByRole('status')).toHaveText('Menu published.');
+  await guest.goto(storefront);
+  await expect(guest.getByRole('option', { name: 'Döner', exact: true })).toHaveCount(0);
+  await expect(guest.getByRole('option', { name: 'Falafel', exact: true })).toBeAttached();
   // Private credentials are never serialized in rendered HTML or browser storage.
   expect((await page.content()).includes(fixture.merchant_token)).toBe(false);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
