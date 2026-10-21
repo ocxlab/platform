@@ -20,7 +20,7 @@
   {:else if data.stores.length}
     <div class="store-list" role="region" aria-label={t('ui-published-stores')}>
       <ul>{#each data.stores as store (`${store.merchant_id}/${store.id}`)}
-        <li><a href={`/stores/${store.merchant_id}/${store.id}`}><bdi dir="auto">{store.display_name}</bdi></a>{#if store.handle} <small><bdi dir="ltr">{store.handle}</bdi></small>{/if}</li>
+        <li><a href={`/stores/${store.merchant_id}/${store.id}`}><bdi class="store-name" dir="auto">{store.display_name}</bdi></a></li>
       {/each}</ul>
     </div>
     {#if data.next}<p><a href={data.next}>{t('ui-more-stores')}</a></p>{/if}
@@ -31,5 +31,7 @@
   .store-list { max-block-size: 22rem; overflow-y: auto; border: 1px solid var(--border, #d3dce0); border-radius: .5rem; }
   ul { list-style: none; margin: 0; padding: .25rem; }
   li + li { border-block-start: 1px solid var(--border, #d3dce0); }
-  li a { display: block; padding: .9rem; overflow-wrap: anywhere; }
+  li a { display: block; padding: .9rem; overflow-wrap: anywhere; border-radius: .25rem; text-decoration: none; }
+  li a:hover { background: #e5eff3; }
+  .store-name { font-weight: 600; }
 </style>
