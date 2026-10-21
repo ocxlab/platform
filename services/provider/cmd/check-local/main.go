@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -34,7 +35,31 @@ func main() {
 	if body.Status != "ok" || body.Service != "ocp-api" {
 		fail(fmt.Errorf("unexpected liveness response: %+v", body))
 	}
-	fmt.Println("API process liveness passed; commerce readiness is not implemented")
+	req, err := http.NewRequest("GET", base+"/api/v1/merchants/00000000-0000-0000-0000-000000000001/stores/00000000-0000-0000-0000-000000000002", nil)
+	if err != nil {
+		fail(err)
+	}
+	// A well-shaped but unissued credential must reach the restricted DB lookup.
+	// This read-only negative control does not create merchant data or grants.
+	req.Header.Set("Authorization", "Bearer ocp_"+strings.Repeat("x", 43))
+	negative, err := client.Do(req)
+	if err != nil {
+		fail(err)
+	}
+	defer negative.Body.Close()
+	if negative.StatusCode != 401 {
+		fail(fmt.Errorf("credential lookup negative control returned HTTP %d", negative.StatusCode))
+	}
+	var problem struct {
+		Code string `json:"code"`
+	}
+	if err := json.NewDecoder(io.LimitReader(negative.Body, 4096)).Decode(&problem); err != nil {
+		fail(err)
+	}
+	if problem.Code != "unauthenticated" {
+		fail(fmt.Errorf("unexpected authentication failure code"))
+	}
+	fmt.Println("API liveness and database-backed credential rejection passed; ordering/network/payment readiness is not implemented")
 }
 
 func fail(err error) {

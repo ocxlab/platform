@@ -1,0 +1,38 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - name: revision
+    in: path
+    required: true
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+get:
+  operationId: GetOfferingRevision
+  x-required-scope: offering:read
+  tags: [Merchant commerce]
+  summary: Read a retained immutable draft revision
+  description: Requires offering:read.
+  responses:
+    '200':
+      description: Retained immutable draft revision.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/offerings/revision.yaml#/OfferingRevision
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

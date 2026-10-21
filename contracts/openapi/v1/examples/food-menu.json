@@ -1,0 +1,17 @@
+{
+  "currency": "EUR",
+  "availability_mode": "manual",
+  "items": [{
+    "id": "doener",
+    "name": "Example Döner",
+    "available": true,
+    "variants": [{"id": "regular", "name": "Regular", "price_minor": 700}],
+    "option_groups": [{
+      "id": "sauce",
+      "name": "Choose a sauce",
+      "min_selected": 1,
+      "max_selected": 1,
+      "options": [{"id": "garlic", "name": "Garlic sauce", "price_minor": 0}, {"id": "chili", "name": "Chili sauce", "price_minor": 0}]
+    }]
+  }]
+}

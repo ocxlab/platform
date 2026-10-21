@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"ocp.local/platform/internal/httpapi"
+	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/runtimehttp"
 )
 
@@ -33,16 +35,35 @@ func main() {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := run(ctx, *listen); err != nil {
+	startup, cancel := context.WithTimeout(ctx, 10*time.Second)
+	db, err := persistence.Open(startup, os.Getenv("OCP_DATABASE_URL"))
+	if err == nil {
+		err = persistence.CheckRuntimeRole(startup, db)
+	}
+	cancel()
+	if err != nil {
+		slog.Error("database startup failed")
+		os.Exit(1)
+	}
+	defer db.Close()
+	handler, err := httpapi.NewHandler(db)
+	if err != nil {
+		slog.Error("contract startup failed")
+		os.Exit(1)
+	}
+	if err := serve(ctx, *listen, handler); err != nil {
 		slog.Error("API stopped", "error", err)
 		os.Exit(1)
 	}
 }
 
 func run(ctx context.Context, listen string) error {
+	return serve(ctx, listen, runtimehttp.NewHandler())
+}
+func serve(ctx context.Context, listen string, handler http.Handler) error {
 	server := &http.Server{
 		Addr:              listen,
-		Handler:           runtimehttp.NewHandler(),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,

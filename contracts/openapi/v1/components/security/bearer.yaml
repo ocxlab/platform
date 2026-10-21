@@ -1,0 +1,9 @@
+type: http
+scheme: bearer
+bearerFormat: opaque
+description: >-
+  Revocable expiring merchant-scoped grant. Supported action scopes are
+  store:read, store:write, offering:read, and offering:write. These are application
+  grants, not OAuth scopes. Authentication failures return 401; a valid grant
+  without the requested action or merchant entitlement returns 403. Development
+  provisioning is administrative; no public signup is defined by this contract.

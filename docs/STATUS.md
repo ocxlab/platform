@@ -1,29 +1,52 @@
 # Development status
 
-20 October 2026, Europe/Berlin (UTC+02:00). Local foundation verified.
+21 October 2026, Europe/Berlin (UTC+02:00). Steps 1 and 2 are implemented and
+accepted by both technical reviewers at the bounded foundation scope.
 
-Prepared the Task/Docker command interface, pinned container images, minimal Go
-API liveness and tests, local PostgreSQL, and implementation handoff. No CI files,
-cloud resources, business functionality, or copied research code/credentials.
+Step 1 settled the bounded implementation handoff and received engineering and
+protocol reviews. See [FOUNDATION-DECISIONS.md](FOUNDATION-DECISIONS.md) and the
+two `step-1-*` reports under `reviews/`. Commit: `c5a710c`.
 
-The monorepo separates runtimes: `services/provider/` owns the Go module and
-`services/onix/` reserves the documented native Beckn/ONIX integration boundary.
-`apps/`, `contracts/`, and `deploy/` have separate purposes. Go's `cmd/` and
-`internal/` conventions remain inside the provider module, not at repository root.
+Step 2 implements authorized create/read store and append/read immutable draft
+offering revisions through modular JSON/OpenAPI contracts and actual PostgreSQL.
+The replaceable Food model validates a small manually available menu; it does not
+publish the catalog or validate customer purchase selections. Generated Go models,
+client, routing, and embedded contract are committed alongside their modular sources.
 
-Executed: `task doctor`, `task check`, and `task smoke` passed on this layout.
-These cover Compose validation, formatting, vet, race-enabled unit tests, the API
-image build, live HTTP liveness, and PostgreSQL `SELECT 1`. Host Task 3.52.0 and
-Docker Engine 29.8.0 were detected; pinned container runtime versions were Go
-1.26.6 and PostgreSQL 18.6.
+Executed successfully: `task doctor`, `task contracts:generate`, `task check`, and
+`task smoke`. The check includes contract/example validation, deterministic bundling,
+non-mutating generated drift comparison, vet, race-enabled tests, isolated real
+PostgreSQL integration, and the non-root API image build. Smoke applies development
+role/migrations explicitly, starts API/database, checks HTTP liveness, rejects an
+unissued credential through the actual database-backed lookup, and checks SQL
+connectivity. It creates no merchant or store fixtures in the development database.
 
-`task stop` completed afterward; containers are stopped and named data/cache
-volumes retained. Run `task smoke` to rebuild, start, and check the local stack.
-The API does not yet connect to PostgreSQL. No business workflows, native ONIX
-runtime, migrations, UCP interoperability, or payment integration were tested.
+The integration suite migrates a unique disposable database twice and uses the
+non-owner `ocp_app` role. It exercises a generated-client store request, read/write
+contracts, invalid/expired/revoked/wrong-action/wrong-merchant credentials, forced
+row-level security, pooled tenant-context cleanup after commit/rollback, concurrent
+revision and retry-key writers, atomic rollback, immutable historical drafts, and
+handler restart against retained data. Unit-only runs explicitly skip DB integration;
+the dedicated Task supplies a disposable PostgreSQL service and stops it afterward.
 
-Next: choose the bounded OpenAPI/code-generation and persistence tooling, then
-implement the first contract-driven slice described in the kickoff document.
+No production authentication, storefront, publication, ordering, inventory allocation,
+payment, native ONIX runtime, UCP interoperability, merchant transfer, cloud failover,
+or storage-loss recovery was implemented or tested in this slice. `services/onix/`
+remains a planned integration boundary, not a substitute local discovery service.
+No CI, cloud account, real credentials, or research source snapshots were added.
 
-The founder initialized Git during preparation. Preserve configured identity and
-existing edits; no remote repository or publication is needed for this work.
+The final `task check` and `task smoke` reruns passed after the review corrections;
+local Markdown links passed a filesystem check. `task stop` completed afterward;
+development containers/network are stopped/removed and named development data/cache
+volumes are retained. Resume with `task smoke` or `task dev`; no host language installation is needed.
+
+Both step-2 technical reviews and their verification/disposition are retained under
+`reviews/`. All reported blockers and bounded hardening/maintainability findings
+were corrected. The engineering reviewer also executed contract checks, real
+PostgreSQL integration, race tests, and the runtime build. These are automated
+technical reviews, not independent human or interoperability certification.
+
+Read [FOUNDATION-REPORT.md](FOUNDATION-REPORT.md) for the result and acceptance
+boundary. Next: agree the connected restaurant publication/purchase slice under
+the kickoff plan, retaining network and payment integration milestones. No next
+slice has been implemented as part of this batch.

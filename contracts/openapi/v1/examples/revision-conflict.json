@@ -1,0 +1,9 @@
+{
+  "type": "urn:ocp:problem:revision_conflict",
+  "title": "Conflict",
+  "status": 409,
+  "instance": "urn:uuid:00000000-0000-4000-8000-000000000001",
+  "code": "revision_conflict",
+  "detail": "The offering draft has changed; read its current revision before editing.",
+  "current_revision": 2
+}

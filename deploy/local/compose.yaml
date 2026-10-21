@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: services/provider/Dockerfile
       target: api
+    environment:
+      OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@db:5432/ocp_dev?sslmode=disable
     ports:
       - "127.0.0.1:${OCP_HTTP_PORT:-18180}:8080"
     read_only: true
@@ -48,6 +50,23 @@ services:
       - go-build-cache:/root/.cache/go-build
       - go-module-cache:/go/pkg/mod
     command: [go, version]
+
+  test-db:
+    profiles: [test]
+    image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    environment:
+      POSTGRES_USER: ocp_test
+      POSTGRES_PASSWORD: ocp_test_local_only
+      POSTGRES_DB: ocp_test
+    tmpfs:
+      - /var/lib/postgresql
+    volumes:
+      - ./deploy/local/init/roles.sql:/docker-entrypoint-initdb.d/roles.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U ocp_test -d ocp_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
 
 volumes:
   postgres-data:

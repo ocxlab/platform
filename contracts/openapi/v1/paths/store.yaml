@@ -1,0 +1,31 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+get:
+  operationId: GetStore
+  x-required-scope: store:read
+  tags: [Merchant account]
+  summary: Read an authorized store
+  description: Requires store:read.
+  responses:
+    '200':
+      description: Current authorized store record.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/stores/store.yaml#/Store
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

@@ -1,22 +1,108 @@
 # API contracts
 
-Supported business REST APIs will be defined here before their handlers are built.
-The foundation currently exposes process liveness only; it does not claim a
-complete API contract or generated business implementation.
+Edit the modular OpenAPI source here, then generate its consuming Go artifacts.
+Requests and responses use JSON. YAML is only the readable authoring format.
+This is the first owned administration contract, not an OCP standard or a claim
+of UCP/Beckn conformance. It covers stores and **draft** offerings only.
 
-Keep four application surfaces distinct: Merchant commerce, Customer commerce,
-Merchant account, and Customer account. Add identity, discovery, and payment
-service contracts with their own owners. These are interface boundaries, not a
-requirement for separate binaries or servers.
+## Where definitions belong
 
-For the first business slice, choose an OpenAPI version and generator together,
-pin their versions, and expose generation/validation/drift checks through Task
-and Docker. Generated files identify their source and must be reproducible.
-Examples must cover authorization, replay/conflicts, current agreed terms, and
-required-action/error results as well as success. The initial operational endpoint
-also needs a machine-readable description when that contract pipeline is introduced.
+```text
+contracts/
+  openapi/v1/
+    openapi.yaml                Entry document and public component names
+    paths/                      Operations grouped by resource path
+    components/
+      parameters/               Shared identifiers and Idempotency-Key
+      responses/                Reusable Problem Details response
+      security/                 Bearer credential requirements
+    schemas/
+      common/                   Identifiers, liveness, and Problem Details
+      stores/                   Store resource and creation request
+      offerings/                Model reference and immutable revision envelope
+    domains/food/menu/v1/       Replaceable Food menu definition
+    examples/                   Fictional JSON documents checked in tests
+  tooling/go.yaml               Pinned generator configuration
+  build/                        Ignored, self-contained generated bundle
+```
 
-Do not import a whole UCP/Beckn schema family or claim compatibility merely to fill
-this directory. Record exact adopted capabilities, projections, source versions,
-and material-specific rights. Food has its own versioned behavior; future Shopping
-and Lodging adapters invoke their appropriate handlers and shared execution.
+The entry document composes resources through local `$ref` references. Keep
+shared concepts in their owning file rather than copying them into operations.
+Group small, cohesive resource/request schemas in one file; split a file when
+its contents have different owners or lifecycles, not just to maximize file count.
+No remote references are fetched during generation. Files outside the v1 root
+are rejected. Dependencies and image digests are pinned separately from API versions.
+
+## Change and verify a contract
+
+```text
+task contracts:generate
+task fmt
+task check
+```
+
+Generation validates source references, bundles them, reloads the serialized bundle
+as a fresh consumer, and validates it again. Generated models, client, server
+interfaces/routing, and embedded contract live in
+`services/provider/internal/httpapi/generated.go`. Commit that file with the source
+change; never hand-edit it. `task contracts:check` regenerates to a temporary file
+and compares it without rewriting committed Go. The ignored bundle can be rebuilt.
+
+`task check` also verifies fictional examples, Food definition rules, runtime
+responses, generated-client round trips, authorization, retries, and real PostgreSQL
+behavior. The integration suite uses unique disposable databases, not the development
+database. Go tests without `OCP_TEST_DATABASE_URL` explicitly skip that suite;
+`task test:integration` supplies it. A passing unit-only run is not DB acceptance.
+
+The API is `/api/v1`; its current draft document version is `0.1.0`. Changes in
+meaning or removal require a new major contract. Optional additions must still
+respect declared compatibility: closed request schemas deliberately reject unknown
+fields. A new optional request field is not usable against an older server unless
+negotiated or otherwise supported. Offering model `ocp.food.menu` version `1.0.0`
+is independent of the API version. Append immutable revisions with an expected
+`base_revision`; do not reinterpret retained documents after model upgrades.
+
+All failures use `application/problem+json`, with a stable `code` and safe details.
+Mutation retries require a 16–128 character `Idempotency-Key`. Matching requests
+within the merchant/grant/operation/resource scope return the original successful
+status and byte-identical body; changed content returns 409. Fingerprints use
+validated, decoded JSON, not whitespace or key order. Results and mutations commit
+together. Successful keys have no automatic expiry in this foundation; cleanup
+and key reuse require an explicit future contract. A grant is checked again on
+every retry. Unknown offering models return 422, not optimistic acceptance.
+Revisit retention/archival before general availability; do not enable unbounded
+merchant write volume without that explicit operational and contract decision.
+
+Each protected operation declares its action in `x-required-scope`; the handler
+loads that declaration and rejects unknown/missing actions at startup. It is a
+local OpenAPI extension for opaque grants, not a claim of OAuth scope negotiation.
+Every response carries a fresh `X-Request-ID`; Problem Details `instance` carries
+the matching UUID URN. `code`, not the generic `about:blank` type, is v1's machine
+discriminator. Expected errors are listed on each operation using the shared
+Problem response. Neither request bodies nor credentials are logged.
+
+## What generated structure does not implement
+
+Generated types and schema validation are only the structural boundary. Application
+code still owns authorization, tenant scope, semantic validation, atomic revision
+updates, and replay. For example, the Food schema bounds option counts; its
+validator additionally checks that a required choice can actually be satisfied
+and that identifiers are unique within their scope. Installing a schema file
+alone does not install a domain's behavior.
+
+Merchant commerce, Customer commerce, Merchant account, and Customer account remain
+distinct API surfaces. This increment implements Merchant account store setup and
+Merchant commerce offering administration only. Identity, discovery, and payment
+keep their own owners; these boundaries do not require separate servers. Native
+ONIX integration and selected UCP capabilities remain planned connected slices.
+Before importing their schemas, record exact versions, adopted capabilities, and
+material-specific reuse rights rather than copying an ecosystem wholesale.
+
+## Tooling note
+
+The pinned kin-openapi v0.133.0 default internal-reference naming resolver looped on
+an absolute path during initial generation. The small bundling command supplies
+a deterministic local-path resolver instead. It materializes named root aliases
+before internalizing references and validates the serialized result, including
+reloading the generated embedded contract in tests. Resolver behavior is tooling,
+not a new wire-format convention. Re-evaluate this workaround with a cohort upgrade.

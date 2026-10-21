@@ -43,6 +43,13 @@ and appropriate generated artifacts. UI, external API, and future agent adapters
 must use the same authorized application operations. Structural code generation
 does not implement behavioral rules or authorization.
 
+Edit modular source under `contracts/openapi/v1/`, not the ignored bundle or
+generated Go. Keep reusable resource definitions, parameters, headers, and errors
+in their owning files and expose stable root component names. After changes, run
+`task contracts:generate` and `task check`; commit source and generated artifacts
+together. Protected operations must declare a recognized `x-required-scope`.
+Read `contracts/README.md` before extending the contract or offering-model registry.
+
 Prefer a compact modular implementation with a growth path. Initial storage uses
 the selected managed provider's recovery facilities; extra protected copies and
 isolated backup storage are optional later tiers. Federation is a committed later

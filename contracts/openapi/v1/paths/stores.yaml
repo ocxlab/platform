@@ -1,0 +1,42 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+post:
+  operationId: CreateStore
+  x-required-scope: store:write
+  tags: [Merchant account]
+  summary: Create a store for the authorized merchant
+  description: Requires store:write. Display names do not establish public identity or domains.
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/stores/store.yaml#/CreateStoreRequest
+  responses:
+    '201':
+      description: Successful result; matching retries return this original status and body.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/stores/store.yaml#/Store
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

@@ -5,10 +5,11 @@ network discovery, identity, payment integration, and eventually the application
 merchants and customers use. These responsibilities can run compactly at first
 without losing their boundaries as the service grows.
 
-This first increment is the **local development foundation**, not a restaurant
-product. It provides an API process with a liveness endpoint, PostgreSQL, and
-containerized build/test commands. It does not yet connect the API to PostgreSQL,
-implement business operations, run ONIX, or integrate payment processors.
+This increment is the **contract and persistence foundation**, not a restaurant
+product. Authorized merchants can create/read stores and append/read immutable
+draft offering revisions through JSON APIs backed by PostgreSQL. Modular OpenAPI
+contracts generate the HTTP interfaces and client. Publication, purchases, native
+ONIX integration, customer applications, and payment remain later slices.
 
 ## Start locally
 
@@ -24,8 +25,8 @@ task smoke
 
 `task smoke` starts the stack and leaves it running. Open
 <http://localhost:18180/health/live>. The response establishes process liveness,
-not order readiness. There is intentionally no successful readiness or business
-endpoint yet. PostgreSQL has no published host port; access it through Compose.
+not order readiness. There is intentionally no successful readiness claim.
+PostgreSQL has no published host port; access it through Compose.
 
 ```text
 task logs
@@ -48,9 +49,14 @@ credentials out of source control; none are needed for the current checks.
 | `task` | List commands |
 | `task doctor` | Check host tools and Compose syntax |
 | `task fmt` | Format Go sources inside Docker |
-| `task check` | Check formatting, run vet and race tests, and build the API image |
+| `task contracts:generate` | Validate/bundle modular OpenAPI and regenerate committed Go |
+| `task contracts:check` | Check generated-code drift without rewriting committed Go |
+| `task check` | Check contracts/formatting, vet, race tests, real PostgreSQL tests, and runtime build |
 | `task test` | Run unit tests |
 | `task test:race` | Run unit tests with the race detector |
+| `task test:integration` | Exercise authorized HTTP/SQL behavior in disposable isolated databases |
+| `task db:prepare` | Explicitly provision development role and apply embedded migrations |
+| `task dev:credential` | Print a new development merchant and temporary bearer credential once |
 | `task dev` | Build/start API and PostgreSQL, waiting for container health |
 | `task db:check` | Run a harmless SQL connectivity query |
 | `task smoke` | Start the stack and check actual HTTP and SQL connectivity |
@@ -58,20 +64,20 @@ credentials out of source control; none are needed for the current checks.
 
 There is no CI configuration. The same Task commands can be called by CI later.
 First builds need registry access for the pinned images; later dependency updates
-may require authorized module downloads. The current Go code uses only the standard
-library. Go and PostgreSQL versions/digests are recorded in the provider Dockerfile
+may require authorized module downloads. Go module dependencies are pinned in
+`services/provider/go.mod` and `go.sum`. Go and PostgreSQL versions/digests are recorded in the provider Dockerfile
 and local Compose file;
 they are tested development pins, not a promise to use those versions forever.
 
 ## Layout and next increment
 
 - `services/provider/`: owned Go API/worker runtime; its own module and tests.
-- `services/provider/cmd/`: executable entry points (`api`, `check-local` today).
+- `services/provider/cmd/`: API, local checks, contract tooling, migration, and development provisioning entry points.
 - `services/provider/internal/`: private Go implementation packages.
 - `services/onix/`: retained network runtime boundary and integration plan.
 - `apps/`: merchant/customer application boundary; frontend tooling not selected.
 - `deploy/local/`: local composition of independently runnable components.
-- `contracts/`: rules for introducing versioned API contracts.
+- `contracts/`: modular versioned OpenAPI, shared resources, Food definitions, and generation instructions.
 - `docs/IMPLEMENTATION-KICKOFF.md`: ownership, repository growth, and acceptance milestones.
 - `docs/STATUS.md`: executed checks and unfinished work.
 
@@ -87,10 +93,18 @@ does not claim to replace the second; no native network integration runs yet.
 The provider can initially contain several logical service modules without
 requiring a server per module. See `services/README.md` for the structure.
 
-The first business increment will implement one complete restaurant journey,
-contract-first, rather than independent placeholder APIs. Frontend framework,
-OpenAPI generators, exact public protocol versions, authentication formats, and
-production hosting remain bounded decisions before their respective implementation.
+Start a foundation API session with `task dev`, then `task dev:credential`. Use
+the returned merchant identifier and bearer token with the operations described in
+[contracts/README.md](contracts/README.md). Keep the token private; it expires in
+24 hours. Provisioning is a local administrative command, not public signup.
+The API uses the restricted `ocp_app` database role; migration/provisioning use a
+different administrative connection. Do not reuse development credentials in production.
+
+The next increment will connect publication and a restaurant purchase journey,
+not fill in unrelated placeholder endpoints. Frontend tooling, production login,
+exact public protocol cohorts, and production hosting remain later decisions.
+The selected foundation cohort and deferred boundaries are in
+[docs/FOUNDATION-DECISIONS.md](docs/FOUNDATION-DECISIONS.md).
 
 Research stays in the sibling `ocp-lab` repository. Its implementation-design
 baseline is commit `878e242` and its final report is under

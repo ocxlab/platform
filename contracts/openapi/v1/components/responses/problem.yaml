@@ -1,0 +1,21 @@
+description: >-
+  Problem Details (RFC 9457). 400 invalid wire request; 401 invalid credentials;
+  403 insufficient action or merchant authority; 404 resource absent within the
+  authorized tenant; 409 replay or revision conflict; 413 body too large;
+  415 unsupported media type; 422 unsupported model or invalid model definition;
+  503 unavailable persistence. Safe details never contain credentials or SQL.
+headers:
+  X-Request-ID:
+    $ref: ../headers/request-id.yaml
+  Cache-Control:
+    schema:
+      type: string
+      enum: [no-store]
+  WWW-Authenticate:
+    description: Bearer challenge on 401 responses only.
+    schema:
+      type: string
+content:
+  application/problem+json:
+    schema:
+      $ref: ../../schemas/common/problem.yaml

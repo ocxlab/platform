@@ -5,7 +5,7 @@ languages or a requirement to deploy every logical service separately.
 
 | Runtime | Responsibility | Current state |
 | --- | --- | --- |
-| `provider/` | Owned Go API and worker implementation for account, offering, commerce, identity, scoped payment, and compact discovery modules | API liveness scaffold only; workers and business modules not implemented |
+| `provider/` | Owned Go API and worker implementation for account, offering, commerce, identity, scoped payment, and compact discovery modules | Authorized store and draft-offering foundation; other modules/workers are planned |
 | `onix/` | Retained native publication/crawling runtime and its plugin/configuration integration | Integration boundary documented; not yet imported or running here |
 
 The provider runtime's publication adapter sends public revisions through ONIX;

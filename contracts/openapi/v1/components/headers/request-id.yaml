@@ -1,0 +1,4 @@
+description: Fresh server-generated UUID for this HTTP attempt, including retries.
+schema:
+  type: string
+  format: uuid

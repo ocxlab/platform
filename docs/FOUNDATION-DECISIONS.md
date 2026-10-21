@@ -15,7 +15,7 @@ take payment, or implement a storefront. Those remain the next connected slices.
 | Runtime | Owned Go implementation under `services/provider/`; retained ONIX integration under `services/onix/`; no replacement local-only network |
 | Wire format | JSON request/response bodies; OpenAPI source in modular YAML; generated bundles are build artifacts, not editing sources |
 | Contract ownership | Provider entry document composes account, offering, and operational paths; reusable parameters, responses, and resource schemas have their own files |
-| Contract tooling | OpenAPI 3.0.3, pinned oapi-codegen v2.6.0 for Go types, HTTP interfaces, embedded contract, and client; kin-openapi validation and local-reference bundling |
+| Contract tooling | OpenAPI 3.0.3, oapi-codegen v2.6.0, runtime v1.4.1, and kin-openapi v0.133.0; generated Go types, HTTP interfaces, embedded contract, and client |
 | Persistence | pgx v5.7.6 PostgreSQL access; embedded SQL migrations through Goose v3.26.0; explicit migration command, not automatic API-startup DDL |
 | Authentication | Revocable, expiring opaque bearer grants stored as SHA-256 digests; merchant and action scope checked on every private operation; no public signup or production identity-provider claim |
 | Data isolation | Runtime non-owner role, forced row-level security, transaction-local merchant context, composite tenant foreign keys; migration/bootstrap credentials separate from API credentials |
@@ -61,7 +61,7 @@ are not part of this slice.
 - Exercise actual PostgreSQL migrations, repeated migration, authorized mutations,
   missing/revoked/expired/wrong-scope credentials, wrong-merchant access, concurrent
   revision conflicts, replay/conflict, and pooled tenant-context cleanup.
-- Validate menu selections structurally and semantically at the server boundary;
+- Validate menu definitions structurally and semantically at the server boundary;
   a generated form is not the source of purchase authority. This slice validates
   catalog definitions, not customer purchase choices or full Food conformance.
 - Keep Task and Docker as the local command interface. Add no CI, cloud resources,
@@ -126,3 +126,27 @@ Step 1 receives separate engineering and protocol reviews before step 2 proceeds
 Step 2 receives both perspectives against the actual code, contracts, and executed
 checks, followed by corrections. Review reports identify snapshots and limitations;
 automated reviews are not independent interoperability or production approval.
+
+## Implementation corrections from step 2
+
+The first compiler run exposed an incompatible runtime v1.1.2 pin; v1.4.1 supplies
+the generated client's required styling helpers. The local bundler now gives
+reusable resources, parameters, responses, and Food types intentional root names,
+not generated filesystem/hash names. It reloads serialized output before accepting
+the bundle. PascalCase operation IDs preserve identity through this generator's
+normalization; JSON fields remain snake_case. The config's output setting overrides
+the CLI flag, so drift checking uses a temporary derived config and never edits the
+source artifact. A deliberate generated-comment change failed the check as expected
+without being overwritten; the temporary change was then removed.
+
+Both technical reviews also require matching 413/415 behavior, readable choice
+labels, request correlation, explicit expected errors, and executable non-owner
+checks. Protected operations declare `x-required-scope`, loaded and checked against
+known actions at startup. Every response has a fresh `X-Request-ID`; Problem
+`instance` carries its UUID URN. Runtime startup rejects explicit role memberships
+and ownership/privileged-role reachability, not merely unsafe login flags.
+The integration suite now asserts those negative controls and the credential
+lookup function's owner, ACL, and fixed search path. Replay hashes explicitly include
+operation/resource as well as the complete typed request. Read-only responses no
+longer promise stored mutation replay. Review retention/archival before general
+availability; automatic cleanup remains deliberately unimplemented.

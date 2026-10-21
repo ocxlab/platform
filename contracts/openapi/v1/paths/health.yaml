@@ -1,0 +1,17 @@
+get:
+  operationId: GetLiveness
+  tags: [Operations]
+  security: []
+  summary: Check process liveness, not commerce or database readiness
+  responses:
+    '200':
+      description: Process is alive; no commerce readiness assertion.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/common/health.yaml
+    default:
+      $ref: ../components/responses/problem.yaml

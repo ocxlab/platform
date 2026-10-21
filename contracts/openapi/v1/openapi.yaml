@@ -1,0 +1,76 @@
+openapi: 3.0.3
+info:
+  title: OCP Provider administration foundation
+  version: 0.1.0
+  description: >-
+    Draft owned administration contract, not UCP or Beckn conformance.
+    JSON bodies; private responses are not cacheable. All bearer grants are bound
+    to one merchant and checked per action. Optional additions may remain in v1;
+    removed fields or changed meaning require a new major API contract.
+    Each HTTP attempt receives a fresh X-Request-ID UUID response header.
+    Problem.code is the v1 programmatic discriminator; type may be about:blank.
+servers:
+  - url: /
+tags:
+  - name: Operations
+  - name: Merchant account
+  - name: Merchant commerce
+security:
+  - BearerAuth: []
+paths:
+  /health/live:
+    $ref: paths/health.yaml
+  /api/v1/merchants/{merchant_id}/stores:
+    $ref: paths/stores.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}:
+    $ref: paths/store.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/offering:
+    $ref: paths/offering.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision}:
+    $ref: paths/offering-revision.yaml
+components:
+  parameters:
+    MerchantID:
+      $ref: components/parameters/merchant-id.yaml
+    StoreID:
+      $ref: components/parameters/store-id.yaml
+    IdempotencyKey:
+      $ref: components/parameters/idempotency-key.yaml
+  responses:
+    ProblemResponse:
+      $ref: components/responses/problem.yaml
+  headers:
+    RequestID:
+      $ref: components/headers/request-id.yaml
+  securitySchemes:
+    BearerAuth:
+      $ref: components/security/bearer.yaml
+  schemas:
+    Identifier:
+      $ref: schemas/common/identifier.yaml
+    Store:
+      $ref: schemas/stores/store.yaml#/Store
+    CreateStoreRequest:
+      $ref: schemas/stores/store.yaml#/CreateStoreRequest
+    WriteOfferingRequest:
+      $ref: schemas/offerings/revision.yaml#/WriteOfferingRequest
+    OfferingRevision:
+      $ref: schemas/offerings/revision.yaml#/OfferingRevision
+    Model:
+      $ref: schemas/offerings/revision.yaml#/Model
+    Problem:
+      $ref: schemas/common/problem.yaml
+    Health:
+      $ref: schemas/common/health.yaml
+    FoodMenu:
+      $ref: domains/food/menu/v1/schema.yaml#/FoodMenu
+    FoodMenuItem:
+      $ref: domains/food/menu/v1/schema.yaml#/Item
+    FoodVariant:
+      $ref: domains/food/menu/v1/schema.yaml#/Variant
+    FoodOptionGroup:
+      $ref: domains/food/menu/v1/schema.yaml#/OptionGroup
+    FoodOption:
+      $ref: domains/food/menu/v1/schema.yaml#/Option
+    FoodLocalIdentifier:
+      $ref: domains/food/menu/v1/schema.yaml#/LocalIdentifier

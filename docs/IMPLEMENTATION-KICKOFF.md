@@ -23,10 +23,12 @@ frontend applications, contracts, and integrations without selecting their tools
 prematurely. Runtime images run as non-root; local database administration is
 explicitly a development convenience, not the application's future database role.
 
-The foundation has no commerce persistence, migrations, business authentication,
-ONIX runtime, UCP adapter, or payment adapter yet. Existing sandbox evidence is
-reference material, not permission to carry secrets or experimental implementations
-into this repository wholesale.
+The original scaffold had no commerce persistence or business authentication.
+The subsequent [foundation report](FOUNDATION-REPORT.md) records the completed
+store/draft-offering contract, restricted grant, and PostgreSQL slice. Native ONIX,
+UCP adapters, purchase execution, and payment remain unimplemented. Existing sandbox
+evidence is reference material, not permission to copy secrets or experimental
+implementations into this repository wholesale.
 
 ## Ownership to preserve as code is added
 
@@ -66,8 +68,9 @@ the owned module without an actual reuse decision.
 | F3: Joined network slice | Two separately configured commerce providers, retained ONIX publication/crawl, compact discovery, one scoped payment service | App finds both merchants and resolves current authority; freshness/withdrawal, distinct payees, and wrong-host/merchant negative controls |
 | F4: Deployment and release evidence | Selected managed hosting/recovery, operational checks, restaurant/device feedback, bounded Shopping/Lodging compatibility | Actual restore/rollback and declared limits; public security, legal/payment/material-rights checks; no launch promise based on liveness alone |
 
-These are planned acceptance requirements. Only F0 has been worked on in this
-batch; see STATUS.md for checks actually executed. Each later milestone should
+F0 and the bounded F1 foundation are now implemented; later milestones remain
+planned acceptance requirements. See STATUS.md for checks actually executed.
+Each later milestone should
 leave a working path and tests, not a disconnected set of API stubs. Network
 integration and shared payment are part of the implementation plan, not optional
 features to rediscover after a single-provider storefront is finished.

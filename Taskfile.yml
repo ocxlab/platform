@@ -58,14 +58,55 @@ tasks:
     cmds:
       - task: tools:build
       - task: fmt:check
+      - task: contracts:check
       - task: vet
       - task: test:race
+      - task: test:integration
       - task: build
 
   dev:
     desc: Build and start the local API and PostgreSQL; wait for health checks
     cmds:
+      - task: db:prepare
       - '{{.COMPOSE}} up --build --detach --wait api db'
+
+  contracts:bundle:
+    desc: Validate modular local OpenAPI sources and build a self-contained bundle
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/contracts'
+
+  contracts:generate:
+    desc: Regenerate committed Go models, client, routing, and embedded contract
+    cmds:
+      - task: contracts:bundle
+      - '{{.COMPOSE}} run --rm --no-deps tools go tool oapi-codegen --config ../../contracts/tooling/go.yaml ../../contracts/build/provider.openapi.json'
+
+  contracts:check:
+    desc: Validate contracts and detect generated-code drift without rewriting committed code
+    cmds:
+      - task: contracts:bundle
+      - >-
+        {{.COMPOSE}} run --rm --no-deps tools sh -ec
+        'sed "s@^output:.*@output: /tmp/generated.go@" ../../contracts/tooling/go.yaml > /tmp/codegen.yaml; go tool oapi-codegen --config /tmp/codegen.yaml ../../contracts/build/provider.openapi.json; cmp internal/httpapi/generated.go /tmp/generated.go'
+
+  db:prepare:
+    desc: Start the development database, provision its restricted role, and apply migrations explicitly
+    cmds:
+      - '{{.COMPOSE}} up --detach --wait db'
+      - '{{.COMPOSE}} exec -T db psql -v ON_ERROR_STOP=1 -U ocp_dev -d ocp_dev -f /dev/stdin < deploy/local/init/roles.sql'
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/migrate'
+
+  dev:credential:
+    desc: Create one development merchant and print its temporary bearer credential once
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/provision'
+
+  test:integration:
+    desc: Run real PostgreSQL foundation tests in isolated disposable databases
+    cmds:
+      - defer: '{{.COMPOSE}} stop test-db'
+      - '{{.COMPOSE}} up --detach --wait test-db'
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable tools go test -race -count=1 ./internal/integration'
 
   db:check:
     desc: Execute a harmless SQL connectivity check against the local database

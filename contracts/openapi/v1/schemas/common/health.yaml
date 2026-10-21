@@ -1,0 +1,10 @@
+type: object
+additionalProperties: false
+required: [status, service]
+properties:
+  status:
+    type: string
+    enum: [ok]
+  service:
+    type: string
+    enum: [ocp-api]

@@ -1,0 +1,6 @@
+name: merchant_id
+in: path
+required: true
+schema:
+  $ref: ../../schemas/common/identifier.yaml
+description: Requested merchant; must match the authenticated grant.

@@ -1,0 +1,79 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+get:
+  operationId: GetOffering
+  x-required-scope: offering:read
+  tags: [Merchant commerce]
+  summary: Read the current draft revision
+  description: Requires offering:read. Drafts are not public catalog publication.
+  responses:
+    '200':
+      description: Latest authorized draft revision, not a published catalog.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/offerings/revision.yaml#/OfferingRevision
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+put:
+  operationId: WriteOffering
+  x-required-scope: offering:write
+  tags: [Merchant commerce]
+  summary: Append an immutable draft revision using an expected current head
+  description: >-
+    Requires offering:write. base_revision must equal the current head (zero
+    initially). Conflict returns revision_conflict (409) with current_revision.
+    Installed model validation rejects unsupported models or invalid definitions
+    (422). Mutating request bodies are limited to 262144 bytes.
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/offerings/revision.yaml#/WriteOfferingRequest
+  responses:
+    '201':
+      description: Successful result; matching retries return this original status and body.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/offerings/revision.yaml#/OfferingRevision
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

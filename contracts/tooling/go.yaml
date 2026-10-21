@@ -1,0 +1,9 @@
+package: httpapi
+output: internal/httpapi/generated.go
+generate:
+  models: true
+  std-http-server: true
+  client: true
+  embedded-spec: true
+output-options:
+  skip-prune: true

@@ -1,0 +1,15 @@
+name: Idempotency-Key
+in: header
+required: true
+description: >-
+  One key per intended mutation, scoped by merchant, grant, operation and resource.
+  Repeat the same key after a lost response. Matching validated requests return
+  the original successful status/body; changed requests return 409.
+  The fingerprint uses canonical decoded JSON, not raw property order.
+  Successful keys are retained with merchant data without automatic expiry in
+  this foundation; do not reuse them for a later intention.
+schema:
+  type: string
+  minLength: 16
+  maxLength: 128
+  pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$'

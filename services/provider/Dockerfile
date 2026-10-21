@@ -5,7 +5,8 @@ WORKDIR /workspace/services/provider
 ENV GOTOOLCHAIN=local
 
 FROM tools AS build
-COPY services/provider/go.mod ./
+COPY services/provider/go.mod services/provider/go.sum ./
+RUN go mod download
 COPY services/provider/cmd ./cmd
 COPY services/provider/internal ./internal
 RUN CGO_ENABLED=0 go build -trimpath -o /out/ocp-api ./cmd/api

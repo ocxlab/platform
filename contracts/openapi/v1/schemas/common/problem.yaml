@@ -1,0 +1,26 @@
+type: object
+required: [type, title, status, code, detail, instance]
+properties:
+  type:
+    type: string
+    format: uri
+  title:
+    type: string
+  status:
+    type: integer
+    minimum: 400
+    maximum: 599
+  code:
+    type: string
+    description: Stable machine-readable error code.
+  detail:
+    type: string
+  current_revision:
+    type: integer
+    format: int64
+    minimum: 0
+    description: Current draft head on a revision conflict.
+  instance:
+    type: string
+    format: uri
+    description: Unique error occurrence, urn:uuid matching the X-Request-ID response header.

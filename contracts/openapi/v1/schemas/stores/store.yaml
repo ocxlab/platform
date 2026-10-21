@@ -1,0 +1,25 @@
+CreateStoreRequest:
+  type: object
+  additionalProperties: false
+  required: [display_name]
+  properties:
+    display_name:
+      type: string
+      minLength: 1
+      maxLength: 160
+Store:
+  type: object
+  additionalProperties: false
+  required: [id, merchant_id, display_name, created_at]
+  properties:
+    id:
+      $ref: ../common/identifier.yaml
+    merchant_id:
+      $ref: ../common/identifier.yaml
+    display_name:
+      type: string
+      minLength: 1
+      maxLength: 160
+    created_at:
+      type: string
+      format: date-time
