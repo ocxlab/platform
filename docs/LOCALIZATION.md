@@ -1,6 +1,10 @@
 # Web language support
 
-The maintained web UI offers Deutsch, English, and Arabic in a header dropdown.
+The maintained web UI offers Deutsch, English, and Arabic in a bottom-right
+language dropdown. Its closed control shows only the current flag; options show
+flags and native language names. It opens upward and keeps the same physical
+corner in RTL. Header navigation uses Lucide Store and ShieldUser icons with
+translated accessible labels and native browser tooltips.
 It covers the current home, merchant/store/menu, guest checkout/receipt, provider
 administration, and error screens. Merchant-entered names and offering content
 are not translated or rewritten. Arabic is an initial translation, not a native

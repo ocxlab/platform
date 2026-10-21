@@ -3,21 +3,27 @@
   import { translate } from '$lib/i18n/messages';
   import { direction } from '$lib/i18n/locales';
   import LanguagePicker from '$lib/components/LanguagePicker.svelte';
+  import Store from '@lucide/svelte/icons/store';
+  import ShieldUser from '@lucide/svelte/icons/shield-user';
   let { children, data } = $props();
   provideLocale(() => data.locale);
   const t = (key: string) => translate(key, data.locale);
   $effect(() => { document.documentElement.lang = data.locale; document.documentElement.dir = direction(data.locale); });
 </script>
 <svelte:head><title>OCP Lab</title><meta name="description" content={t('ui-home-title')} /></svelte:head>
-<header><a href="/" class="brand" dir="ltr">OCP Lab</a><nav aria-label={t('ui-main')}><a href="/merchant">{t('ui-merchant')}</a><a href="/admin">{t('ui-admin')}</a></nav><LanguagePicker /></header>
+<header><a href="/" class="brand" dir="ltr">OCP Lab</a><nav aria-label={t('ui-main')}><a href="/merchant" aria-label={t('ui-merchant')} title={t('ui-merchant')}><Store size={22} aria-hidden="true" /></a><a href="/admin" aria-label={t('ui-admin')} title={t('ui-admin')}><ShieldUser size={22} aria-hidden="true" /></a></nav></header>
 <main>{@render children()}</main>
 <footer>{t('ui-footer')}</footer>
+<LanguagePicker />
 <style>
   :global(*) { box-sizing: border-box; }
   :global(body) { margin: 0; background: #f5f7f8; color: #1a2b35; font-family: system-ui, sans-serif; line-height: 1.55; }
   header, main, footer { max-width: 1080px; margin: auto; padding: 1.4rem; }
   header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; border-bottom: 1px solid #ccd8de; gap:1rem; }
   nav { display:flex; gap:1rem; flex-wrap:wrap; } .brand { font-weight:750; font-size:1.4rem; text-decoration:none; }
+  nav a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border-radius: .3rem; }
+  nav a:hover { background: #e5eff3; }
+  footer { padding-bottom: 5rem; }
   :global(a) { color: #20586f; } :global(h1), :global(h2), :global(h3) { color:#20586f; line-height:1.2; }
   :global(section), :global(fieldset), :global(article) { background:white; border:1px solid #ccd8de; border-radius:.5rem; padding:1.2rem; margin:1rem 0; min-width:0; }
   :global(label) { display:block; margin:.8rem 0; font-weight:600; } :global(label input), :global(label textarea), :global(label select) { display:block; width:100%; margin-top:.3rem; }

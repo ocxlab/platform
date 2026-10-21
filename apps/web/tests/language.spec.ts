@@ -2,6 +2,15 @@ import { test, expect } from '@playwright/test';
 
 test('language preference persists and names keep their own direction in both layouts', async ({ page, browser, request }) => {
   await page.goto('/merchant?view=test');
+  await expect(page.locator('header nav a')).toHaveCount(2);
+  await expect(page.getByRole('link', { name: 'Merchant', exact: true })).toHaveAttribute('title','Merchant');
+  await expect(page.getByRole('link', { name: 'Provider admin', exact: true })).toHaveAttribute('title','Provider admin');
+  await expect(page.locator('.language-picker summary')).toHaveText('');
+  await expect(page.locator('.language-picker summary img')).toBeVisible();
+  const corner = await page.locator('.language-picker').boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(viewport.width - corner!.x - corner!.width).toBeLessThan(40);
+  expect(viewport.height - corner!.y - corner!.height).toBeLessThan(40);
   await page.locator('.language-picker summary').click();
   const arabic = page.locator('.language-picker button[value=ar] bdi');
   await expect(arabic).toHaveText('العربية');
