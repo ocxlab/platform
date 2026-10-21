@@ -1,0 +1,83 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+get:
+  operationId: GetPublication
+  tags: [Merchant commerce]
+  summary: Read publication state
+  description: >-
+    Private state is independent of draft head. A new store starts at generation zero.
+  x-required-scope: offering:read
+  x-access: merchant
+  responses:
+    '200':
+      description: Current representation.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/offerings/publication.yaml#/Publication
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml
+put:
+  operationId: ChangePublication
+  tags: [Merchant commerce]
+  summary: Publish an exact revision or withdraw
+  description: >-
+    Requires expected_generation; every successful command advances generation, including a no-op. A missing revision withdraws. Cannot override provider suspension. Revision must exist. State, append-only audit and retry result commit atomically. Maximum body 262144 bytes.
+  x-required-scope: offering:write
+  x-access: merchant
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/offerings/publication.yaml#/ChangePublicationRequest
+  responses:
+    '201':
+      description: Created immutable result; authenticated mutation retries return the original successful body.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/offerings/publication.yaml#/Publication
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml

@@ -20,6 +20,11 @@ properties:
     format: int64
     minimum: 0
     description: Current draft head on a revision conflict.
+  current_generation:
+    type: integer
+    format: int64
+    minimum: 0
+    description: Current publication generation on a publication_conflict.
   instance:
     type: string
     format: uri

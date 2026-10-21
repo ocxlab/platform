@@ -1,5 +1,6 @@
 get:
   operationId: GetLiveness
+  x-access: public
   tags: [Operations]
   security: []
   summary: Check process liveness, not commerce or database readiness

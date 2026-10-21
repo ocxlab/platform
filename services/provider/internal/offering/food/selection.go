@@ -1,0 +1,121 @@
+package food
+
+import (
+	"encoding/json"
+	"errors"
+)
+
+var ErrSelection = errors.New("invalid or unavailable selection")
+
+const MaxTotal int64 = 1000000000000
+
+// Project deliberately enumerates public fields through the installed model.
+// Adding a private draft field must never automatically add it to publication.
+func Project(raw json.RawMessage) (json.RawMessage, error) {
+	var value menu
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return nil, err
+	}
+	return json.Marshal(value)
+}
+
+type SelectedOption struct {
+	GroupID  string `json:"group_id"`
+	OptionID string `json:"option_id"`
+}
+type SelectionLine struct {
+	ItemID    string           `json:"item_id"`
+	VariantID string           `json:"variant_id"`
+	Quantity  int              `json:"quantity"`
+	Options   []SelectedOption `json:"options"`
+}
+type QuotedLine struct {
+	Selection   SelectionLine `json:"selection"`
+	ItemName    string        `json:"item_name"`
+	VariantName string        `json:"variant_name"`
+	UnitPrice   int64         `json:"unit_price_minor"`
+	Total       int64         `json:"total_minor"`
+}
+
+// Price uses only the published model and selection references. Neither UI totals
+// nor caller-supplied prices are inputs. It does not reserve or accept an order.
+func Price(raw json.RawMessage, lines []SelectionLine) ([]QuotedLine, int64, error) {
+	var value menu
+	if err := json.Unmarshal(raw, &value); err != nil || value.Currency != "EUR" {
+		return nil, 0, ErrSelection
+	}
+	if len(lines) < 1 || len(lines) > 20 {
+		return nil, 0, ErrSelection
+	}
+	quoted := make([]QuotedLine, 0, len(lines))
+	var total int64
+	for _, line := range lines {
+		if line.Quantity < 1 || line.Quantity > 99 || len(line.Options) > 600 {
+			return nil, 0, ErrSelection
+		}
+		var selected *item
+		for i := range value.Items {
+			if value.Items[i].ID == line.ItemID {
+				selected = &value.Items[i]
+				break
+			}
+		}
+		if selected == nil || !selected.Available {
+			return nil, 0, ErrSelection
+		}
+		unit := int64(-1)
+		name := ""
+		for _, variant := range selected.Variants {
+			if variant.ID == line.VariantID {
+				unit = variant.Price
+				name = variant.Name
+				break
+			}
+		}
+		if unit < 0 || unit > MaxTotal {
+			return nil, 0, ErrSelection
+		}
+		seen := map[SelectedOption]bool{}
+		counts := map[string]int{}
+		for _, option := range line.Options {
+			if seen[option] {
+				return nil, 0, ErrSelection
+			}
+			seen[option] = true
+			found := false
+			for _, group := range selected.Groups {
+				if group.ID == option.GroupID {
+					for _, choice := range group.Options {
+						if choice.ID == option.OptionID {
+							if choice.Price < 0 || choice.Price > MaxTotal-unit {
+								return nil, 0, ErrSelection
+							}
+							unit += choice.Price
+							counts[group.ID]++
+							found = true
+							break
+						}
+					}
+				}
+			}
+			if !found {
+				return nil, 0, ErrSelection
+			}
+		}
+		for _, group := range selected.Groups {
+			if counts[group.ID] < group.Min || counts[group.ID] > group.Max {
+				return nil, 0, ErrSelection
+			}
+		}
+		if unit > MaxTotal/int64(line.Quantity) {
+			return nil, 0, ErrSelection
+		}
+		lineTotal := unit * int64(line.Quantity)
+		if lineTotal > MaxTotal-total {
+			return nil, 0, ErrSelection
+		}
+		total += lineTotal
+		quoted = append(quoted, QuotedLine{Selection: line, ItemName: selected.Name, VariantName: name, UnitPrice: unit, Total: lineTotal})
+	}
+	return quoted, total, nil
+}

@@ -13,14 +13,18 @@ import (
 var Model = offering.Model{ID: "ocp.food.menu", Version: "1.0.0"}
 
 type menu struct {
-	Items []item `json:"items"`
+	Currency         string `json:"currency"`
+	AvailabilityMode string `json:"availability_mode"`
+	Items            []item `json:"items"`
 }
 type item struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Variants []struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Available bool   `json:"available"`
+	Variants  []struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Price int64  `json:"price_minor"`
 	} `json:"variants"`
 	Groups []group `json:"option_groups"`
 }
@@ -30,8 +34,9 @@ type group struct {
 	Min     int    `json:"min_selected"`
 	Max     int    `json:"max_selected"`
 	Options []struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Price int64  `json:"price_minor"`
 	} `json:"options"`
 }
 

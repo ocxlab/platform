@@ -1,6 +1,83 @@
 name: ocp-platform
 
 services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: web
+    environment:
+      OCP_API_URL: http://api:8080
+      ORIGIN: http://localhost:18181
+      OCP_LOCAL_INSECURE_COOKIES: 'true'
+      BODY_SIZE_LIMIT: 300K
+    ports:
+      - '127.0.0.1:18181:3000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
+  web-tools:
+    profiles: [tools]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: tools
+    working_dir: /workspace/apps/web
+    volumes:
+      - .:/workspace
+      - web-node-modules:/workspace/apps/web/node_modules
+      - web-npm-cache:/root/.npm
+    command: [node, --version]
+
+  browser-api:
+    profiles: [browser]
+    build:
+      context: .
+      dockerfile: services/provider/Dockerfile
+      target: api
+    environment:
+      OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@test-db:5432/ocp_test?sslmode=disable
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, /ocp-api, -healthcheck]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  browser-web:
+    profiles: [browser]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: web
+    environment:
+      OCP_API_URL: http://browser-api:8080
+      ORIGIN: http://browser-web:3000
+      OCP_LOCAL_INSECURE_COOKIES: 'true'
+      BODY_SIZE_LIMIT: 300K
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  browser:
+    profiles: [browser]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: browsers
+    environment:
+      OCP_BROWSER_URL: http://browser-web:3000
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
   api:
     build:
       context: .
@@ -69,6 +146,8 @@ services:
       retries: 20
 
 volumes:
+  web-node-modules:
+  web-npm-cache:
   postgres-data:
   go-build-cache:
   go-module-cache:

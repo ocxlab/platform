@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/store-id.yaml
 get:
   operationId: GetOffering
+  x-access: merchant
   x-required-scope: offering:read
   tags: [Merchant commerce]
   summary: Read the current draft revision
@@ -31,6 +32,7 @@ get:
       $ref: ../components/responses/problem.yaml
 put:
   operationId: WriteOffering
+  x-access: merchant
   x-required-scope: offering:write
   tags: [Merchant commerce]
   summary: Append an immutable draft revision using an expected current head

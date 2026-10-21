@@ -1,0 +1,45 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+post:
+  operationId: CreateFoodQuote
+  tags: [Customer commerce]
+  summary: Validate and price a food selection
+  description: >-
+    Anonymous, deliberately non-idempotent: each successful request creates a new immutable ten-minute quote. Duplicate quotes have no commercial effects. Publication generation must still match and be visible. Selection/prices use the locked published revision; no customer prices accepted. No order, reservation, delivery promise, payment or acceptance is created. Maximum total 1000000000000 minor units, body 262144 bytes. Expiry is a later placement precondition, not automatic order cancellation.
+  security: []
+  x-access: public
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../domains/food/selection/v1/schema.yaml#/FoodSelectionRequest
+  responses:
+    '201':
+      description: Created immutable quote. Repeating the request creates another quote without commercial effects.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/selection/v1/schema.yaml#/FoodQuote
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/quote-capacity.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml

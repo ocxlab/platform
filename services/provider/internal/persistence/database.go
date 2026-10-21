@@ -57,6 +57,7 @@ type Principal struct {
 	ID         uuid.UUID
 	MerchantID uuid.UUID
 	Scopes     []string
+	Provider   bool
 }
 
 func (p Principal) Allows(scope string) bool {

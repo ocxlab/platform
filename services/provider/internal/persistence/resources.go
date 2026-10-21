@@ -64,8 +64,12 @@ func Mutate(ctx context.Context, db *sql.DB, principal Principal, operation, res
 	}
 	var previous []byte
 	var result Result
+	table := "commerce.request_replays"
+	if principal.Provider {
+		table = "commerce.provider_request_replays"
+	}
 	err = tx.QueryRowContext(ctx, `SELECT request_hash,response_status,response_body
-  FROM commerce.request_replays WHERE merchant_id=$1 AND grant_id=$2 AND operation=$3 AND resource=$4 AND replay_key=$5`, principal.MerchantID, principal.ID, operation, resource, key).Scan(&previous, &result.Status, &result.Body)
+  FROM `+table+` WHERE merchant_id=$1 AND grant_id=$2 AND operation=$3 AND resource=$4 AND replay_key=$5`, principal.MerchantID, principal.ID, operation, resource, key).Scan(&previous, &result.Status, &result.Body)
 	if err == nil {
 		if !bytes.Equal(previous, digest[:]) {
 			return Result{}, ErrReplayConflict
@@ -88,7 +92,7 @@ func Mutate(ctx context.Context, db *sql.DB, principal Principal, operation, res
 	if err != nil {
 		return Result{}, err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO commerce.request_replays
+	if _, err = tx.ExecContext(ctx, `INSERT INTO `+table+`
  (merchant_id,grant_id,operation,resource,replay_key,request_hash,response_status,response_body)
  VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, principal.MerchantID, principal.ID, operation, resource, key, digest[:], result.Status, []byte(result.Body)); err != nil {
 		return Result{}, err

@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"ocp.local/platform/internal/persistence"
 	"os"
@@ -11,6 +12,8 @@ import (
 )
 
 func main() {
+	provider := flag.Bool("provider", false, "Provision a separate local provider administration credential")
+	flag.Parse()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	db, err := persistence.Open(ctx, os.Getenv("OCP_MIGRATION_DATABASE_URL"))
@@ -19,6 +22,15 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+	if *provider {
+		p, token, err := persistence.ProvisionProvider(ctx, db, []string{"publication:read", "publication:manage"}, time.Now().Add(24*time.Hour))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "provider provisioning failed")
+			os.Exit(1)
+		}
+		_ = json.NewEncoder(os.Stdout).Encode(map[string]any{"provider_grant_id": p.ID, "token": token, "expires_in_hours": 24})
+		return
+	}
 	p, token, err := persistence.Provision(ctx, db, "Local example merchant", []string{"store:read", "store:write", "offering:read", "offering:write"}, time.Now().Add(24*time.Hour))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "provisioning failed")

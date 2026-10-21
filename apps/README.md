@@ -3,9 +3,9 @@
 This is the application boundary of the monorepo, separate from backend runtimes
 under `services/`. Use SvelteKit with TypeScript for the merchant application,
 customer storefront, and provider administration application. Add directories
-when implementing working journeys, not empty framework scaffolds. Package
-tooling and exact dependency versions will be pinned with the first UI slice;
-Docker supplies the tooling and root Task commands remain the entry point.
+when implementing working journeys, not empty framework scaffolds. `web/` now
+contains all three surfaces in one initially compact deployment. Its package lock
+and Dockerfile pin the tested cohort; root Task commands remain the entry point.
 
 Merchant setup/catalog administration and order handling, plus the customer
 storefront, must use the supported application APIs rather than private database
@@ -38,4 +38,5 @@ Use Vitest and Svelte Testing Library for focused UI behavior, and Playwright fo
 browser journeys against the actual API/database. Include authorization rejection
 and administrative audit behavior in backend/integration checks, plus keyboard
 and accessibility checks for the UI. Run browser tooling in Docker through Task.
-These are agreed implementation requirements, not tests already executed.
+The publication slice now has a joined Chromium journey and focused component/
+session tests. See [the web guide](web/README.md) for execution and limitations.

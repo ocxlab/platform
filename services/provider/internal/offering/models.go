@@ -11,18 +11,35 @@ type Model struct {
 	Version string `json:"version"`
 }
 type Validator func(json.RawMessage) (json.RawMessage, error)
-type Registry struct{ validators map[Model]Validator }
+type Registry struct {
+	validators  map[Model]Validator
+	projections map[Model]Validator
+}
 
 var ErrUnsupported = errors.New("unsupported offering model")
 var ErrInvalid = errors.New("invalid offering definition")
 
 // NewRegistry copies installed implementations before the service starts.
-func NewRegistry(installed map[Model]Validator) *Registry {
+func NewRegistry(installed map[Model]Validator, projections ...map[Model]Validator) *Registry {
 	copy := make(map[Model]Validator, len(installed))
 	for key, value := range installed {
 		copy[key] = value
 	}
-	return &Registry{validators: copy}
+	public := make(map[Model]Validator)
+	for _, group := range projections {
+		for key, value := range group {
+			public[key] = value
+		}
+	}
+	return &Registry{validators: copy, projections: public}
+}
+
+func (r *Registry) Project(model Model, document json.RawMessage) (json.RawMessage, error) {
+	project, ok := r.projections[model]
+	if !ok {
+		return nil, ErrUnsupported
+	}
+	return project(document)
 }
 
 func (r *Registry) Validate(model Model, document json.RawMessage) (json.RawMessage, error) {

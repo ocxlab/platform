@@ -2,6 +2,7 @@ parameters:
   - $ref: ../components/parameters/merchant-id.yaml
 post:
   operationId: CreateStore
+  x-access: merchant
   x-required-scope: store:write
   tags: [Merchant account]
   summary: Create a store for the authorized merchant

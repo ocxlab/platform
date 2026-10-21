@@ -54,8 +54,10 @@ unrestricted impersonation, secret exposure, or mandatory extra deployments.
 Edit modular source under `contracts/openapi/v1/`, not the ignored bundle or
 generated Go. Keep reusable resource definitions, parameters, headers, and errors
 in their owning files and expose stable root component names. After changes, run
-`task contracts:generate` and `task check`; commit source and generated artifacts
-together. Protected operations must declare a recognized `x-required-scope`.
+`task contracts:generate`, `task web:generate`, and `task check`; commit source and
+generated Go/TypeScript artifacts together. All operations declare `x-access`;
+protected operations also declare a recognized `x-required-scope` and matching
+security scheme. Keep merchant and provider-admin credential audiences separate.
 Read `contracts/README.md` before extending the contract or offering-model registry.
 
 Prefer a compact modular implementation with a growth path. Initial storage uses

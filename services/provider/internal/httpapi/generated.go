@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	BearerAuthScopes = "BearerAuth.Scopes"
+	BearerAuthScopes         = "BearerAuth.Scopes"
+	ProviderBearerAuthScopes = "ProviderBearerAuth.Scopes"
 )
 
 // Defines values for FoodMenuAvailabilityMode.
@@ -45,13 +46,28 @@ func (e FoodMenuAvailabilityMode) Valid() bool {
 
 // Defines values for FoodMenuCurrency.
 const (
-	EUR FoodMenuCurrency = "EUR"
+	FoodMenuCurrencyEUR FoodMenuCurrency = "EUR"
 )
 
 // Valid indicates whether the value is a known member of the FoodMenuCurrency enum.
 func (e FoodMenuCurrency) Valid() bool {
 	switch e {
-	case EUR:
+	case FoodMenuCurrencyEUR:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodQuoteCurrency.
+const (
+	FoodQuoteCurrencyEUR FoodQuoteCurrency = "EUR"
+)
+
+// Valid indicates whether the value is a known member of the FoodQuoteCurrency enum.
+func (e FoodQuoteCurrency) Valid() bool {
+	switch e {
+	case FoodQuoteCurrencyEUR:
 		return true
 	default:
 		return false
@@ -103,6 +119,14 @@ func (e OfferingRevisionState) Valid() bool {
 	}
 }
 
+// ChangePublicationRequest defines model for ChangePublicationRequest.
+type ChangePublicationRequest struct {
+	ExpectedGeneration int64 `json:"expected_generation"`
+
+	// Revision Select exact immutable revision; omitted or null withdraws publication.
+	Revision *int64 `json:"revision,omitempty"`
+}
+
 // CreateStoreRequest defines model for CreateStoreRequest.
 type CreateStoreRequest struct {
 	DisplayName string `json:"display_name"`
@@ -150,6 +174,59 @@ type FoodOptionGroup struct {
 	MinSelected int                 `json:"min_selected"`
 	Name        string              `json:"name"`
 	Options     []FoodOption        `json:"options"`
+}
+
+// FoodQuote defines model for FoodQuote.
+type FoodQuote struct {
+	CreatedAt time.Time         `json:"created_at"`
+	Currency  FoodQuoteCurrency `json:"currency"`
+	ExpiresAt time.Time         `json:"expires_at"`
+
+	// Id Durable opaque identifier; not a display name or hostname.
+	Id    Identifier       `json:"id"`
+	Lines []FoodQuotedLine `json:"lines"`
+
+	// MerchantId Durable opaque identifier; not a display name or hostname.
+	MerchantId            Identifier `json:"merchant_id"`
+	Model                 Model      `json:"model"`
+	PublicationGeneration int64      `json:"publication_generation"`
+	Revision              int64      `json:"revision"`
+
+	// StoreId Durable opaque identifier; not a display name or hostname.
+	StoreId    Identifier `json:"store_id"`
+	TotalMinor int64      `json:"total_minor"`
+}
+
+// FoodQuoteCurrency defines model for FoodQuote.Currency.
+type FoodQuoteCurrency string
+
+// FoodQuotedLine defines model for FoodQuotedLine.
+type FoodQuotedLine struct {
+	ItemName       string            `json:"item_name"`
+	Selection      FoodSelectionLine `json:"selection"`
+	TotalMinor     int64             `json:"total_minor"`
+	UnitPriceMinor int64             `json:"unit_price_minor"`
+	VariantName    string            `json:"variant_name"`
+}
+
+// FoodSelectedOption defines model for FoodSelectedOption.
+type FoodSelectedOption struct {
+	GroupId  FoodLocalIdentifier `json:"group_id"`
+	OptionId FoodLocalIdentifier `json:"option_id"`
+}
+
+// FoodSelectionLine defines model for FoodSelectionLine.
+type FoodSelectionLine struct {
+	ItemId    FoodLocalIdentifier  `json:"item_id"`
+	Options   []FoodSelectedOption `json:"options"`
+	Quantity  int                  `json:"quantity"`
+	VariantId FoodLocalIdentifier  `json:"variant_id"`
+}
+
+// FoodSelectionRequest defines model for FoodSelectionRequest.
+type FoodSelectionRequest struct {
+	Lines                 []FoodSelectionLine `json:"lines"`
+	PublicationGeneration int64               `json:"publication_generation"`
 }
 
 // FoodVariant defines model for FoodVariant.
@@ -205,6 +282,9 @@ type Problem struct {
 	// Code Stable machine-readable error code.
 	Code string `json:"code"`
 
+	// CurrentGeneration Current publication generation on a publication_conflict.
+	CurrentGeneration *int64 `json:"current_generation,omitempty"`
+
 	// CurrentRevision Current draft head on a revision conflict.
 	CurrentRevision *int64 `json:"current_revision,omitempty"`
 	Detail          string `json:"detail"`
@@ -214,6 +294,40 @@ type Problem struct {
 	Status   int    `json:"status"`
 	Title    string `json:"title"`
 	Type     string `json:"type"`
+}
+
+// PublicOffering defines model for PublicOffering.
+type PublicOffering struct {
+	DisplayName string `json:"display_name"`
+
+	// Document Explicit model-owned public projection. Currently ocp.food.menu 1.0.0 only.
+	Document map[string]interface{} `json:"document"`
+
+	// MerchantId Durable opaque identifier; not a display name or hostname.
+	MerchantId            Identifier `json:"merchant_id"`
+	Model                 Model      `json:"model"`
+	PublicationGeneration int64      `json:"publication_generation"`
+	Revision              int64      `json:"revision"`
+
+	// StoreId Durable opaque identifier; not a display name or hostname.
+	StoreId Identifier `json:"store_id"`
+}
+
+// Publication defines model for Publication.
+type Publication struct {
+	Generation int64 `json:"generation"`
+
+	// MerchantId Durable opaque identifier; not a display name or hostname.
+	MerchantId Identifier `json:"merchant_id"`
+
+	// Revision Chosen public revision, absent or null when withdrawn.
+	Revision *int64 `json:"revision,omitempty"`
+
+	// StoreId Durable opaque identifier; not a display name or hostname.
+	StoreId Identifier `json:"store_id"`
+
+	// Suspended Provider visibility override; restoring does not change chosen revision.
+	Suspended bool `json:"suspended"`
 }
 
 // Store defines model for Store.
@@ -226,6 +340,15 @@ type Store struct {
 
 	// MerchantId Durable opaque identifier; not a display name or hostname.
 	MerchantId Identifier `json:"merchant_id"`
+}
+
+// SuspendPublicationRequest defines model for SuspendPublicationRequest.
+type SuspendPublicationRequest struct {
+	ExpectedGeneration int64 `json:"expected_generation"`
+
+	// Reason Internal attributable administrative reason, never publicly projected.
+	Reason    string `json:"reason"`
+	Suspended bool   `json:"suspended"`
 }
 
 // WriteOfferingRequest defines model for WriteOfferingRequest.
@@ -247,8 +370,17 @@ type MerchantID = Identifier
 // StoreID Durable opaque identifier; not a display name or hostname.
 type StoreID = Identifier
 
+// ComponentsResponsesQuoteCapacityYaml4bef3f4e defines model for ComponentsResponsesQuoteCapacityYaml4bef3f4e.
+type ComponentsResponsesQuoteCapacityYaml4bef3f4e = Problem
+
 // ProblemResponse defines model for ProblemResponse.
 type ProblemResponse = Problem
+
+// AdminSuspendPublicationParams defines parameters for AdminSuspendPublication.
+type AdminSuspendPublicationParams struct {
+	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
 
 // CreateStoreParams defines parameters for CreateStore.
 type CreateStoreParams struct {
@@ -262,11 +394,26 @@ type WriteOfferingParams struct {
 	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
 }
 
+// ChangePublicationParams defines parameters for ChangePublication.
+type ChangePublicationParams struct {
+	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// AdminSuspendPublicationJSONRequestBody defines body for AdminSuspendPublication for application/json ContentType.
+type AdminSuspendPublicationJSONRequestBody = SuspendPublicationRequest
+
 // CreateStoreJSONRequestBody defines body for CreateStore for application/json ContentType.
 type CreateStoreJSONRequestBody = CreateStoreRequest
 
 // WriteOfferingJSONRequestBody defines body for WriteOffering for application/json ContentType.
 type WriteOfferingJSONRequestBody = WriteOfferingRequest
+
+// ChangePublicationJSONRequestBody defines body for ChangePublication for application/json ContentType.
+type ChangePublicationJSONRequestBody = ChangePublicationRequest
+
+// CreateFoodQuoteJSONRequestBody defines body for CreateFoodQuote for application/json ContentType.
+type CreateFoodQuoteJSONRequestBody = FoodSelectionRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -341,6 +488,14 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// AdminGetPublication request
+	AdminGetPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminSuspendPublicationWithBody request with any body
+	AdminSuspendPublicationWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AdminSuspendPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, body AdminSuspendPublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CreateStoreWithBody request with any body
 	CreateStoreWithBody(ctx context.Context, merchantId MerchantID, params *CreateStoreParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -360,8 +515,60 @@ type ClientInterface interface {
 	// GetOfferingRevision request
 	GetOfferingRevision(ctx context.Context, merchantId MerchantID, storeId StoreID, revision int64, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetPublication request
+	GetPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ChangePublicationWithBody request with any body
+	ChangePublicationWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ChangePublication(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, body ChangePublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateFoodQuoteWithBody request with any body
+	CreateFoodQuoteWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateFoodQuote(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPublicOffering request
+	GetPublicOffering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetLiveness request
 	GetLiveness(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) AdminGetPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminGetPublicationRequest(c.Server, merchantId, storeId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminSuspendPublicationWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminSuspendPublicationRequestWithBody(c.Server, merchantId, storeId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminSuspendPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, body AdminSuspendPublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminSuspendPublicationRequest(c.Server, merchantId, storeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) CreateStoreWithBody(ctx context.Context, merchantId MerchantID, params *CreateStoreParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -448,6 +655,78 @@ func (c *Client) GetOfferingRevision(ctx context.Context, merchantId MerchantID,
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPublicationRequest(c.Server, merchantId, storeId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ChangePublicationWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewChangePublicationRequestWithBody(c.Server, merchantId, storeId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ChangePublication(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, body ChangePublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewChangePublicationRequest(c.Server, merchantId, storeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateFoodQuoteWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateFoodQuoteRequestWithBody(c.Server, merchantId, storeId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateFoodQuote(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateFoodQuoteRequest(c.Server, merchantId, storeId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPublicOffering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPublicOfferingRequest(c.Server, merchantId, storeId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetLiveness(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetLivenessRequest(c.Server)
 	if err != nil {
@@ -458,6 +737,114 @@ func (c *Client) GetLiveness(ctx context.Context, reqEditors ...RequestEditorFn)
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewAdminGetPublicationRequest generates requests for AdminGetPublication
+func NewAdminGetPublicationRequest(server string, merchantId MerchantID, storeId StoreID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/admin/merchants/%s/stores/%s/publication", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminSuspendPublicationRequest calls the generic AdminSuspendPublication builder with application/json body
+func NewAdminSuspendPublicationRequest(server string, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, body AdminSuspendPublicationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAdminSuspendPublicationRequestWithBody(server, merchantId, storeId, params, "application/json", bodyReader)
+}
+
+// NewAdminSuspendPublicationRequestWithBody generates requests for AdminSuspendPublication with any type of body
+func NewAdminSuspendPublicationRequestWithBody(server string, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/admin/merchants/%s/stores/%s/publication", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Idempotency-Key", headerParam0)
+
+	}
+
+	return req, nil
 }
 
 // NewCreateStoreRequest calls the generic CreateStore builder with application/json body
@@ -717,6 +1104,209 @@ func NewGetOfferingRevisionRequest(server string, merchantId MerchantID, storeId
 	return req, nil
 }
 
+// NewGetPublicationRequest generates requests for GetPublication
+func NewGetPublicationRequest(server string, merchantId MerchantID, storeId StoreID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/publication", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewChangePublicationRequest calls the generic ChangePublication builder with application/json body
+func NewChangePublicationRequest(server string, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, body ChangePublicationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewChangePublicationRequestWithBody(server, merchantId, storeId, params, "application/json", bodyReader)
+}
+
+// NewChangePublicationRequestWithBody generates requests for ChangePublication with any type of body
+func NewChangePublicationRequestWithBody(server string, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/publication", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Idempotency-Key", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewCreateFoodQuoteRequest calls the generic CreateFoodQuote builder with application/json body
+func NewCreateFoodQuoteRequest(server string, merchantId MerchantID, storeId StoreID, body CreateFoodQuoteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateFoodQuoteRequestWithBody(server, merchantId, storeId, "application/json", bodyReader)
+}
+
+// NewCreateFoodQuoteRequestWithBody generates requests for CreateFoodQuote with any type of body
+func NewCreateFoodQuoteRequestWithBody(server string, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/public/merchants/%s/stores/%s/food/quotes", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetPublicOfferingRequest generates requests for GetPublicOffering
+func NewGetPublicOfferingRequest(server string, merchantId MerchantID, storeId StoreID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/public/merchants/%s/stores/%s/offering", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetLivenessRequest generates requests for GetLiveness
 func NewGetLivenessRequest(server string) (*http.Request, error) {
 	var err error
@@ -787,6 +1377,14 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// AdminGetPublicationWithResponse request
+	AdminGetPublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*AdminGetPublicationResponse, error)
+
+	// AdminSuspendPublicationWithBodyWithResponse request with any body
+	AdminSuspendPublicationWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminSuspendPublicationResponse, error)
+
+	AdminSuspendPublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, body AdminSuspendPublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminSuspendPublicationResponse, error)
+
 	// CreateStoreWithBodyWithResponse request with any body
 	CreateStoreWithBodyWithResponse(ctx context.Context, merchantId MerchantID, params *CreateStoreParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateStoreResponse, error)
 
@@ -806,8 +1404,86 @@ type ClientWithResponsesInterface interface {
 	// GetOfferingRevisionWithResponse request
 	GetOfferingRevisionWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, revision int64, reqEditors ...RequestEditorFn) (*GetOfferingRevisionResponse, error)
 
+	// GetPublicationWithResponse request
+	GetPublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetPublicationResponse, error)
+
+	// ChangePublicationWithBodyWithResponse request with any body
+	ChangePublicationWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ChangePublicationResponse, error)
+
+	ChangePublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, body ChangePublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*ChangePublicationResponse, error)
+
+	// CreateFoodQuoteWithBodyWithResponse request with any body
+	CreateFoodQuoteWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateFoodQuoteResponse, error)
+
+	CreateFoodQuoteWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateFoodQuoteResponse, error)
+
+	// GetPublicOfferingWithResponse request
+	GetPublicOfferingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetPublicOfferingResponse, error)
+
 	// GetLivenessWithResponse request
 	GetLivenessWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetLivenessResponse, error)
+}
+
+type AdminGetPublicationResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *Publication
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminGetPublicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminGetPublicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminSuspendPublicationResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *Publication
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminSuspendPublicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminSuspendPublicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type CreateStoreResponse struct {
@@ -956,6 +1632,126 @@ func (r GetOfferingRevisionResponse) StatusCode() int {
 	return 0
 }
 
+type GetPublicationResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *Publication
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPublicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPublicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ChangePublicationResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *Publication
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ChangePublicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ChangePublicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateFoodQuoteResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *FoodQuote
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ComponentsResponsesQuoteCapacityYaml4bef3f4e
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateFoodQuoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateFoodQuoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPublicOfferingResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *PublicOffering
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPublicOfferingResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPublicOfferingResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetLivenessResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
@@ -977,6 +1773,32 @@ func (r GetLivenessResponse) StatusCode() int {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
+}
+
+// AdminGetPublicationWithResponse request returning *AdminGetPublicationResponse
+func (c *ClientWithResponses) AdminGetPublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*AdminGetPublicationResponse, error) {
+	rsp, err := c.AdminGetPublication(ctx, merchantId, storeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminGetPublicationResponse(rsp)
+}
+
+// AdminSuspendPublicationWithBodyWithResponse request with arbitrary body returning *AdminSuspendPublicationResponse
+func (c *ClientWithResponses) AdminSuspendPublicationWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminSuspendPublicationResponse, error) {
+	rsp, err := c.AdminSuspendPublicationWithBody(ctx, merchantId, storeId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminSuspendPublicationResponse(rsp)
+}
+
+func (c *ClientWithResponses) AdminSuspendPublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *AdminSuspendPublicationParams, body AdminSuspendPublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminSuspendPublicationResponse, error) {
+	rsp, err := c.AdminSuspendPublication(ctx, merchantId, storeId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminSuspendPublicationResponse(rsp)
 }
 
 // CreateStoreWithBodyWithResponse request with arbitrary body returning *CreateStoreResponse
@@ -1040,6 +1862,58 @@ func (c *ClientWithResponses) GetOfferingRevisionWithResponse(ctx context.Contex
 	return ParseGetOfferingRevisionResponse(rsp)
 }
 
+// GetPublicationWithResponse request returning *GetPublicationResponse
+func (c *ClientWithResponses) GetPublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetPublicationResponse, error) {
+	rsp, err := c.GetPublication(ctx, merchantId, storeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPublicationResponse(rsp)
+}
+
+// ChangePublicationWithBodyWithResponse request with arbitrary body returning *ChangePublicationResponse
+func (c *ClientWithResponses) ChangePublicationWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ChangePublicationResponse, error) {
+	rsp, err := c.ChangePublicationWithBody(ctx, merchantId, storeId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseChangePublicationResponse(rsp)
+}
+
+func (c *ClientWithResponses) ChangePublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, body ChangePublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*ChangePublicationResponse, error) {
+	rsp, err := c.ChangePublication(ctx, merchantId, storeId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseChangePublicationResponse(rsp)
+}
+
+// CreateFoodQuoteWithBodyWithResponse request with arbitrary body returning *CreateFoodQuoteResponse
+func (c *ClientWithResponses) CreateFoodQuoteWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateFoodQuoteResponse, error) {
+	rsp, err := c.CreateFoodQuoteWithBody(ctx, merchantId, storeId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateFoodQuoteResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateFoodQuoteWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateFoodQuoteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateFoodQuoteResponse, error) {
+	rsp, err := c.CreateFoodQuote(ctx, merchantId, storeId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateFoodQuoteResponse(rsp)
+}
+
+// GetPublicOfferingWithResponse request returning *GetPublicOfferingResponse
+func (c *ClientWithResponses) GetPublicOfferingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetPublicOfferingResponse, error) {
+	rsp, err := c.GetPublicOffering(ctx, merchantId, storeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPublicOfferingResponse(rsp)
+}
+
 // GetLivenessWithResponse request returning *GetLivenessResponse
 func (c *ClientWithResponses) GetLivenessWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetLivenessResponse, error) {
 	rsp, err := c.GetLiveness(ctx, reqEditors...)
@@ -1047,6 +1921,184 @@ func (c *ClientWithResponses) GetLivenessWithResponse(ctx context.Context, reqEd
 		return nil, err
 	}
 	return ParseGetLivenessResponse(rsp)
+}
+
+// ParseAdminGetPublicationResponse parses an HTTP response from a AdminGetPublicationWithResponse call
+func ParseAdminGetPublicationResponse(rsp *http.Response) (*AdminGetPublicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminGetPublicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Publication
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminSuspendPublicationResponse parses an HTTP response from a AdminSuspendPublicationWithResponse call
+func ParseAdminSuspendPublicationResponse(rsp *http.Response) (*AdminSuspendPublicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminSuspendPublicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Publication
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseCreateStoreResponse parses an HTTP response from a CreateStoreWithResponse call
@@ -1431,6 +2483,334 @@ func ParseGetOfferingRevisionResponse(rsp *http.Response) (*GetOfferingRevisionR
 	return response, nil
 }
 
+// ParseGetPublicationResponse parses an HTTP response from a GetPublicationWithResponse call
+func ParseGetPublicationResponse(rsp *http.Response) (*GetPublicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPublicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Publication
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseChangePublicationResponse parses an HTTP response from a ChangePublicationWithResponse call
+func ParseChangePublicationResponse(rsp *http.Response) (*ChangePublicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ChangePublicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Publication
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateFoodQuoteResponse parses an HTTP response from a CreateFoodQuoteWithResponse call
+func ParseCreateFoodQuoteResponse(rsp *http.Response) (*CreateFoodQuoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateFoodQuoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest FoodQuote
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ComponentsResponsesQuoteCapacityYaml4bef3f4e
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPublicOfferingResponse parses an HTTP response from a GetPublicOfferingWithResponse call
+func ParseGetPublicOfferingResponse(rsp *http.Response) (*GetPublicOfferingResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPublicOfferingResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PublicOffering
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetLivenessResponse parses an HTTP response from a GetLivenessWithResponse call
 func ParseGetLivenessResponse(rsp *http.Response) (*GetLivenessResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1466,6 +2846,12 @@ func ParseGetLivenessResponse(rsp *http.Response) (*GetLivenessResponse, error) 
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Inspect store publication
+	// (GET /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication)
+	AdminGetPublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
+	// Suspend or restore publication visibility
+	// (PUT /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication)
+	AdminSuspendPublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params AdminSuspendPublicationParams)
 	// Create a store for the authorized merchant
 	// (POST /api/v1/merchants/{merchant_id}/stores)
 	CreateStore(w http.ResponseWriter, r *http.Request, merchantId MerchantID, params CreateStoreParams)
@@ -1481,6 +2867,18 @@ type ServerInterface interface {
 	// Read a retained immutable draft revision
 	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision})
 	GetOfferingRevision(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, revision int64)
+	// Read publication state
+	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/publication)
+	GetPublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
+	// Publish an exact revision or withdraw
+	// (PUT /api/v1/merchants/{merchant_id}/stores/{store_id}/publication)
+	ChangePublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params ChangePublicationParams)
+	// Validate and price a food selection
+	// (POST /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes)
+	CreateFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
+	// Browse current public offering
+	// (GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering)
+	GetPublicOffering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Check process liveness, not commerce or database readiness
 	// (GET /health/live)
 	GetLiveness(w http.ResponseWriter, r *http.Request)
@@ -1494,6 +2892,114 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// AdminGetPublication operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetPublication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ProviderBearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetPublication(w, r, merchantId, storeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminSuspendPublication operation middleware
+func (siw *ServerInterfaceWrapper) AdminSuspendPublication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ProviderBearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminSuspendPublicationParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminSuspendPublication(w, r, merchantId, storeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // CreateStore operation middleware
 func (siw *ServerInterfaceWrapper) CreateStore(w http.ResponseWriter, r *http.Request) {
@@ -1751,6 +3257,182 @@ func (siw *ServerInterfaceWrapper) GetOfferingRevision(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// GetPublication operation middleware
+func (siw *ServerInterfaceWrapper) GetPublication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPublication(w, r, merchantId, storeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ChangePublication operation middleware
+func (siw *ServerInterfaceWrapper) ChangePublication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ChangePublicationParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ChangePublication(w, r, merchantId, storeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateFoodQuote operation middleware
+func (siw *ServerInterfaceWrapper) CreateFoodQuote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateFoodQuote(w, r, merchantId, storeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPublicOffering operation middleware
+func (siw *ServerInterfaceWrapper) GetPublicOffering(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPublicOffering(w, r, merchantId, storeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetLiveness operation middleware
 func (siw *ServerInterfaceWrapper) GetLiveness(w http.ResponseWriter, r *http.Request) {
 
@@ -1885,11 +3567,17 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.AdminGetPublication)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.AdminSuspendPublication)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores", wrapper.CreateStore)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}", wrapper.GetStore)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.GetOffering)
 	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.WriteOffering)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision}", wrapper.GetOfferingRevision)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.GetPublication)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.ChangePublication)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes", wrapper.CreateFoodQuote)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.GetPublicOffering)
 	m.HandleFunc("GET "+options.BaseURL+"/health/live", wrapper.GetLiveness)
 
 	return m
@@ -1898,61 +3586,89 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"hiiF4zcAAA==",
+	"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",
+	"OJCBsWwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

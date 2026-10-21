@@ -1,11 +1,12 @@
 openapi: 3.0.3
 info:
-  title: OCP Provider administration foundation
+  title: OCP Platform API
   version: 0.1.0
   description: >-
-    Draft owned administration contract, not UCP or Beckn conformance.
-    JSON bodies; private responses are not cacheable. All bearer grants are bound
-    to one merchant and checked per action. Optional additions may remain in v1;
+    Draft owned contract, not UCP or Beckn conformance.
+    JSON bodies; responses are not cacheable in this slice. Merchant grants are bound
+    to one merchant; provider administration has a separate credential audience.
+    Anonymous operations explicitly declare security and public access. Optional additions may remain in v1;
     removed fields or changed meaning require a new major API contract.
     Each HTTP attempt receives a fresh X-Request-ID UUID response header.
     Problem.code is the v1 programmatic discriminator; type may be about:blank.
@@ -15,6 +16,8 @@ tags:
   - name: Operations
   - name: Merchant account
   - name: Merchant commerce
+  - name: Customer commerce
+  - name: Provider administration
 security:
   - BearerAuth: []
 paths:
@@ -28,6 +31,14 @@ paths:
     $ref: paths/offering.yaml
   /api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision}:
     $ref: paths/offering-revision.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/publication:
+    $ref: paths/publication.yaml
+  /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication:
+    $ref: paths/admin-publication.yaml
+  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering:
+    $ref: paths/public-offering.yaml
+  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes:
+    $ref: paths/food-quotes.yaml
 components:
   parameters:
     MerchantID:
@@ -45,6 +56,8 @@ components:
   securitySchemes:
     BearerAuth:
       $ref: components/security/bearer.yaml
+    ProviderBearerAuth:
+      $ref: components/security/provider-bearer.yaml
   schemas:
     Identifier:
       $ref: schemas/common/identifier.yaml
@@ -74,3 +87,21 @@ components:
       $ref: domains/food/menu/v1/schema.yaml#/Option
     FoodLocalIdentifier:
       $ref: domains/food/menu/v1/schema.yaml#/LocalIdentifier
+    Publication:
+      $ref: schemas/offerings/publication.yaml#/Publication
+    ChangePublicationRequest:
+      $ref: schemas/offerings/publication.yaml#/ChangePublicationRequest
+    SuspendPublicationRequest:
+      $ref: schemas/offerings/publication.yaml#/SuspendPublicationRequest
+    PublicOffering:
+      $ref: schemas/offerings/publication.yaml#/PublicOffering
+    FoodSelectionRequest:
+      $ref: domains/food/selection/v1/schema.yaml#/FoodSelectionRequest
+    FoodSelectionLine:
+      $ref: domains/food/selection/v1/schema.yaml#/SelectionLine
+    FoodSelectedOption:
+      $ref: domains/food/selection/v1/schema.yaml#/SelectedOption
+    FoodQuote:
+      $ref: domains/food/selection/v1/schema.yaml#/FoodQuote
+    FoodQuotedLine:
+      $ref: domains/food/selection/v1/schema.yaml#/QuotedLine

@@ -1,0 +1,78 @@
+Publication:
+  type: object
+  additionalProperties: false
+  required: [merchant_id, store_id, generation, suspended]
+  properties:
+    merchant_id:
+      $ref: ../common/identifier.yaml
+    store_id:
+      $ref: ../common/identifier.yaml
+    generation:
+      type: integer
+      format: int64
+      minimum: 0
+    revision:
+      type: integer
+      format: int64
+      minimum: 1
+      nullable: true
+      description: Chosen public revision, absent or null when withdrawn.
+    suspended:
+      type: boolean
+      description: Provider visibility override; restoring does not change chosen revision.
+ChangePublicationRequest:
+  type: object
+  additionalProperties: false
+  required: [expected_generation]
+  properties:
+    expected_generation:
+      type: integer
+      format: int64
+      minimum: 0
+    revision:
+      type: integer
+      format: int64
+      minimum: 1
+      nullable: true
+      description: Select exact immutable revision; omitted or null withdraws publication.
+SuspendPublicationRequest:
+  type: object
+  additionalProperties: false
+  required: [expected_generation, suspended, reason]
+  properties:
+    expected_generation:
+      type: integer
+      format: int64
+      minimum: 0
+    suspended:
+      type: boolean
+    reason:
+      type: string
+      minLength: 1
+      maxLength: 500
+      description: Internal attributable administrative reason, never publicly projected.
+PublicOffering:
+  type: object
+  additionalProperties: false
+  required: [merchant_id, store_id, display_name, publication_generation, revision, model, document]
+  properties:
+    merchant_id:
+      $ref: ../common/identifier.yaml
+    store_id:
+      $ref: ../common/identifier.yaml
+    display_name:
+      type: string
+    publication_generation:
+      type: integer
+      format: int64
+      minimum: 1
+    revision:
+      type: integer
+      format: int64
+      minimum: 1
+    model:
+      $ref: revision.yaml#/Model
+    document:
+      type: object
+      additionalProperties: true
+      description: Explicit model-owned public projection. Currently ocp.food.menu 1.0.0 only.

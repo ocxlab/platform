@@ -1,9 +1,10 @@
 # API contracts
 
-Edit the modular OpenAPI source here, then generate its consuming Go artifacts.
+Edit the modular OpenAPI source here, then generate its Go and TypeScript artifacts.
 Requests and responses use JSON. YAML is only the readable authoring format.
 This is the first owned administration contract, not an OCP standard or a claim
-of UCP/Beckn conformance. It covers stores and **draft** offerings only.
+of UCP/Beckn conformance. It covers stores, draft revisions, publication,
+provider-admin visibility control, public offerings, and guest Food quotes.
 
 ## Where definitions belong
 
@@ -14,13 +15,15 @@ contracts/
     paths/                      Operations grouped by resource path
     components/
       parameters/               Shared identifiers and Idempotency-Key
-      responses/                Reusable Problem Details response
+      responses/                Shared Problem Details and quote-capacity response
+      headers/                  Shared request correlation
       security/                 Bearer credential requirements
     schemas/
       common/                   Identifiers, liveness, and Problem Details
       stores/                   Store resource and creation request
       offerings/                Model reference and immutable revision envelope
     domains/food/menu/v1/       Replaceable Food menu definition
+    domains/food/selection/v1/  Selection and priced quote definitions
     examples/                   Fictional JSON documents checked in tests
   tooling/go.yaml               Pinned generator configuration
   build/                        Ignored, self-contained generated bundle
@@ -37,6 +40,7 @@ are rejected. Dependencies and image digests are pinned separately from API vers
 
 ```text
 task contracts:generate
+task web:generate
 task fmt
 task check
 ```
@@ -46,7 +50,9 @@ as a fresh consumer, and validates it again. Generated models, client, server
 interfaces/routing, and embedded contract live in
 `services/provider/internal/httpapi/generated.go`. Commit that file with the source
 change; never hand-edit it. `task contracts:check` regenerates to a temporary file
-and compares it without rewriting committed Go. The ignored bundle can be rebuilt.
+and compares it without rewriting committed Go. TypeScript types live in
+`apps/web/src/lib/api/generated.d.ts`; `task web:check` checks their drift and
+consumers. Both generators use the same rebuildable, ignored bundle.
 
 `task check` also verifies fictional examples, Food definition rules, runtime
 responses, generated-client round trips, authorization, retries, and real PostgreSQL
@@ -63,8 +69,8 @@ is independent of the API version. Append immutable revisions with an expected
 `base_revision`; do not reinterpret retained documents after model upgrades.
 
 All failures use `application/problem+json`, with a stable `code` and safe details.
-Mutation retries require a 16–128 character `Idempotency-Key`. Matching requests
-within the merchant/grant/operation/resource scope return the original successful
+Private mutation retries require a 16–128 character `Idempotency-Key`. Matching requests
+within the audience/merchant/grant/operation/resource scope return the original successful
 status and byte-identical body; changed content returns 409. Fingerprints use
 validated, decoded JSON, not whitespace or key order. Results and mutations commit
 together. Successful keys have no automatic expiry in this foundation; cleanup
@@ -73,9 +79,10 @@ every retry. Unknown offering models return 422, not optimistic acceptance.
 Revisit retention/archival before general availability; do not enable unbounded
 merchant write volume without that explicit operational and contract decision.
 
-Each protected operation declares its action in `x-required-scope`; the handler
-loads that declaration and rejects unknown/missing actions at startup. It is a
-local OpenAPI extension for opaque grants, not a claim of OAuth scope negotiation.
+Each operation declares `x-access` as public, merchant, or provider. Public operations
+also explicitly clear security; private operations use the matching bearer scheme
+and an `x-required-scope`. Startup rejects inconsistent audiences or unknown/missing
+actions. These local extensions describe opaque grants, not OAuth scope negotiation.
 Every response carries a fresh `X-Request-ID`; Problem Details `instance` carries
 the matching UUID URN. `code`, not the generic `about:blank` type, is v1's machine
 discriminator. Expected errors are listed on each operation using the shared
@@ -91,12 +98,32 @@ and that identifiers are unique within their scope. Installing a schema file
 alone does not install a domain's behavior.
 
 Merchant commerce, Customer commerce, Merchant account, and Customer account remain
-distinct API surfaces. This increment implements Merchant account store setup and
-Merchant commerce offering administration only. Identity, discovery, and payment
+distinct API surfaces. This increment implements Merchant account store setup,
+Merchant commerce offering administration, public Food quotes, and separate
+provider publication administration. Identity, discovery, and payment
 keep their own owners; these boundaries do not require separate servers. Native
 ONIX integration and selected UCP capabilities remain planned connected slices.
 Before importing their schemas, record exact versions, adopted capabilities, and
 material-specific reuse rights rather than copying an ecosystem wholesale.
+
+## Publication and quote behavior
+
+Publication selects an exact immutable revision and advances a separate generation.
+Administrative suspension preserves that choice; merchant publishing cannot undo
+suspension. Both use expected generations and attributable atomic audit records.
+Public responses contain model-owned projections, not private draft history.
+
+Guest quote creation is anonymous and deliberately non-idempotent: each successful
+POST creates a fresh ten-minute snapshot, with no purchase, reservation, acceptance,
+payment, or kitchen effect. The server validates and prices selections against the
+locked, visible publication. Stale generations return 409. Quote IDs alone must
+not become purchase authority in a later placement contract.
+
+The local storage guard allows at most 1,000 active quotes per store; 429 includes
+`Retry-After: 60`. Creation prunes up to 1,000 expired snapshots for that store;
+expiry is a validity limit, not a deletion guarantee. This is not internet rate
+limiting: an attacker could occupy those slots. Public release requires separately
+tested abuse controls, appropriate limits, and a retention policy.
 
 ## Tooling note
 

@@ -70,6 +70,9 @@ the owned module without an actual reuse decision.
 
 F0 and the bounded F1 foundation are now implemented; later milestones remain
 planned acceptance requirements. See STATUS.md for checks actually executed.
+The [publication slice](PUBLICATION-SLICE.md) implements the menu publication,
+public browsing/quote, and related administration portion of F2; order placement,
+staff purchase actions, payment, and durable execution remain unfinished.
 Each later milestone should
 leave a working path and tests, not a disconnected set of API stubs. Network
 integration and shared payment are part of the implementation plan, not optional

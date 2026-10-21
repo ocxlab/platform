@@ -39,22 +39,68 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 	}
 	server := &Server{db: db, models: offering.NewRegistry(map[offering.Model]offering.Validator{
 		food.Model: food.Validator(spec.Components.Schemas["FoodMenu"].Value),
-	})}
+	}, map[offering.Model]offering.Validator{food.Model: food.Project})}
 	generated := HandlerWithOptions(server, StdHTTPServerOptions{ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 		problem(w, 400, "invalid_request", "Request does not match the API contract.", nil)
 	}})
 	scopes := map[string]string{}
-	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true}
+	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true}
+	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true}
+	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true}
 	for _, path := range spec.Paths.Map() {
 		for _, operation := range path.Operations() {
-			if operation.OperationID == "GetLiveness" {
+			expectedAccess := "merchant"
+			if public[operation.OperationID] {
+				expectedAccess = "public"
+			}
+			if provider[operation.OperationID] {
+				expectedAccess = "provider"
+			}
+			if operation.Extensions["x-access"] != expectedAccess {
+				return nil, errors.New("operation must explicitly declare its recognized credential audience")
+			}
+			if public[operation.OperationID] {
+				if operation.Security == nil || len(*operation.Security) != 0 {
+					return nil, errors.New("public operation must explicitly disable bearer security")
+				}
 				continue
+			}
+			effective := spec.Security
+			if operation.Security != nil {
+				effective = *operation.Security
+			}
+			scheme := "BearerAuth"
+			if provider[operation.OperationID] {
+				scheme = "ProviderBearerAuth"
+			}
+			if len(effective) != 1 || len(effective[0]) != 1 {
+				return nil, errors.New("operation has ambiguous credential security")
+			}
+			if _, ok := effective[0][scheme]; !ok {
+				return nil, errors.New("operation security does not match its declared audience")
 			}
 			scope, ok := operation.Extensions["x-required-scope"].(string)
 			if !ok || !known[scope] {
 				return nil, errors.New("protected operation has no recognized action scope")
 			}
 			scopes[operation.OperationID] = scope
+			if operation.Security != nil && len(*operation.Security) == 0 {
+				return nil, errors.New("protected operation cannot declare anonymous security")
+			}
+			if provider[operation.OperationID] && operation.Extensions["x-access"] != "provider" {
+				return nil, errors.New("provider operation missing audience")
+			}
+			if provider[operation.OperationID] {
+				if operation.Security == nil || len(*operation.Security) != 1 || len((*operation.Security)[0]) != 1 {
+					return nil, errors.New("provider operation must declare its credential audience")
+				}
+				if _, ok := (*operation.Security)[0]["ProviderBearerAuth"]; !ok {
+					return nil, errors.New("provider operation has wrong credential audience")
+				}
+			}
+			if !provider[operation.OperationID] && strings.HasPrefix(scope, "publication:") {
+				return nil, errors.New("provider scope on merchant operation")
+			}
 		}
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -68,13 +114,17 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 			problem(w, 404, "not_found", "API operation not found.", nil)
 			return
 		}
-		if route.Operation.OperationID != "GetLiveness" {
+		if !public[route.Operation.OperationID] {
 			header := r.Header.Get("Authorization")
 			if !strings.HasPrefix(header, "Bearer ") {
 				problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
 				return
 			}
-			principal, err := persistence.Authenticate(r.Context(), db, strings.TrimPrefix(header, "Bearer "))
+			authenticate := persistence.Authenticate
+			if provider[route.Operation.OperationID] {
+				authenticate = persistence.AuthenticateProvider
+			}
+			principal, err := authenticate(r.Context(), db, strings.TrimPrefix(header, "Bearer "))
 			if errors.Is(err, persistence.ErrUnauthenticated) {
 				problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
 				return
@@ -88,9 +138,12 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 				problem(w, 400, "invalid_request", "Merchant identifier must be a UUID.", nil)
 				return
 			}
-			if principal.MerchantID != merchant || !principal.Allows(scopes[route.Operation.OperationID]) {
+			if (!principal.Provider && principal.MerchantID != merchant) || !principal.Allows(scopes[route.Operation.OperationID]) {
 				problem(w, 403, "forbidden", "Credential does not authorize this merchant and action.", nil)
 				return
+			}
+			if principal.Provider {
+				principal.MerchantID = merchant
 			}
 			r = r.WithContext(context.WithValue(r.Context(), principalKey{}, principal))
 		}
@@ -143,7 +196,11 @@ func decode(r *http.Request, target any) error {
 func problem(w http.ResponseWriter, status int, code, detail string, current *int64) {
 	body := map[string]any{"type": "about:blank", "title": http.StatusText(status), "status": status, "code": code, "detail": detail, "instance": "urn:uuid:" + w.Header().Get("X-Request-ID")}
 	if current != nil {
-		body["current_revision"] = *current
+		field := "current_revision"
+		if code == "publication_conflict" {
+			field = "current_generation"
+		}
+		body[field] = *current
 	}
 	if status == 401 {
 		w.Header().Set("WWW-Authenticate", "Bearer")
@@ -156,6 +213,7 @@ func problem(w http.ResponseWriter, status int, code, detail string, current *in
 func write(w http.ResponseWriter, value any, err error) {
 	if err != nil {
 		var conflict *persistence.RevisionConflict
+		var publicationConflict *persistence.PublicationConflict
 		switch {
 		case errors.Is(err, persistence.ErrNotFound):
 			problem(w, 404, "not_found", "Resource not found.", nil)
@@ -163,6 +221,15 @@ func write(w http.ResponseWriter, value any, err error) {
 			problem(w, 409, "idempotency_conflict", "This key was used with different request content.", nil)
 		case errors.As(err, &conflict):
 			problem(w, 409, "revision_conflict", "Offering revision has changed.", &conflict.Current)
+		case errors.As(err, &publicationConflict):
+			problem(w, 409, "publication_conflict", "Publication generation has changed. Refresh the public offering or private publication state.", &publicationConflict.Current)
+		case errors.Is(err, food.ErrSelection):
+			problem(w, 422, "invalid_selection", "Select available items and supported variants/options within the published limits.", nil)
+		case errors.Is(err, persistence.ErrQuoteCapacity):
+			w.Header().Set("Retry-After", "60")
+			problem(w, 429, "quote_capacity", "This store has reached its temporary quote capacity. Please try again later.", nil)
+		case errors.Is(err, offering.ErrUnsupported):
+			problem(w, 422, "unsupported_model", "No installed implementation supports this operation for the offering model.", nil)
 		default:
 			problem(w, 503, "unavailable", "Storage is temporarily unavailable.", nil)
 		}

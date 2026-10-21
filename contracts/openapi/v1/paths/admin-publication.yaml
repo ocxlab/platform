@@ -1,0 +1,87 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+get:
+  operationId: AdminGetPublication
+  tags: [Provider administration]
+  summary: Inspect store publication
+  description: >-
+    Requires a separate provider credential. Target merchant is explicit; not a merchant grant with expanded access.
+  x-required-scope: publication:read
+  x-access: provider
+  security:
+    - ProviderBearerAuth: []
+  responses:
+    '200':
+      description: Current representation.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/offerings/publication.yaml#/Publication
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml
+put:
+  operationId: AdminSuspendPublication
+  tags: [Provider administration]
+  summary: Suspend or restore publication visibility
+  description: >-
+    Requires expected_generation and a nonblank internal reason. Every command advances generation; restoration preserves merchant-selected revision. Audit and idempotent response commit atomically. Does not impersonate merchant. Maximum body 262144 bytes.
+  x-required-scope: publication:manage
+  x-access: provider
+  security:
+    - ProviderBearerAuth: []
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/offerings/publication.yaml#/SuspendPublicationRequest
+  responses:
+    '201':
+      description: Created immutable result; authenticated mutation retries return the original successful body.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/offerings/publication.yaml#/Publication
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml

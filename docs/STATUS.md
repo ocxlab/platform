@@ -1,14 +1,38 @@
 # Development status
 
-## Agreed next-slice application requirements
+## Completed publication and guest-selection slice
+
+21 October 2026, Europe/Berlin (UTC+02:00). See
+[PUBLICATION-SLICE.md](PUBLICATION-SLICE.md) for the implemented behavior and limits.
+Merchants edit private menus and publish exact revisions; guests browse and obtain
+validated ten-minute server-priced quotes. Separate provider-admin credentials
+authorize inspection, suspension, and restoration through the supported API and
+UI. Atomic audit records retain actor, action, generation, and request correlation.
+
+Contracts use resource-owned source files, shared definitions, explicit access
+audiences, and generated Go/TypeScript artifacts. `task check` passed, including
+real PostgreSQL race/concurrency/negative checks, six focused web tests, Svelte
+checks, drift checks, and both runtime builds. `task test:browser` passed the joined
+merchant/guest/admin Chromium journey. Both engineering and protocol reviewers
+accepted the bounded local scope after corrections; review reports are under
+`reviews/step-3-*`. Public internet abuse controls and production authentication
+remain release gates; ordering, payment, and native ONIX integration remain next
+connected slices. This is not full F2 acceptance.
+
+`task smoke` and `task web:dev` also passed after the final corrections. The
+local web root returned HTTP 200/no-store. The development API/database/web stack
+is running at localhost:18180/18181 for a walkthrough; disposable test services
+are stopped. Stop with `task stop` without deleting named data/cache volumes.
+
+## Agreed application requirements
 
 21 October 2026: the founder approved SvelteKit/TypeScript web applications and
 incremental provider administration alongside the functions being managed. Each
 slice assesses its management needs and adds the relevant admin UI and separately
 authorized, OpenAPI-defined administration operations in the existing backend.
 See [the kickoff plan](IMPLEMENTATION-KICKOFF.md#administration-accompanies-each-feature-slice)
-and [applications guide](../apps/README.md). No UI, administration endpoint, or new
-runtime behavior was implemented by this documentation update.
+and [applications guide](../apps/README.md). That earlier agreement is now exercised
+by the publication slice above; additional administration grows with each feature.
 
 ## Completed foundation
 

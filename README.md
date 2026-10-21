@@ -5,11 +5,12 @@ network discovery, identity, payment integration, and eventually the application
 merchants and customers use. These responsibilities can run compactly at first
 without losing their boundaries as the service grows.
 
-This increment is the **contract and persistence foundation**, not a restaurant
-product. Authorized merchants can create/read stores and append/read immutable
-draft offering revisions through JSON APIs backed by PostgreSQL. Modular OpenAPI
-contracts generate the HTTP interfaces and client. Publication, purchases, native
-ONIX integration, customer applications, and payment remain later slices.
+The current slice connects private menu editing, exact-revision publication,
+guest browsing, and server-priced selection quotes. Merchants and provider admins
+use separately authorized JSON APIs backed by PostgreSQL; SvelteKit supplies their
+interfaces and the public storefront. Modular OpenAPI contracts generate Go and
+TypeScript artifacts. Purchase execution, payment, and native ONIX integration
+remain connected next slices; this is not yet an ordering product.
 
 ## Start locally
 
@@ -21,12 +22,21 @@ Docker must be running with Linux containers.
 task doctor
 task check
 task smoke
+task web:dev
 ```
 
 `task smoke` starts the stack and leaves it running. Open
 <http://localhost:18180/health/live>. The response establishes process liveness,
 not order readiness. There is intentionally no successful readiness claim.
 PostgreSQL has no published host port; access it through Compose.
+
+Open <http://localhost:18181> for the web application. Run `task dev:credential`
+and enter the printed merchant ID and temporary token at `/merchant`. Create a
+store, save a menu, and publish its saved revision; the workspace links to its
+public storefront. `task dev:admin-credential` supplies a separate temporary
+credential for `/admin`, where merchant/store IDs locate publication for inspection,
+suspension, or restoration. These are local development bootstraps, not production
+signup or login. Tokens are printed once; do not commit them.
 
 ```text
 task logs
@@ -51,12 +61,16 @@ credentials out of source control; none are needed for the current checks.
 | `task fmt` | Format Go sources inside Docker |
 | `task contracts:generate` | Validate/bundle modular OpenAPI and regenerate committed Go |
 | `task contracts:check` | Check generated-code drift without rewriting committed Go |
-| `task check` | Check contracts/formatting, vet, race tests, real PostgreSQL tests, and runtime build |
+| `task web:generate` | Regenerate TypeScript API types from the shared OpenAPI bundle |
+| `task check` | Check contracts, formatting, vet, race/SQL tests, web types/components, and runtime builds |
+| `task test:browser` | Run Chromium merchant/guest/admin journeys with disposable PostgreSQL |
+| `task web:dev` | Start API/database and the web application on localhost:18181 |
 | `task test` | Run unit tests |
 | `task test:race` | Run unit tests with the race detector |
 | `task test:integration` | Exercise authorized HTTP/SQL behavior in disposable isolated databases |
 | `task db:prepare` | Explicitly provision development role and apply embedded migrations |
 | `task dev:credential` | Print a new development merchant and temporary bearer credential once |
+| `task dev:admin-credential` | Print a separate temporary provider-admin credential once |
 | `task dev` | Build/start API and PostgreSQL, waiting for container health |
 | `task db:check` | Run a harmless SQL connectivity query |
 | `task smoke` | Start the stack and check actual HTTP and SQL connectivity |
@@ -75,7 +89,7 @@ they are tested development pins, not a promise to use those versions forever.
 - `services/provider/cmd/`: API, local checks, contract tooling, migration, and development provisioning entry points.
 - `services/provider/internal/`: private Go implementation packages.
 - `services/onix/`: retained network runtime boundary and integration plan.
-- `apps/`: merchant/customer application boundary; frontend tooling not selected.
+- `apps/web/`: SvelteKit merchant workspace, public storefront, and provider administration.
 - `deploy/local/`: local composition of independently runnable components.
 - `contracts/`: modular versioned OpenAPI, shared resources, Food definitions, and generation instructions.
 - `docs/IMPLEMENTATION-KICKOFF.md`: ownership, repository growth, and acceptance milestones.
@@ -100,9 +114,10 @@ the returned merchant identifier and bearer token with the operations described 
 The API uses the restricted `ocp_app` database role; migration/provisioning use a
 different administrative connection. Do not reuse development credentials in production.
 
-The next increment will connect publication and a restaurant purchase journey,
-not fill in unrelated placeholder endpoints. Frontend tooling, production login,
-exact public protocol cohorts, and production hosting remain later decisions.
+Read [the publication slice report](docs/PUBLICATION-SLICE.md) for behavior,
+executed checks, and remaining boundaries. The next increment connects quotes to
+a restaurant purchase journey, not unrelated placeholder endpoints. Production
+login, exact public protocol cohorts, and production hosting remain later decisions.
 The selected foundation cohort and deferred boundaries are in
 [docs/FOUNDATION-DECISIONS.md](docs/FOUNDATION-DECISIONS.md).
 

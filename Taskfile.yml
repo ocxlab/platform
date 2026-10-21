@@ -53,6 +53,42 @@ tasks:
     cmds:
       - '{{.COMPOSE}} build api'
 
+  web:install:
+    desc: Install the locked web cohort inside Docker, never on the host
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps web-tools npm ci --ignore-scripts'
+
+  web:generate:
+    desc: Generate committed TypeScript API types from the same OpenAPI bundle as Go
+    cmds:
+      - task: contracts:bundle
+      - task: web:install
+      - '{{.COMPOSE}} run --rm --no-deps web-tools npm run contracts:generate'
+
+  web:check:
+    desc: Verify generated API drift, type/component checks, tests, and web runtime build
+    cmds:
+      - task: contracts:bundle
+      - task: web:install
+      - '{{.COMPOSE}} run --rm --no-deps web-tools sh -ec "npm run contracts:check && npm run check && npm test"'
+      - '{{.COMPOSE}} build web'
+
+  web:dev:
+    desc: Start the actual API/database and the web app on localhost:18181
+    cmds:
+      - task: dev
+      - '{{.COMPOSE}} up --build --detach --wait web'
+
+  test:browser:
+    desc: Exercise merchant, guest and provider-admin journeys with disposable PostgreSQL
+    cmds:
+      - defer: '{{.COMPOSE}} stop browser-api browser-web test-db'
+      - '{{.COMPOSE}} build tools browser-api browser-web browser'
+      - '{{.COMPOSE}} up --force-recreate --detach --wait test-db'
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable tools go run ./cmd/migrate'
+      - '{{.COMPOSE}} up --force-recreate --detach --wait browser-api browser-web'
+      - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/browser-fixture | {{.COMPOSE}} run --rm --no-deps -T browser node scripts/run-browser-tests.mjs'
+
   check:
     desc: Run formatting checks, vet, race tests, and the runtime build locally
     cmds:
@@ -63,6 +99,7 @@ tasks:
       - task: test:race
       - task: test:integration
       - task: build
+      - task: web:check
 
   dev:
     desc: Build and start the local API and PostgreSQL; wait for health checks
@@ -101,11 +138,16 @@ tasks:
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/provision'
 
+  dev:admin-credential:
+    desc: Print one separate temporary provider administration credential for local use
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/provision -provider'
+
   test:integration:
     desc: Run real PostgreSQL foundation tests in isolated disposable databases
     cmds:
       - defer: '{{.COMPOSE}} stop test-db'
-      - '{{.COMPOSE}} up --detach --wait test-db'
+      - '{{.COMPOSE}} up --force-recreate --detach --wait test-db'
       - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable tools go test -race -count=1 ./internal/integration'
 
   db:check:

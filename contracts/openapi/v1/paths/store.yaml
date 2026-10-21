@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/store-id.yaml
 get:
   operationId: GetStore
+  x-access: merchant
   x-required-scope: store:read
   tags: [Merchant account]
   summary: Read an authorized store
