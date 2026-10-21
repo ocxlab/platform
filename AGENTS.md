@@ -43,6 +43,14 @@ and appropriate generated artifacts. UI, external API, and future agent adapters
 must use the same authorized application operations. Structural code generation
 does not implement behavioral rules or authorization.
 
+Build web applications with SvelteKit and TypeScript. Add provider administration
+incrementally alongside the capabilities being managed, not as a separate late
+dashboard project. Use a separately authorized, OpenAPI-defined provider
+administration API in the existing backend; never give the UI direct database
+access. Record consequential administrative actions, preserve tenant scope, and
+test denied access as well as supported management actions. Do not introduce
+unrestricted impersonation, secret exposure, or mandatory extra deployments.
+
 Edit modular source under `contracts/openapi/v1/`, not the ignored bundle or
 generated Go. Keep reusable resource definitions, parameters, headers, and errors
 in their owning files and expose stable root component names. After changes, run

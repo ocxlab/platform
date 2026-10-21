@@ -77,6 +77,30 @@ features to rediscover after a single-provider storefront is finished.
 
 ## Decisions at the point they become necessary
 
+### Administration accompanies each feature slice
+
+Founder agreement, 21 October 2026: use SvelteKit and TypeScript for the web
+applications and build provider administration incrementally. Each feature slice
+must identify and deliver its necessary management operations and UI, or explain
+why no administration is needed yet. Do not defer all management to the end or
+prebuild a broad dashboard for features that do not exist.
+
+The administration app uses a separately authorized provider administration API,
+documented in modular OpenAPI sources with a generated TypeScript client. It can
+share the existing Go runtime without becoming a new mandatory deployment. Reuse
+the owning modules' supported operations rather than bypassing their invariants
+with database edits. Record consequential actions and verify access denial,
+tenant scope, and retry/concurrency safety where applicable. Start with founder
+access; elaborate staff roles and unrestricted impersonation are not required.
+
+For publication, assess merchant/store lookup and publication management. For
+orders and durable execution, add the required operational inspection and safe
+recovery controls. For payments, add scoped status/reconciliation management
+without exposing secrets or treating an administrative action as payment evidence.
+See [the applications guide](../apps/README.md) for frontend and testing boundaries.
+
+### Other implementation decisions
+
 Before F1, confirm the first concrete operation inventory, credential/grant
 mechanism, OpenAPI/generator pairing, and migration/database tooling. These choices
 can be evaluated locally; a production cloud decision is not needed to implement

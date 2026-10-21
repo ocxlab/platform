@@ -1,5 +1,17 @@
 # Development status
 
+## Agreed next-slice application requirements
+
+21 October 2026: the founder approved SvelteKit/TypeScript web applications and
+incremental provider administration alongside the functions being managed. Each
+slice assesses its management needs and adds the relevant admin UI and separately
+authorized, OpenAPI-defined administration operations in the existing backend.
+See [the kickoff plan](IMPLEMENTATION-KICKOFF.md#administration-accompanies-each-feature-slice)
+and [applications guide](../apps/README.md). No UI, administration endpoint, or new
+runtime behavior was implemented by this documentation update.
+
+## Completed foundation
+
 21 October 2026, Europe/Berlin (UTC+02:00). Steps 1 and 2 are implemented and
 accepted by both technical reviewers at the bounded foundation scope.
 
