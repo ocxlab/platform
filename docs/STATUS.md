@@ -1,5 +1,39 @@
 # Development status
 
+## Public store browsing and table alignment
+
+21 October 2026, Europe/Berlin (UTC+02:00). The homepage now lists this provider's
+published stores with name search, scrollable results, and continuation links.
+Customers can open a storefront and place a guest pickup order without a merchant
+login or copied identifiers. This replaces the placeholder browse instructions;
+ONIX is not a prerequisite for local browsing. The running development homepage
+shows Döner Karlsruhe. Existing stores, menus, and credentials were preserved.
+
+The UI uses the anonymous, modular OpenAPI `GET /api/v1/public/stores` contract.
+Only visible published store names and identifiers cross its database projection;
+ordinary tenant RLS remains intact. Search is literal and case-insensitive, and
+bounded live pages bind their cursor to the trimmed query. This is a local
+directory, not network-wide discovery. Public request limits and search scaling
+remain release work. English, German, and Arabic messages cover the new controls.
+
+The managed-stores table now aligns header and body cells explicitly at the
+logical start edge, correcting browser-default centered headings in both LTR and
+RTL layouts. Browser coverage checks English and Arabic alignment, empty and
+filtered public results, hidden drafts/suspended stores, no-login navigation,
+and search/navigation without JavaScript.
+
+All three Docker browser journeys and `task smoke` passed. The backend part of
+`task check` passed formatting, generated Go drift, vet, race tests, real
+PostgreSQL integration, and the runtime build. The integration suite verifies
+publication visibility, multi-merchant paging, changed-query cursor denial,
+literal wildcard handling, tenant isolation, and the projection function's
+ownership, search path, and execute privileges. Engineering and protocol static
+reviews accepted the corrected bounded scope. The full check then caught a stale
+TypeScript contract description after the cursor clarification; it was regenerated.
+The final `task web:check` rerun passed generated-type drift, zero Svelte
+errors/warnings, 25 unit tests, and the runtime build. These completed checks
+satisfy the two static reviews' mechanical verification conditions.
+
 ## Restaurant order decisions and cancellation
 
 21 October 2026, Europe/Berlin (UTC+02:00). The next restaurant-operations

@@ -25,6 +25,16 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(storeRow.locator('time')).toHaveAttribute('datetime', /.+/);
   await expect(managedStores.getByRole('link')).toHaveCount(2);
   await expect(managedStores.getByRole('link', { name: 'Second Kitchen', exact: true })).toBeVisible();
+  // Headers and values share their logical starting edge in both writing directions.
+  for (const language of ['ar', 'en']) {
+    await page.locator('.language-picker summary').click();
+    await page.locator(`.language-picker button[value=${language}]`).click();
+    const table = page.locator('.store-table table');
+    await expect(table).toHaveCSS('direction', language === 'ar' ? 'rtl' : 'ltr');
+    for (const cell of await table.locator('th, td').all()) {
+      await expect(cell).toHaveCSS('text-align', 'start');
+    }
+  }
   await managedStores.getByRole('link', { name: 'Neighbourhood Kitchen', exact: true }).click();
   await expect(page).toHaveURL(workspace);
   const storefront = `/stores/${fixture.merchant_id}/${store}`;
@@ -45,10 +55,29 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(storeRow.getByRole('cell').nth(1)).toHaveText('1');
   await storeRow.getByRole('link').click();
   const guestContext = await browser.newContext(); const guest = await guestContext.newPage();
+  await guest.goto('/');
+  await expect(guest.getByRole('status')).toContainText('No stores are published yet.');
   await guest.goto(storefront); await expect(guest.getByText('This store has no public menu available.')).toBeVisible();
   await page.getByRole('button', { name: 'Publish saved draft' }).click();
   await expect(page.getByRole('status')).toHaveText('Menu published.');
-  await guest.goto(storefront);
+  const noScriptContext = await browser.newContext({ javaScriptEnabled: false });
+  const noScript = await noScriptContext.newPage();
+  await noScript.goto('/');
+  await noScript.getByLabel('Search by store name').fill('kitchen');
+  await noScript.getByRole('button', { name: 'Search', exact: true }).click();
+  await noScript.getByRole('region', { name: 'Published stores' }).getByRole('link', { name: 'Neighbourhood Kitchen', exact: true }).click();
+  await expect(noScript.getByRole('heading', { name: 'Neighbourhood Kitchen', exact: true })).toBeVisible();
+  await noScriptContext.close();
+  await guest.goto('/');
+  await expect(guest.getByRole('region', { name: 'Published stores' }).getByRole('link')).toHaveCount(1);
+  await expect(guest.getByRole('link', { name: 'Second Kitchen', exact: true })).toHaveCount(0);
+  await guest.getByLabel('Search by store name').fill('missing shop');
+  await guest.getByRole('button', { name: 'Search', exact: true }).click();
+  await expect(guest.getByRole('status')).toContainText('No stores match this name.');
+  await guest.getByLabel('Search by store name').fill('kitchen');
+  await guest.getByRole('button', { name: 'Search', exact: true }).click();
+  await guest.getByRole('region', { name: 'Published stores' }).getByRole('link', { name: 'Neighbourhood Kitchen', exact: true }).click();
+  await expect(guest).toHaveURL(new RegExp(storefront + '$'));
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await expect(guest.getByRole('alert')).toContainText('Select available items');
   await guest.getByLabel('Garlic').check();
@@ -163,6 +192,8 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await admin.getByLabel('Reason for this action').fill('Browser moderation test');
   await admin.getByRole('button', { name: 'Suspend visibility' }).click();
   await expect(admin.getByRole('status')).toContainText('Public visibility suspended');
+  await guest.goto('/');
+  await expect(guest.getByRole('status')).toContainText('No stores are published yet.');
   await guest.goto(storefront); await expect(guest.getByText('This store has no public menu available.')).toBeVisible();
   await guest.goto(receipt); await expect(guest.getByRole('region', { name: 'Order details' })).toContainText('15.00');
   await admin.getByLabel('Reason for this action').fill('Browser review complete');

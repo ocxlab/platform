@@ -46,7 +46,7 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 	}})
 	scopes := map[string]string{}
 	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:cancel": true, "order:manage": true, "order:inspect": true}
-	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true}
+	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true}
 	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true}
 	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true}
 	for _, path := range spec.Paths.Map() {
@@ -248,6 +248,8 @@ func write(w http.ResponseWriter, value any, err error) {
 		var publicationConflict *persistence.PublicationConflict
 		var orderConflict *persistence.OrderRevisionConflict
 		switch {
+		case errors.Is(err, persistence.ErrPublicStoreCursor):
+			problem(w, 400, "invalid_request", "The store continuation cursor is invalid.", nil)
 		case errors.Is(err, persistence.ErrOrderCursor):
 			problem(w, 400, "invalid_request", "The order continuation cursor is invalid.", nil)
 		case errors.As(err, &orderConflict):

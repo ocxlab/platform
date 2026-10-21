@@ -126,6 +126,21 @@ to another merchant's stores. An empty list is `items: []`, not an error or null
 
 ## Publication and quote behavior
 
+`GET /api/v1/public/stores` supplies the homepage's anonymous local directory.
+It exposes only names and merchant/store identifiers for visible publications,
+not drafts, suspended stores, account data, or private operational records. A
+narrow migration-owned SQL function provides that cross-tenant projection while
+ordinary table queries retain tenant RLS. Its trusted owner must have the database
+privileges needed for that projection; never transfer ownership to the runtime.
+
+The optional `q` is a case-insensitive literal name substring, trimmed before
+matching. Pages default to 50, cap at 100, and use a query-bound continuation
+in ascending merchant/store ID order. Keep `q` with `next_after`; omit the cursor
+for a new search. Changed-query cursors return 400. These are live pages, not a
+snapshot. This convenience directory does not implement ONIX or network-wide
+discovery. Edge rate limits and search scaling remain public-release work;
+bounded results alone do not bound database scan cost or request frequency.
+
 Publication selects an exact immutable revision and advances a separate generation.
 Administrative suspension preserves that choice; merchant publishing cannot undo
 suspension. Both use expected generations and attributable atomic audit records.

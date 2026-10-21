@@ -49,7 +49,7 @@
   .store-table { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; text-align: start; }
   caption { text-align: start; color: #52636d; font-size: .9rem; padding-bottom: .75rem; }
-  th, td { padding: .75rem; border-bottom: 1px solid #ccd8de; }
+  th, td { text-align: start; padding: .75rem; border-bottom: 1px solid #ccd8de; }
   thead { background: #f1f6f8; color: #20586f; }
   tbody th { font-weight: 500; }
   td:last-child { white-space: nowrap; }

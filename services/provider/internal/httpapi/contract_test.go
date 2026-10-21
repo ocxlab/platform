@@ -108,7 +108,7 @@ func TestProtectedOperationsDeclareScope(t *testing.T) {
 					}
 				}
 			}
-			if operation.OperationID == "GetLiveness" || operation.OperationID == "GetPublicOffering" || operation.OperationID == "CreateFoodQuote" || operation.OperationID == "CreateGuestSession" {
+			if operation.OperationID == "GetLiveness" || operation.OperationID == "GetPublicOffering" || operation.OperationID == "CreateFoodQuote" || operation.OperationID == "CreateGuestSession" || operation.OperationID == "ListPublicStores" {
 				if access != "public" {
 					t.Fatal("public operation audience mismatch")
 				}

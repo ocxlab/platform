@@ -21,6 +21,8 @@ tags:
 security:
   - BearerAuth: []
 paths:
+  /api/v1/public/stores:
+    $ref: paths/public-stores.yaml
   /health/live:
     $ref: paths/health.yaml
   /api/v1/merchants/{merchant_id}/stores:
@@ -81,6 +83,10 @@ components:
     ProviderBearerAuth:
       $ref: components/security/provider-bearer.yaml
   schemas:
+    PublicStore:
+      $ref: schemas/stores/public-list.yaml#/PublicStore
+    PublicStorePage:
+      $ref: schemas/stores/public-list.yaml#/PublicStorePage
     FoodOrderDecision:
       $ref: domains/food/order/v1/operations.yaml#/FoodOrderDecision
     CancelFoodOrderRequest:

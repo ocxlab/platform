@@ -452,6 +452,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/stores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find this provider's published stores
+         * @description Anonymous local directory, not network-wide discovery. Returns only store IDs and display names with a visible published offering. Case-insensitive literal name search. Live pages use ascending merchant/store IDs; refresh to see additions.
+         */
+        get: operations["ListPublicStores"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health/live": {
         parameters: {
             query?: never;
@@ -728,6 +748,15 @@ export interface components {
             /** Format: int64 */
             revision: number;
             store_id: components["schemas"]["Identifier"];
+        };
+        PublicStore: {
+            display_name: string;
+            id: components["schemas"]["Identifier"];
+            merchant_id: components["schemas"]["Identifier"];
+        };
+        PublicStorePage: {
+            items: components["schemas"]["PublicStore"][];
+            next_after?: string;
         };
         Publication: {
             /** Format: int64 */
@@ -1617,6 +1646,35 @@ export interface operations {
             400: components["responses"]["ProblemResponse"];
             404: components["responses"]["ProblemResponse"];
             429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    ListPublicStores: {
+        parameters: {
+            query?: {
+                q?: string;
+                /** @description Opaque continuation value bound to the trimmed search query. A different query returns 400; omit after to begin a new search. */
+                after?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Visible stores only, or an empty list. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicStorePage"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };

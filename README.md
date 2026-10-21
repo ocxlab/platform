@@ -35,7 +35,10 @@ task web:dev
 not order readiness. There is intentionally no successful readiness claim.
 PostgreSQL has no published host port; access it through Compose.
 
-Open <http://localhost:18181> for the web application. Run `task dev:credential`
+Open <http://localhost:18181> for the web application. **Browse a store** lists
+this provider's published stores, with name search and scrollable results. Open
+a store to browse and place a guest pickup order without a merchant login.
+Run `task dev:credential`
 and enter the printed merchant ID and temporary token at `/merchant`. Create a
 store, save a menu, and publish its saved revision; the workspace links to its
 public storefront. `task dev:admin-credential` supplies a separate temporary
