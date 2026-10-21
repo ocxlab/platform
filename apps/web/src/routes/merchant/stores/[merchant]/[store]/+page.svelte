@@ -11,6 +11,7 @@
 </script>
 <h1><bdi dir="auto">{data.store.display_name}</bdi></h1>
 <p>{t('merchant-edit-intro')}</p>
+<p><a href={`/merchant/stores/${data.store.merchant_id}/${data.store.id}/orders`}>{t('orders-inbox')}</a></p>
 {#if form?.error}<Notice text={form.error} error />{/if}
 {#if form?.success}<Notice text={form.success} />{/if}
 <section><h2>{t('merchant-publication')}</h2>

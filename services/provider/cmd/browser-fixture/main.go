@@ -23,11 +23,11 @@ func main() {
 	if persistence.Migrate(ctx, db) != nil {
 		fail()
 	}
-	p, token, err := persistence.Provision(ctx, db, "Browser fixture merchant", []string{"store:read", "store:write", "offering:read", "offering:write"}, time.Now().Add(time.Hour))
+	p, token, err := persistence.Provision(ctx, db, "Browser fixture merchant", []string{"store:read", "store:write", "offering:read", "offering:write", "order:read", "order:manage"}, time.Now().Add(time.Hour))
 	if err != nil {
 		fail()
 	}
-	_, provider, err := persistence.ProvisionProvider(ctx, db, []string{"publication:read", "publication:manage"}, time.Now().Add(time.Hour))
+	_, provider, err := persistence.ProvisionProvider(ctx, db, []string{"publication:read", "publication:manage", "order:inspect"}, time.Now().Add(time.Hour))
 	if err != nil {
 		fail()
 	}

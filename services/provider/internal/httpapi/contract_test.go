@@ -93,7 +93,7 @@ func TestProtectedOperationsDeclareScope(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	known := map[string]bool{"store:read": true, "store:write": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true}
+	known := map[string]bool{"store:read": true, "store:write": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:manage": true, "order:cancel": true, "order:inspect": true}
 	for _, path := range spec.Paths.Map() {
 		for _, operation := range path.Operations() {
 			access, ok := operation.Extensions["x-access"].(string)

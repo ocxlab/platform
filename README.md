@@ -10,8 +10,10 @@ guest browsing, and server-priced selection quotes. Merchants and provider admin
 use separately authorized JSON APIs backed by PostgreSQL; SvelteKit supplies their
 interfaces and the public storefront. Modular OpenAPI contracts generate Go and
 TypeScript artifacts. Guest pickup-order placement and private receipts are
-available. Acceptance, kitchen operations, payment, and native ONIX integration
-remain next slices; this is not yet a complete ordering product.
+available. The restaurant order inbox supports acceptance/rejection and private
+progress; guests can cancel unpaid, unprepared orders. Kitchen operations,
+payment, and native ONIX integration remain next slices; this is not yet a
+complete ordering product.
 
 ## Start locally
 
@@ -40,6 +42,10 @@ public storefront. `task dev:admin-credential` supplies a separate temporary
 credential for `/admin`, where merchant/store IDs locate publication for inspection,
 suspension, or restoration. These are local development bootstraps, not production
 signup or login. Tokens are printed once; do not commit them.
+The store workspace also links to its order inbox. Existing full development
+credentials can gain the new order scopes with `task dev:order-access`, without
+recreating merchants, stores, or credentials. This is an explicit local bootstrap,
+not a production migration. New credentials already include the relevant scopes.
 
 ```text
 task logs

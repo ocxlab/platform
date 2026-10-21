@@ -1,0 +1,28 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - $ref: ../components/parameters/order-id.yaml
+get:
+  operationId: AdminGetFoodOrder
+  security:
+    - ProviderBearerAuth: []
+  x-access: provider
+  x-required-scope: order:inspect
+  tags: [Provider administration]
+  summary: Inspect an order without impersonating a merchant or changing its outcome
+  description: Separate founder administration scope. Returns agreed terms, current state and history, never guest credentials. No administrative acceptance or payment override.
+  responses:
+    '200':
+      $ref: ../components/responses/food-order.yaml
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

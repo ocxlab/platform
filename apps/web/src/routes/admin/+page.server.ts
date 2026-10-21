@@ -12,6 +12,15 @@ export const actions: Actions = {
     connect(cookies, 'provider', token); return { connected: true };
   },
   disconnect: async ({ cookies }) => { disconnect(cookies, 'provider'); return { disconnected: true }; },
+  inspectOrder: async ({ request, cookies }) => {
+    const current = session(cookies, 'provider'); if (!current) return fail(401, { error: text('admin-connect-first') });
+    const form = await request.formData();
+    const path = { merchant_id: String(form.get('merchant') ?? ''), store_id: String(form.get('store') ?? ''), order_id: String(form.get('order') ?? '') };
+    if (!Object.values(path).every((value) => uuid.test(value))) return fail(400, { error: text('error-common-invalid-request') });
+    const result = await api(current.token).GET('/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}', { params: { path } });
+    if (!result.data) return fail(result.response.status, { error: message(result.error) });
+    return { order: result.data };
+  },
   inspect: async ({ request, cookies }) => {
     const current = session(cookies, 'provider'); if (!current) return fail(401, { error: text('admin-connect-first') });
     const form = await request.formData(); const path = { merchant_id: String(form.get('merchant') ?? ''), store_id: String(form.get('store') ?? '') };

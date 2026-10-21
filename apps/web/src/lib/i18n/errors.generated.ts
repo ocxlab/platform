@@ -101,6 +101,18 @@ export const errorCodes = {
     "status": 409,
     "title": "Publication conflict",
     "message_key": "error-offering-publication-conflict"
+  },
+  "order_revision_conflict": {
+    "module": "orders",
+    "status": 409,
+    "title": "Order revision changed",
+    "message_key": "error-orders-order-revision-conflict"
+  },
+  "order_transition_conflict": {
+    "module": "orders",
+    "status": 409,
+    "title": "Order action unavailable",
+    "message_key": "error-orders-order-transition-conflict"
   }
 } as const;
 export type ErrorCode = keyof typeof errorCodes;

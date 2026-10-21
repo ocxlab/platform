@@ -1,0 +1,43 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+get:
+  operationId: ListMerchantFoodOrders
+  x-access: merchant
+  x-required-scope: order:read
+  tags: [Merchant commerce]
+  summary: Read a bounded pickup order inbox
+  description: >-
+    Includes open and closed orders, independently of current publication, newest first with order ID
+    as the tie breaker. Pages are live reads; refresh the first page for new orders. Pass next_after
+    unchanged as after to continue. Invalid cursors return 400. No guest tokens or customer account data are returned.
+  parameters:
+    - $ref: ../components/parameters/page-limit.yaml
+    - name: after
+      in: query
+      schema:
+        type: string
+        maxLength: 128
+        pattern: '^[A-Za-z0-9_-]+$'
+  responses:
+    '200':
+      description: Bounded order page, with an empty items array when no orders exist.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/order/v1/operations.yaml#/FoodOrderPage
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

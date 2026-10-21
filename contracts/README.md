@@ -155,8 +155,48 @@ together; a retry retains the original terms even after quote expiry or withdraw
 The web retains one checkout intent per store, including its original retry key.
 See `docs/STATUS.md` for executed checks and remaining product boundaries.
 
+## Restaurant decisions and guest cancellation
+
+The merchant Food order API provides a newest-first inbox, individual reads,
+and explicit accept/reject decisions. Its operations require `order:read` or
+`order:manage`; a catalog-writing grant alone does not confer order access.
+The placing guest can cancel an open order before payment or preparation,
+including after acceptance. Separate provider `order:inspect` authority permits
+read-only inspection through the administration API, not merchant impersonation.
+
+`expected_revision` refers to operational progress, not the offering revision
+inside agreed terms. A stale action returns `order_revision_conflict` with
+`current_order_revision`; read the current order before choosing another action.
+Invalid state transitions return `order_transition_conflict`. A successful
+decision or cancellation returns 201. Revision, attributable event, and original
+replay result commit together. A matching successful retry returns its historical
+body, while GET returns current progress and ordered history. Closed orders cannot
+be reopened by later acceptance. Acceptance neither collects money nor starts
+preparation; there is no API for overriding those facts in this slice.
+
+Placement bodies and agreed terms remain immutable. Migration 00004 backfills a
+separate operational row for existing orders. Current reads supply `revision`;
+it remains optional in the response schema so retained placement replay bodies
+without it stay valid. `history` is omitted from inbox pages and old placement
+replays. The current state graph permits at most three events; its schema allows
+four. Extend the history contract or add pagination when adding payment/kitchen
+events. The newly expanded state enums require updated consumers: this is a
+coordinated draft-contract increment, not proof that older generated clients
+understand new lifecycle states.
+
+Inbox pages contain at most 100 orders (default 50), ordered by placement time
+descending and immutable order ID descending for ties. Pass opaque `next_after`
+unchanged as `after`. A cursor is a position, not a credential. Refresh the first
+page for new arrivals; multi-request pagination is not a snapshot. The UI uses
+explicit refresh, not push notifications or a realtime delivery guarantee.
+
+Fresh development credentials include their audience's order scopes.
+`task dev:order-access` explicitly extends existing active full-merchant and
+publication-admin walkthrough grants in the local `ocp_dev` database. It is not
+part of application migrations and must not become a production privilege upgrade.
+
 Stable machine errors are owned by module under [errors/](errors/README.md).
-Run `task errors:generate` after catalog changes. English and German Fluent
+Run `task errors:generate` after catalog changes. English, German, and Arabic Fluent
 resources live with the web application; API problem details remain diagnostic,
 not the source of customer-facing translations.
 

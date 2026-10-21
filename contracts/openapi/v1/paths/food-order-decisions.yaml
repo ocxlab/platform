@@ -1,0 +1,45 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - $ref: ../components/parameters/order-id.yaml
+post:
+  operationId: DecideFoodOrder
+  x-access: merchant
+  x-required-scope: order:manage
+  tags: [Merchant commerce]
+  summary: Accept or reject a pending pickup order
+  description: >-
+    Requires the current operational revision and an open, pending order. Acceptance does not record
+    payment or start preparation. Rejection closes the order without changing agreed terms.
+    State, history and replay result commit atomically. Matching retries return the original 201 body,
+    even if progress has since changed; GET returns current state. Stale revisions and invalid
+    transitions return 409 with order_revision_conflict or order_transition_conflict.
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../domains/food/order/v1/operations.yaml#/FoodOrderDecision
+  responses:
+    '201':
+      $ref: ../components/responses/food-order.yaml
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

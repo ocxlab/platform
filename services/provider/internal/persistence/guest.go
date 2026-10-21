@@ -70,7 +70,7 @@ func AuthenticateGuest(ctx context.Context, db *sql.DB, token string) (Principal
 		return Principal{}, ErrUnauthenticated
 	}
 	digest := sha256.Sum256([]byte(token))
-	p := Principal{Guest: true, Scopes: []string{"quote:create", "order:create", "order:read"}}
+	p := Principal{Guest: true, Scopes: []string{"quote:create", "order:create", "order:read", "order:cancel"}}
 	err := db.QueryRowContext(ctx, `SELECT id,merchant_id,store_id FROM auth.lookup_guest_grant($1)`, digest[:]).Scan(&p.ID, &p.MerchantID, &p.StoreID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Principal{}, ErrUnauthenticated

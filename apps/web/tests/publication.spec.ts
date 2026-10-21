@@ -93,6 +93,23 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(unrelated.getByText('Open this order in the browser used at checkout.', { exact: false })).toBeVisible();
   await expect(unrelated.getByRole('region', { name: 'Order details' })).toHaveCount(0);
   await unrelatedContext.close();
+  // Merchant and customer operations use the same durable order through separate APIs.
+  const orderId = new URL(receipt).pathname.split('/').at(-1)!;
+  await page.getByRole('link', { name: 'Order inbox', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Pickup orders', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: orderId, exact: true }).click();
+  await page.getByRole('button', { name: 'Accept order', exact: true }).click();
+  await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Accept order', exact: true })).toHaveCount(0);
+  await guest.goto(receipt);
+  await expect(guest.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
+  await guest.getByRole('button', { name: 'Cancel order', exact: true }).click();
+  await expect(guest.getByText('This order is cancelled.', { exact: false })).toBeVisible();
+  await expect(guest.getByRole('button', { name: 'Cancel order', exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Cancelled');
+  await expect(page.getByRole('region', { name: 'Order details' }).getByRole('listitem')).toHaveCount(3);
+  await page.goto(workspace);
   // Deletion is a draft edit, survives reload, and only reaches customers on publish.
   const removeItem = page.getByRole('button', { name: /Remove menu item.*Döner/ });
   const viewport = page.viewportSize();
@@ -135,7 +152,13 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   const adminContext = await browser.newContext(); const admin = await adminContext.newPage();
   await admin.goto('/admin'); await admin.getByLabel('Temporary provider credential').fill(fixture.provider_token);
   await admin.getByRole('button', { name: 'Connect provider' }).click();
-  await admin.getByLabel('Merchant identifier').fill(fixture.merchant_id); await admin.getByLabel('Store identifier').fill(store);
+  await admin.getByLabel("Order's merchant identifier").fill(fixture.merchant_id);
+  await admin.getByLabel("Order's store identifier").fill(store);
+  await admin.getByLabel('Order identifier', { exact: true }).fill(orderId);
+  await admin.getByRole('button', { name: 'Inspect order', exact: true }).click();
+  await expect(admin.getByRole('region', { name: 'Order details' })).toContainText('Cancelled');
+  await expect(admin.getByRole('button', { name: 'Accept order', exact: true })).toHaveCount(0);
+  await admin.getByLabel('Merchant identifier', { exact: true }).fill(fixture.merchant_id); await admin.getByLabel('Store identifier', { exact: true }).fill(store);
   await admin.getByRole('button', { name: 'Inspect publication' }).click();
   await admin.getByLabel('Reason for this action').fill('Browser moderation test');
   await admin.getByRole('button', { name: 'Suspend visibility' }).click();
@@ -146,6 +169,15 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await admin.getByRole('button', { name: 'Restore visibility' }).click();
   await expect(admin.getByRole('status')).toContainText('Visibility restored');
   await guest.goto(storefront); await expect(guest.getByRole('heading', { name: 'Neighbourhood Kitchen' })).toBeVisible();
+  await guest.getByRole('button', { name: 'Check selection price' }).click();
+  await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
+  const declinedReceipt = guest.url();
+  const declinedId = new URL(declinedReceipt).pathname.split('/').at(-1)!;
+  await page.goto(`${workspace}/orders/${declinedId}`);
+  await page.getByRole('button', { name: 'Decline order', exact: true }).click();
+  await guest.reload();
+  await expect(guest.getByText('The restaurant declined this order.', { exact: false })).toBeVisible();
+  await expect(guest.getByRole('button', { name: 'Cancel order', exact: true })).toHaveCount(0);
   expect((await admin.content()).includes(fixture.provider_token)).toBe(false);
   await guest.goto('/admin'); await expect(guest.getByLabel('Temporary provider credential')).toBeVisible();
   const csrf = await request.post('/merchant?/connect', { headers: { Origin: 'https://untrusted.example' }, form: { merchant: fixture.merchant_id, token: 'not-a-credential' } });

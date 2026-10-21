@@ -31,7 +31,7 @@ FoodOrder:
       enum: [pickup]
     acceptance:
       type: string
-      enum: [pending]
+      enum: [pending, accepted, rejected]
     payment:
       type: string
       enum: [not_started]
@@ -40,7 +40,18 @@ FoodOrder:
       enum: [not_started]
     resolution:
       type: string
-      enum: [open]
+      enum: [open, rejected, cancelled]
+    revision:
+      description: Current operational revision. Optional for compatibility with retained placement replay bodies; current reads always supply it.
+      type: integer
+      format: int64
+      minimum: 1
+    history:
+      description: Ordered durable history on individual order reads. Omitted from bounded inbox pages and old placement replays. Contains no credentials or actor identifiers.
+      type: array
+      maxItems: 4
+      items:
+        $ref: operations.yaml#/FoodOrderEvent
     created_at:
       type: string
       format: date-time

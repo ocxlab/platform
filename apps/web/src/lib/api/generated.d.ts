@@ -4,6 +4,31 @@
  */
 
 export interface paths {
+    "/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Inspect an order without impersonating a merchant or changing its outcome
+         * @description Separate founder administration scope. Returns agreed terms, current state and history, never guest credentials. No administrative acceptance or payment override.
+         */
+        get: operations["AdminGetFoodOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication": {
         parameters: {
             query?: never;
@@ -75,6 +100,31 @@ export interface paths {
         get: operations["GetGuestFoodOrder"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel this guest's unpaid, unprepared pickup order
+         * @description Only the placing guest can cancel. Requires current revision, open resolution, payment not_started and fulfilment_progress not_started. Works before or after merchant acceptance. No payment or refund effect is implied. Cancellation closes the order; late acceptance cannot reopen it. State, history and replay result commit atomically. Matching retries return the original 201 body.
+         */
+        post: operations["CancelGuestFoodOrder"];
         delete?: never;
         options?: never;
         head?: never;
@@ -172,6 +222,77 @@ export interface paths {
         get: operations["GetStore"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Read a bounded pickup order inbox
+         * @description Includes open and closed orders, independently of current publication, newest first with order ID as the tie breaker. Pages are live reads; refresh the first page for new orders. Pass next_after unchanged as after to continue. Invalid cursors return 400. No guest tokens or customer account data are returned.
+         */
+        get: operations["ListMerchantFoodOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        /** Read an order and its durable progress */
+        get: operations["GetMerchantFoodOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept or reject a pending pickup order
+         * @description Requires the current operational revision and an open, pending order. Acceptance does not record payment or start preparation. Rejection closes the order without changing agreed terms. State, history and replay result commit atomically. Matching retries return the original 201 body, even if progress has since changed; GET returns current state. Stale revisions and invalid transitions return 409 with order_revision_conflict or order_transition_conflict.
+         */
+        post: operations["DecideFoodOrder"];
         delete?: never;
         options?: never;
         head?: never;
@@ -352,6 +473,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CancelFoodOrderRequest: {
+            /** Format: int64 */
+            expected_revision: number;
+        };
         ChangePublicationRequest: {
             /** Format: int64 */
             expected_generation: number;
@@ -398,7 +523,7 @@ export interface components {
         };
         FoodOrder: {
             /** @enum {string} */
-            acceptance: "pending";
+            acceptance: "pending" | "accepted" | "rejected";
             /** @enum {string} */
             contract: "ocp.food.order.v1";
             /** Format: date-time */
@@ -407,15 +532,41 @@ export interface components {
             fulfilment: "pickup";
             /** @enum {string} */
             fulfilment_progress: "not_started";
+            /** @description Ordered durable history on individual order reads. Omitted from bounded inbox pages and old placement replays. Contains no credentials or actor identifiers. */
+            history?: components["schemas"]["FoodOrderEvent"][];
             id: components["schemas"]["Identifier"];
             merchant_id: components["schemas"]["Identifier"];
             /** @enum {string} */
             payment: "not_started";
             /** @enum {string} */
-            resolution: "open";
+            resolution: "open" | "rejected" | "cancelled";
+            /**
+             * Format: int64
+             * @description Current operational revision. Optional for compatibility with retained placement replay bodies; current reads always supply it.
+             */
+            revision?: number;
             store_id: components["schemas"]["Identifier"];
             /** @description Immutable agreed quote snapshot. expires_at is the deadline for first placement, not an expiry or cancellation of this order. */
             terms: components["schemas"]["FoodQuote"];
+        };
+        FoodOrderDecision: {
+            /** @enum {string} */
+            decision: "accept" | "reject";
+            /** Format: int64 */
+            expected_revision: number;
+        };
+        FoodOrderEvent: {
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string} */
+            event: "placed" | "accepted" | "rejected" | "cancelled";
+            /** Format: int64 */
+            sequence: number;
+        };
+        FoodOrderPage: {
+            items: components["schemas"]["FoodOrder"][];
+            /** @description Opaque position for the next page in newest-first order, not an authorization credential. */
+            next_after?: string;
         };
         FoodQuote: {
             /** Format: date-time */
@@ -545,6 +696,11 @@ export interface components {
             current_generation?: number;
             /**
              * Format: int64
+             * @description Current operational order revision on order_revision_conflict. Read the order before selecting a new action.
+             */
+            current_order_revision?: number;
+            /**
+             * Format: int64
              * @description Current draft head on a revision conflict.
              */
             current_revision?: number;
@@ -632,6 +788,16 @@ export interface components {
         };
     };
     responses: {
+        /** @description Order state with immutable agreed terms and current revision. */
+        ComponentsResponsesFoodOrderYamlfe02b813: {
+            headers: {
+                "X-Request-ID": components["headers"]["RequestID"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["FoodOrder"];
+            };
+        };
         /** @description Active guest checkout capacity reached. Retry after the indicated delay; capacity may still be occupied. */
         ComponentsResponsesGuestCapacityYaml2ca50909: {
             headers: {
@@ -691,6 +857,29 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    AdminGetFoodOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ComponentsResponsesFoodOrderYamlfe02b813"];
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
     AdminGetPublication: {
         parameters: {
             query?: never;
@@ -840,6 +1029,39 @@ export interface operations {
             413: components["responses"]["ProblemResponse"];
             415: components["responses"]["ProblemResponse"];
             422: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    CancelGuestFoodOrder: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelFoodOrderRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["ComponentsResponsesFoodOrderYamlfe02b813"];
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };
@@ -1016,6 +1238,97 @@ export interface operations {
             401: components["responses"]["ProblemResponse"];
             403: components["responses"]["ProblemResponse"];
             404: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    ListMerchantFoodOrders: {
+        parameters: {
+            query?: {
+                /** @description Maximum resources per page. Defaults to 50, with an upper bound of 100. */
+                limit?: components["parameters"]["ComponentsParametersPageLimitYaml06bb837c"];
+                after?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded order page, with an empty items array when no orders exist. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodOrderPage"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    GetMerchantFoodOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ComponentsResponsesFoodOrderYamlfe02b813"];
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    DecideFoodOrder: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FoodOrderDecision"];
+            };
+        };
+        responses: {
+            201: components["responses"]["ComponentsResponsesFoodOrderYamlfe02b813"];
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };

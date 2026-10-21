@@ -25,6 +25,11 @@ properties:
     format: int64
     minimum: 0
     description: Current publication generation on a publication_conflict.
+  current_order_revision:
+    type: integer
+    format: int64
+    minimum: 1
+    description: Current operational order revision on order_revision_conflict. Read the order before selecting a new action.
   instance:
     type: string
     format: uri

@@ -49,6 +49,16 @@ paths:
     $ref: paths/food-orders.yaml
   /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}:
     $ref: paths/food-order.yaml
+  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation:
+    $ref: paths/food-order-cancellation.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders:
+    $ref: paths/merchant-food-orders.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}:
+    $ref: paths/merchant-food-order.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions:
+    $ref: paths/food-order-decisions.yaml
+  /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}:
+    $ref: paths/admin-food-order.yaml
 components:
   parameters:
     MerchantID:
@@ -71,6 +81,14 @@ components:
     ProviderBearerAuth:
       $ref: components/security/provider-bearer.yaml
   schemas:
+    FoodOrderDecision:
+      $ref: domains/food/order/v1/operations.yaml#/FoodOrderDecision
+    CancelFoodOrderRequest:
+      $ref: domains/food/order/v1/operations.yaml#/CancelFoodOrderRequest
+    FoodOrderEvent:
+      $ref: domains/food/order/v1/operations.yaml#/FoodOrderEvent
+    FoodOrderPage:
+      $ref: domains/food/order/v1/operations.yaml#/FoodOrderPage
     GuestSession:
       $ref: schemas/common/guest-session.yaml#/GuestSession
     PlaceFoodOrderRequest:

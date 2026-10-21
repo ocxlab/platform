@@ -1,5 +1,50 @@
 # Development status
 
+## Restaurant order decisions and cancellation
+
+21 October 2026, Europe/Berlin (UTC+02:00). The next restaurant-operations
+checkpoint is implemented and running at http://localhost:18181/. Open a managed
+store and select **Order inbox** to inspect and accept or decline guest pickup
+orders. Guests can refresh their private receipt and cancel an open, unpaid,
+unprepared order, including after acceptance. Provider administration can inspect
+a known order through its separately authorized, read-only API.
+
+Agreed terms remain immutable. Operational revisions, attributed events, and
+scoped retry results commit together; conflicting actions serialize per order.
+The inbox is newest-first with bounded continuation pages. Both UI and external
+clients use the same modular OpenAPI operations. New messages and stable errors
+have English, German, and Arabic Fluent resources; Arabic still needs a native
+speaker's review. See [order operations](ORDER-OPERATIONS.md) for the walkthrough.
+
+Passed: regenerated Go/TypeScript contracts, formatting, full `task check`
+(including race tests, real PostgreSQL integration, generation drift, API/web
+builds, zero Svelte errors/warnings, and 25 web unit tests), `task smoke`, and all
+three Docker browser journeys. Integration covers concurrent actions, tenant,
+scope and guest ownership boundaries, event/replay rollback, restart, cursor
+continuation, and migration of an actual legacy order while preserving its
+original replay. The first browser run found an ambiguous test selector between
+two admin forms; exact label matching fixed it and the rerun passed.
+
+Engineering and protocol automated static reviews accepted the bounded slice
+after their corrections; these are not independent human reviews. Their final
+verification conditions are satisfied by the checks above. Contract regeneration
+and formatting also resolved the engineering report's temporary mechanical notes.
+The current graph can retain placement, acceptance, and cancellation (three
+events); its four-event schema bound must be revisited before more lifecycle work.
+
+No development data was reset. Migration 00004 and the explicit local-only
+`task dev:order-access` upgrade retain existing stores and credentials. The local
+API was restarted; Vite remains live. `task dev` now stops the old API before
+migration to prevent legacy placement writes after the progress backfill.
+
+The original three-part sequence remains: guest placement is complete; restaurant
+operations now include manual decisions/cancellation; payment and recovery follow,
+then payment-gated kitchen progression. This is not the full restaurant workflow.
+Automatic acceptance, opening/pause controls, estimates/timeouts, preparation,
+ready/collected states, delivery, notifications, and long-lived guest recovery
+remain. No payment or kitchen success is fabricated by acceptance. Network
+integration and release validation remain subsequent connected milestones.
+
 ## Local Vite development and compact navigation
 
 21 October 2026, Europe/Berlin (UTC+02:00). `task web:dev` now runs Svelte/Vite

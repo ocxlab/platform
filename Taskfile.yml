@@ -131,6 +131,8 @@ tasks:
   dev:
     desc: Build and start the local API and PostgreSQL; wait for health checks
     cmds:
+      # Do not let an old API write orders between a backfill and its new runtime.
+      - '{{.COMPOSE}} stop api'
       - task: db:prepare
       - '{{.COMPOSE}} up --build --detach --wait api db'
 
@@ -179,6 +181,11 @@ tasks:
     desc: Print one separate temporary provider administration credential for local use
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/provision -provider'
+
+  dev:order-access:
+    desc: Explicitly extend existing local full-merchant/admin credentials with order access, retaining store data
+    cmds:
+      - '{{.COMPOSE}} exec -T db psql -v ON_ERROR_STOP=1 -U ocp_dev -d ocp_dev -f /dev/stdin < deploy/local/enable-order-scopes.sql'
 
   test:integration:
     desc: Run real PostgreSQL foundation tests in isolated disposable databases

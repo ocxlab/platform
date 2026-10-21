@@ -1,0 +1,4 @@
+{
+  "order_revision_conflict": { "status": 409, "title": "Order revision changed", "message_key": "error-orders-order-revision-conflict" },
+  "order_transition_conflict": { "status": 409, "title": "Order action unavailable", "message_key": "error-orders-order-transition-conflict" }
+}

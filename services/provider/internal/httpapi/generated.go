@@ -62,13 +62,19 @@ func (e FoodMenuCurrency) Valid() bool {
 
 // Defines values for FoodOrderAcceptance.
 const (
-	Pending FoodOrderAcceptance = "pending"
+	FoodOrderAcceptanceAccepted FoodOrderAcceptance = "accepted"
+	FoodOrderAcceptancePending  FoodOrderAcceptance = "pending"
+	FoodOrderAcceptanceRejected FoodOrderAcceptance = "rejected"
 )
 
 // Valid indicates whether the value is a known member of the FoodOrderAcceptance enum.
 func (e FoodOrderAcceptance) Valid() bool {
 	switch e {
-	case Pending:
+	case FoodOrderAcceptanceAccepted:
+		return true
+	case FoodOrderAcceptancePending:
+		return true
+	case FoodOrderAcceptanceRejected:
 		return true
 	default:
 		return false
@@ -137,13 +143,61 @@ func (e FoodOrderPayment) Valid() bool {
 
 // Defines values for FoodOrderResolution.
 const (
-	Open FoodOrderResolution = "open"
+	FoodOrderResolutionCancelled FoodOrderResolution = "cancelled"
+	FoodOrderResolutionOpen      FoodOrderResolution = "open"
+	FoodOrderResolutionRejected  FoodOrderResolution = "rejected"
 )
 
 // Valid indicates whether the value is a known member of the FoodOrderResolution enum.
 func (e FoodOrderResolution) Valid() bool {
 	switch e {
-	case Open:
+	case FoodOrderResolutionCancelled:
+		return true
+	case FoodOrderResolutionOpen:
+		return true
+	case FoodOrderResolutionRejected:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodOrderDecisionDecision.
+const (
+	Accept FoodOrderDecisionDecision = "accept"
+	Reject FoodOrderDecisionDecision = "reject"
+)
+
+// Valid indicates whether the value is a known member of the FoodOrderDecisionDecision enum.
+func (e FoodOrderDecisionDecision) Valid() bool {
+	switch e {
+	case Accept:
+		return true
+	case Reject:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodOrderEventEvent.
+const (
+	Accepted  FoodOrderEventEvent = "accepted"
+	Cancelled FoodOrderEventEvent = "cancelled"
+	Placed    FoodOrderEventEvent = "placed"
+	Rejected  FoodOrderEventEvent = "rejected"
+)
+
+// Valid indicates whether the value is a known member of the FoodOrderEventEvent enum.
+func (e FoodOrderEventEvent) Valid() bool {
+	switch e {
+	case Accepted:
+		return true
+	case Cancelled:
+		return true
+	case Placed:
+		return true
+	case Rejected:
 		return true
 	default:
 		return false
@@ -225,6 +279,11 @@ func (e PlaceFoodOrderRequestFulfilment) Valid() bool {
 	}
 }
 
+// CancelFoodOrderRequest defines model for CancelFoodOrderRequest.
+type CancelFoodOrderRequest struct {
+	ExpectedRevision int64 `json:"expected_revision"`
+}
+
 // ChangePublicationRequest defines model for ChangePublicationRequest.
 type ChangePublicationRequest struct {
 	ExpectedGeneration int64 `json:"expected_generation"`
@@ -290,6 +349,9 @@ type FoodOrder struct {
 	Fulfilment         FoodOrderFulfilment         `json:"fulfilment"`
 	FulfilmentProgress FoodOrderFulfilmentProgress `json:"fulfilment_progress"`
 
+	// History Ordered durable history on individual order reads. Omitted from bounded inbox pages and old placement replays. Contains no credentials or actor identifiers.
+	History *[]FoodOrderEvent `json:"history,omitempty"`
+
 	// Id Durable opaque identifier; not a display name or hostname.
 	Id Identifier `json:"id"`
 
@@ -297,6 +359,9 @@ type FoodOrder struct {
 	MerchantId Identifier          `json:"merchant_id"`
 	Payment    FoodOrderPayment    `json:"payment"`
 	Resolution FoodOrderResolution `json:"resolution"`
+
+	// Revision Current operational revision. Optional for compatibility with retained placement replay bodies; current reads always supply it.
+	Revision *int64 `json:"revision,omitempty"`
 
 	// StoreId Durable opaque identifier; not a display name or hostname.
 	StoreId Identifier `json:"store_id"`
@@ -322,6 +387,33 @@ type FoodOrderPayment string
 
 // FoodOrderResolution defines model for FoodOrder.Resolution.
 type FoodOrderResolution string
+
+// FoodOrderDecision defines model for FoodOrderDecision.
+type FoodOrderDecision struct {
+	Decision         FoodOrderDecisionDecision `json:"decision"`
+	ExpectedRevision int64                     `json:"expected_revision"`
+}
+
+// FoodOrderDecisionDecision defines model for FoodOrderDecision.Decision.
+type FoodOrderDecisionDecision string
+
+// FoodOrderEvent defines model for FoodOrderEvent.
+type FoodOrderEvent struct {
+	CreatedAt time.Time           `json:"created_at"`
+	Event     FoodOrderEventEvent `json:"event"`
+	Sequence  int64               `json:"sequence"`
+}
+
+// FoodOrderEventEvent defines model for FoodOrderEvent.Event.
+type FoodOrderEventEvent string
+
+// FoodOrderPage defines model for FoodOrderPage.
+type FoodOrderPage struct {
+	Items []FoodOrder `json:"items"`
+
+	// NextAfter Opaque position for the next page in newest-first order, not an authorization credential.
+	NextAfter *string `json:"next_after,omitempty"`
+}
 
 // FoodQuote defines model for FoodQuote.
 type FoodQuote struct {
@@ -479,6 +571,9 @@ type Problem struct {
 	// CurrentGeneration Current publication generation on a publication_conflict.
 	CurrentGeneration *int64 `json:"current_generation,omitempty"`
 
+	// CurrentOrderRevision Current operational order revision on order_revision_conflict. Read the order before selecting a new action.
+	CurrentOrderRevision *int64 `json:"current_order_revision,omitempty"`
+
 	// CurrentRevision Current draft head on a revision conflict.
 	CurrentRevision *int64 `json:"current_revision,omitempty"`
 	Detail          string `json:"detail"`
@@ -596,6 +691,9 @@ type MerchantID = Identifier
 // StoreID Durable opaque identifier; not a display name or hostname.
 type StoreID = Identifier
 
+// ComponentsResponsesFoodOrderYamlfe02b813 defines model for ComponentsResponsesFoodOrderYamlfe02b813.
+type ComponentsResponsesFoodOrderYamlfe02b813 = FoodOrder
+
 // ComponentsResponsesGuestCapacityYaml2ca50909 defines model for ComponentsResponsesGuestCapacityYaml2ca50909.
 type ComponentsResponsesGuestCapacityYaml2ca50909 = Problem
 
@@ -617,6 +715,12 @@ type PlaceFoodOrderParams struct {
 	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
 }
 
+// CancelGuestFoodOrderParams defines parameters for CancelGuestFoodOrder.
+type CancelGuestFoodOrderParams struct {
+	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
 // ListStoresParams defines parameters for ListStores.
 type ListStoresParams struct {
 	// Limit Maximum resources per page. Defaults to 50, with an upper bound of 100.
@@ -628,6 +732,19 @@ type ListStoresParams struct {
 
 // CreateStoreParams defines parameters for CreateStore.
 type CreateStoreParams struct {
+	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// ListMerchantFoodOrdersParams defines parameters for ListMerchantFoodOrders.
+type ListMerchantFoodOrdersParams struct {
+	// Limit Maximum resources per page. Defaults to 50, with an upper bound of 100.
+	Limit *ComponentsParametersPageLimitYaml06bb837c `form:"limit,omitempty" json:"limit,omitempty"`
+	After *string                                    `form:"after,omitempty" json:"after,omitempty"`
+}
+
+// DecideFoodOrderParams defines parameters for DecideFoodOrder.
+type DecideFoodOrderParams struct {
 	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
 	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
 }
@@ -650,11 +767,17 @@ type AdminSuspendPublicationJSONRequestBody = SuspendPublicationRequest
 // PlaceFoodOrderJSONRequestBody defines body for PlaceFoodOrder for application/json ContentType.
 type PlaceFoodOrderJSONRequestBody = PlaceFoodOrderRequest
 
+// CancelGuestFoodOrderJSONRequestBody defines body for CancelGuestFoodOrder for application/json ContentType.
+type CancelGuestFoodOrderJSONRequestBody = CancelFoodOrderRequest
+
 // CreateGuestFoodQuoteJSONRequestBody defines body for CreateGuestFoodQuote for application/json ContentType.
 type CreateGuestFoodQuoteJSONRequestBody = FoodSelectionRequest
 
 // CreateStoreJSONRequestBody defines body for CreateStore for application/json ContentType.
 type CreateStoreJSONRequestBody = CreateStoreRequest
+
+// DecideFoodOrderJSONRequestBody defines body for DecideFoodOrder for application/json ContentType.
+type DecideFoodOrderJSONRequestBody = FoodOrderDecision
 
 // WriteOfferingJSONRequestBody defines body for WriteOffering for application/json ContentType.
 type WriteOfferingJSONRequestBody = WriteOfferingRequest
@@ -741,6 +864,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// AdminGetFoodOrder request
+	AdminGetFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AdminGetPublication request
 	AdminGetPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -756,6 +882,11 @@ type ClientInterface interface {
 
 	// GetGuestFoodOrder request
 	GetGuestFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CancelGuestFoodOrderWithBody request with any body
+	CancelGuestFoodOrderWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CancelGuestFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, body CancelGuestFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateGuestFoodQuoteWithBody request with any body
 	CreateGuestFoodQuoteWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -775,6 +906,17 @@ type ClientInterface interface {
 
 	// GetStore request
 	GetStore(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListMerchantFoodOrders request
+	ListMerchantFoodOrders(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetMerchantFoodOrder request
+	GetMerchantFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DecideFoodOrderWithBody request with any body
+	DecideFoodOrderWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	DecideFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, body DecideFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetOffering request
 	GetOffering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -810,6 +952,18 @@ type ClientInterface interface {
 
 	// GetLiveness request
 	GetLiveness(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) AdminGetFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminGetFoodOrderRequest(c.Server, merchantId, storeId, orderId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) AdminGetPublication(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -874,6 +1028,30 @@ func (c *Client) PlaceFoodOrder(ctx context.Context, merchantId MerchantID, stor
 
 func (c *Client) GetGuestFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetGuestFoodOrderRequest(c.Server, merchantId, storeId, orderId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CancelGuestFoodOrderWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelGuestFoodOrderRequestWithBody(c.Server, merchantId, storeId, orderId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CancelGuestFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, body CancelGuestFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelGuestFoodOrderRequest(c.Server, merchantId, storeId, orderId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -958,6 +1136,54 @@ func (c *Client) CreateStore(ctx context.Context, merchantId MerchantID, params 
 
 func (c *Client) GetStore(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetStoreRequest(c.Server, merchantId, storeId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListMerchantFoodOrders(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListMerchantFoodOrdersRequest(c.Server, merchantId, storeId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetMerchantFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMerchantFoodOrderRequest(c.Server, merchantId, storeId, orderId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DecideFoodOrderWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDecideFoodOrderRequestWithBody(c.Server, merchantId, storeId, orderId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DecideFoodOrder(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, body DecideFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDecideFoodOrderRequest(c.Server, merchantId, storeId, orderId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1122,6 +1348,54 @@ func (c *Client) GetLiveness(ctx context.Context, reqEditors ...RequestEditorFn)
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewAdminGetFoodOrderRequest generates requests for AdminGetFoodOrder
+func NewAdminGetFoodOrderRequest(server string, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/admin/merchants/%s/stores/%s/food/orders/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewAdminGetPublicationRequest generates requests for AdminGetPublication
@@ -1342,6 +1616,80 @@ func NewGetGuestFoodOrderRequest(server string, merchantId MerchantID, storeId S
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCancelGuestFoodOrderRequest calls the generic CancelGuestFoodOrder builder with application/json body
+func NewCancelGuestFoodOrderRequest(server string, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, body CancelGuestFoodOrderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCancelGuestFoodOrderRequestWithBody(server, merchantId, storeId, orderId, params, "application/json", bodyReader)
+}
+
+// NewCancelGuestFoodOrderRequestWithBody generates requests for CancelGuestFoodOrder with any type of body
+func NewCancelGuestFoodOrderRequestWithBody(server string, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/guest/merchants/%s/stores/%s/food/orders/%s/cancellation", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Idempotency-Key", headerParam0)
+
 	}
 
 	return req, nil
@@ -1617,6 +1965,207 @@ func NewGetStoreRequest(server string, merchantId MerchantID, storeId StoreID) (
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListMerchantFoodOrdersRequest generates requests for ListMerchantFoodOrders
+func NewListMerchantFoodOrdersRequest(server string, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/food/orders", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "after", *params.After, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetMerchantFoodOrderRequest generates requests for GetMerchantFoodOrder
+func NewGetMerchantFoodOrderRequest(server string, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/food/orders/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDecideFoodOrderRequest calls the generic DecideFoodOrder builder with application/json body
+func NewDecideFoodOrderRequest(server string, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, body DecideFoodOrderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDecideFoodOrderRequestWithBody(server, merchantId, storeId, orderId, params, "application/json", bodyReader)
+}
+
+// NewDecideFoodOrderRequestWithBody generates requests for DecideFoodOrder with any type of body
+func NewDecideFoodOrderRequestWithBody(server string, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/food/orders/%s/decisions", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Idempotency-Key", headerParam0)
+
 	}
 
 	return req, nil
@@ -2105,6 +2654,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// AdminGetFoodOrderWithResponse request
+	AdminGetFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*AdminGetFoodOrderResponse, error)
+
 	// AdminGetPublicationWithResponse request
 	AdminGetPublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*AdminGetPublicationResponse, error)
 
@@ -2120,6 +2672,11 @@ type ClientWithResponsesInterface interface {
 
 	// GetGuestFoodOrderWithResponse request
 	GetGuestFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*GetGuestFoodOrderResponse, error)
+
+	// CancelGuestFoodOrderWithBodyWithResponse request with any body
+	CancelGuestFoodOrderWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelGuestFoodOrderResponse, error)
+
+	CancelGuestFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, body CancelGuestFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelGuestFoodOrderResponse, error)
 
 	// CreateGuestFoodQuoteWithBodyWithResponse request with any body
 	CreateGuestFoodQuoteWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGuestFoodQuoteResponse, error)
@@ -2139,6 +2696,17 @@ type ClientWithResponsesInterface interface {
 
 	// GetStoreWithResponse request
 	GetStoreWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetStoreResponse, error)
+
+	// ListMerchantFoodOrdersWithResponse request
+	ListMerchantFoodOrdersWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams, reqEditors ...RequestEditorFn) (*ListMerchantFoodOrdersResponse, error)
+
+	// GetMerchantFoodOrderWithResponse request
+	GetMerchantFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*GetMerchantFoodOrderResponse, error)
+
+	// DecideFoodOrderWithBodyWithResponse request with any body
+	DecideFoodOrderWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DecideFoodOrderResponse, error)
+
+	DecideFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, body DecideFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*DecideFoodOrderResponse, error)
 
 	// GetOfferingWithResponse request
 	GetOfferingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetOfferingResponse, error)
@@ -2174,6 +2742,34 @@ type ClientWithResponsesInterface interface {
 
 	// GetLivenessWithResponse request
 	GetLivenessWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetLivenessResponse, error)
+}
+
+type AdminGetFoodOrderResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *ComponentsResponsesFoodOrderYamlfe02b813
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminGetFoodOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminGetFoodOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type AdminGetPublicationResponse struct {
@@ -2296,6 +2892,37 @@ func (r GetGuestFoodOrderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetGuestFoodOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CancelGuestFoodOrderResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *ComponentsResponsesFoodOrderYamlfe02b813
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CancelGuestFoodOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CancelGuestFoodOrderResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2442,6 +3069,93 @@ func (r GetStoreResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetStoreResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListMerchantFoodOrdersResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *FoodOrderPage
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListMerchantFoodOrdersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListMerchantFoodOrdersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetMerchantFoodOrderResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *ComponentsResponsesFoodOrderYamlfe02b813
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetMerchantFoodOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetMerchantFoodOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DecideFoodOrderResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *ComponentsResponsesFoodOrderYamlfe02b813
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DecideFoodOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DecideFoodOrderResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2712,6 +3426,15 @@ func (r GetLivenessResponse) StatusCode() int {
 	return 0
 }
 
+// AdminGetFoodOrderWithResponse request returning *AdminGetFoodOrderResponse
+func (c *ClientWithResponses) AdminGetFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*AdminGetFoodOrderResponse, error) {
+	rsp, err := c.AdminGetFoodOrder(ctx, merchantId, storeId, orderId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminGetFoodOrderResponse(rsp)
+}
+
 // AdminGetPublicationWithResponse request returning *AdminGetPublicationResponse
 func (c *ClientWithResponses) AdminGetPublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*AdminGetPublicationResponse, error) {
 	rsp, err := c.AdminGetPublication(ctx, merchantId, storeId, reqEditors...)
@@ -2762,6 +3485,23 @@ func (c *ClientWithResponses) GetGuestFoodOrderWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseGetGuestFoodOrderResponse(rsp)
+}
+
+// CancelGuestFoodOrderWithBodyWithResponse request with arbitrary body returning *CancelGuestFoodOrderResponse
+func (c *ClientWithResponses) CancelGuestFoodOrderWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelGuestFoodOrderResponse, error) {
+	rsp, err := c.CancelGuestFoodOrderWithBody(ctx, merchantId, storeId, orderId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelGuestFoodOrderResponse(rsp)
+}
+
+func (c *ClientWithResponses) CancelGuestFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *CancelGuestFoodOrderParams, body CancelGuestFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelGuestFoodOrderResponse, error) {
+	rsp, err := c.CancelGuestFoodOrder(ctx, merchantId, storeId, orderId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelGuestFoodOrderResponse(rsp)
 }
 
 // CreateGuestFoodQuoteWithBodyWithResponse request with arbitrary body returning *CreateGuestFoodQuoteResponse
@@ -2823,6 +3563,41 @@ func (c *ClientWithResponses) GetStoreWithResponse(ctx context.Context, merchant
 		return nil, err
 	}
 	return ParseGetStoreResponse(rsp)
+}
+
+// ListMerchantFoodOrdersWithResponse request returning *ListMerchantFoodOrdersResponse
+func (c *ClientWithResponses) ListMerchantFoodOrdersWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams, reqEditors ...RequestEditorFn) (*ListMerchantFoodOrdersResponse, error) {
+	rsp, err := c.ListMerchantFoodOrders(ctx, merchantId, storeId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListMerchantFoodOrdersResponse(rsp)
+}
+
+// GetMerchantFoodOrderWithResponse request returning *GetMerchantFoodOrderResponse
+func (c *ClientWithResponses) GetMerchantFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, reqEditors ...RequestEditorFn) (*GetMerchantFoodOrderResponse, error) {
+	rsp, err := c.GetMerchantFoodOrder(ctx, merchantId, storeId, orderId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetMerchantFoodOrderResponse(rsp)
+}
+
+// DecideFoodOrderWithBodyWithResponse request with arbitrary body returning *DecideFoodOrderResponse
+func (c *ClientWithResponses) DecideFoodOrderWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DecideFoodOrderResponse, error) {
+	rsp, err := c.DecideFoodOrderWithBody(ctx, merchantId, storeId, orderId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDecideFoodOrderResponse(rsp)
+}
+
+func (c *ClientWithResponses) DecideFoodOrderWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *DecideFoodOrderParams, body DecideFoodOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*DecideFoodOrderResponse, error) {
+	rsp, err := c.DecideFoodOrder(ctx, merchantId, storeId, orderId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDecideFoodOrderResponse(rsp)
 }
 
 // GetOfferingWithResponse request returning *GetOfferingResponse
@@ -2936,6 +3711,74 @@ func (c *ClientWithResponses) GetLivenessWithResponse(ctx context.Context, reqEd
 		return nil, err
 	}
 	return ParseGetLivenessResponse(rsp)
+}
+
+// ParseAdminGetFoodOrderResponse parses an HTTP response from a AdminGetFoodOrderWithResponse call
+func ParseAdminGetFoodOrderResponse(rsp *http.Response) (*AdminGetFoodOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminGetFoodOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ComponentsResponsesFoodOrderYamlfe02b813
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseAdminGetPublicationResponse parses an HTTP response from a AdminGetPublicationWithResponse call
@@ -3288,6 +4131,95 @@ func ParseGetGuestFoodOrderResponse(rsp *http.Response) (*GetGuestFoodOrderRespo
 			return nil, err
 		}
 		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCancelGuestFoodOrderResponse parses an HTTP response from a CancelGuestFoodOrderWithResponse call
+func ParseCancelGuestFoodOrderResponse(rsp *http.Response) (*CancelGuestFoodOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CancelGuestFoodOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ComponentsResponsesFoodOrderYamlfe02b813
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
 		var dest ProblemResponse
@@ -3670,6 +4602,231 @@ func ParseGetStoreResponse(rsp *http.Response) (*GetStoreResponse, error) {
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListMerchantFoodOrdersResponse parses an HTTP response from a ListMerchantFoodOrdersWithResponse call
+func ParseListMerchantFoodOrdersResponse(rsp *http.Response) (*ListMerchantFoodOrdersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListMerchantFoodOrdersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FoodOrderPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetMerchantFoodOrderResponse parses an HTTP response from a GetMerchantFoodOrderWithResponse call
+func ParseGetMerchantFoodOrderResponse(rsp *http.Response) (*GetMerchantFoodOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetMerchantFoodOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ComponentsResponsesFoodOrderYamlfe02b813
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDecideFoodOrderResponse parses an HTTP response from a DecideFoodOrderWithResponse call
+func ParseDecideFoodOrderResponse(rsp *http.Response) (*DecideFoodOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DecideFoodOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ComponentsResponsesFoodOrderYamlfe02b813
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
 		var dest ProblemResponse
@@ -4388,6 +5545,9 @@ func ParseGetLivenessResponse(rsp *http.Response) (*GetLivenessResponse, error) 
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Inspect an order without impersonating a merchant or changing its outcome
+	// (GET /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id})
+	AdminGetFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5)
 	// Inspect store publication
 	// (GET /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication)
 	AdminGetPublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
@@ -4400,6 +5560,9 @@ type ServerInterface interface {
 	// Inspect this guest's pickup order
 	// (GET /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id})
 	GetGuestFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5)
+	// Cancel this guest's unpaid, unprepared pickup order
+	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation)
+	CancelGuestFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params CancelGuestFoodOrderParams)
 	// Quote a selection for this guest
 	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes)
 	CreateGuestFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
@@ -4415,6 +5578,15 @@ type ServerInterface interface {
 	// Read an authorized store
 	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id})
 	GetStore(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
+	// Read a bounded pickup order inbox
+	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders)
+	ListMerchantFoodOrders(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params ListMerchantFoodOrdersParams)
+	// Read an order and its durable progress
+	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id})
+	GetMerchantFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5)
+	// Accept or reject a pending pickup order
+	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions)
+	DecideFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params DecideFoodOrderParams)
 	// Read the current draft revision
 	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/offering)
 	GetOffering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
@@ -4452,6 +5624,55 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// AdminGetFoodOrder operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetFoodOrder(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "order_id" -------------
+	var orderId ComponentsParametersOrderIdYaml294fa0a5
+
+	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ProviderBearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetFoodOrder(w, r, merchantId, storeId, orderId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // AdminGetPublication operation middleware
 func (siw *ServerInterfaceWrapper) AdminGetPublication(w http.ResponseWriter, r *http.Request) {
@@ -4669,6 +5890,83 @@ func (siw *ServerInterfaceWrapper) GetGuestFoodOrder(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetGuestFoodOrder(w, r, merchantId, storeId, orderId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelGuestFoodOrder operation middleware
+func (siw *ServerInterfaceWrapper) CancelGuestFoodOrder(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "order_id" -------------
+	var orderId ComponentsParametersOrderIdYaml294fa0a5
+
+	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, GuestBearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CancelGuestFoodOrderParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelGuestFoodOrder(w, r, merchantId, storeId, orderId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4907,6 +6205,191 @@ func (siw *ServerInterfaceWrapper) GetStore(w http.ResponseWriter, r *http.Reque
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetStore(w, r, merchantId, storeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMerchantFoodOrders operation middleware
+func (siw *ServerInterfaceWrapper) ListMerchantFoodOrders(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListMerchantFoodOrdersParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "after" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "after", r.URL.Query(), &params.After, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "after", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMerchantFoodOrders(w, r, merchantId, storeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMerchantFoodOrder operation middleware
+func (siw *ServerInterfaceWrapper) GetMerchantFoodOrder(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "order_id" -------------
+	var orderId ComponentsParametersOrderIdYaml294fa0a5
+
+	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMerchantFoodOrder(w, r, merchantId, storeId, orderId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DecideFoodOrder operation middleware
+func (siw *ServerInterfaceWrapper) DecideFoodOrder(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "order_id" -------------
+	var orderId ComponentsParametersOrderIdYaml294fa0a5
+
+	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DecideFoodOrderParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DecideFoodOrder(w, r, merchantId, storeId, orderId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5417,15 +6900,20 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.AdminGetFoodOrder)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.AdminGetPublication)
 	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.AdminSuspendPublication)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders", wrapper.PlaceFoodOrder)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.GetGuestFoodOrder)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation", wrapper.CancelGuestFoodOrder)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes", wrapper.CreateGuestFoodQuote)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}", wrapper.GetGuestFoodQuote)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores", wrapper.ListStores)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores", wrapper.CreateStore)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}", wrapper.GetStore)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders", wrapper.ListMerchantFoodOrders)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.GetMerchantFoodOrder)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions", wrapper.DecideFoodOrder)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.GetOffering)
 	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.WriteOffering)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision}", wrapper.GetOfferingRevision)
@@ -5442,123 +6930,141 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+w9f3PbNpZf5Y1uZ9rOSbLk2Glj/+Umbde3SeON2+3tdnIeiHyS0JAAC4CKVY+/+w0e",
-	"ABKkKNmSHSdpvX9sHZEAgYf3+xeueonMCylQGN07uurNkaWo6M83+HuJ2py+sP9IUSeKF4ZL0Tvqfa9Q",
-	"z0GjWqAazFCgYgZT+Pnn0xcwlQrMnGv4+08/nQEzBvPC9IGLJCtTLmag0CiOetjr93Qyx5zZ+adS5cz0",
-	"jnplydNev2eWBfaOetooLma96+vrfq9giuVo/OqeV8s+q35/rVJUp+m/WZ7tPzuYshE7tK9yu+SCmXmv",
-	"3xMst/NK++YFfUnh7yVXmPaOjCoxXtPfFE57R73/2qtBtOee6r3TFIXhU46qZ9fWtZozNsOXPOfGrmf0",
-	"dDL55snXySosX7FLnpc5KNSyVAlqKFBBwWY4hBc4ZWVmNBgJh6M+vOdmDkxAWdh3JrIUKcgpjEcjC03a",
-	"5+8lqmW90cwuoAHp1M3ZOzoc9Xu5+3jvaDyy/+LC/6s6AC4MzjZs8txIhSdTg8rucjx98jQ9PHi2usvv",
-	"LpOs1HyBoO2IwekLSEqlpYKpkjmYOUKhcMFlqYHmtNAbCrw0F8zOvm5/9LC346mdppgX0qBIlv/A5eqi",
-	"XwuEd7ikA7GAECmmkJeG2ed90IksMIXJEnJUyZwJ04eZov/IwpIElwKYSKujHcIbLJAZ2q5muZudtgAM",
-	"MqmNfbWQQuMQXjGTzC29LFjGU6Iv5ShSWxIqlaBppOIzLlgGukwS1HpaZqANM6Xem8h0eQx2YbOOwQej",
-	"Z0P4aY4w5WKGqlBcGCg1akiYkIInLIMUE2n3/D/nr3/sg5AGFHsPhbLbM0sgKhrCef3ld7jUwBTajzAu",
-	"MHUoG+ADKTOMfpKlAVYamTPDE8DLgqslcOE4x9QiNoHvGFLpvoulRrvhnBgMg4yZcCr2xQo/HAOrESQ6",
-	"44E95E0En7PLlyhmZt47Gu9/Q/RQ/fupZUDGoLIf+b9fTwb/YYM/RoNnb+s/hxdHg7dX48P+eP/r6791",
-	"MLF+75UHRBdT9fzWoph/6xjyUhvILSbQYbPSzO1+E0IHwrVq400GF6a4Rx5HZOkW3vFBIut7+9q1ncVR",
-	"Qovbvwk//2CB9ZwVLOFmSSw/YYejZyNiPokkxLB/sqLILMC4FHuFkpMM8//+TVuIX91yZWdulFtW88xO",
-	"EmN52syuBZI5Ju8sYid+VaCQJXNMLd0bFSjdHiQXqT/EFDNmqTQMydkStOFZBhMEmSRlwTG1h9yQzEYt",
-	"B8R1O+SJY+Kgy9nMoRN9whKXxkSKtCV5UViO/+vT0dtOpv+/A4+XA3f0XYDyS9urNYbrpryoDu2fpTQY",
-	"H9rBBKdPpgf4EQ7td7sWEkdshp/6mcEEp9LxVbXkYvZQZ+jBGA7wIY/JP4IXVpRkGr588/1zeHZw+PVX",
-	"QzgYjYALkozwnhNcaNnHcDAaV08ShcRUWKbtgyfAhS6nU55wFAZYQgJaqlo8Wf4qFTdL+/pBJbeBTbQd",
-	"YQUXFxUnlor/gSkYFMSrD0bPQGFhz00qsMqMtvMnUkwzntgXxk/AymQwUkLG1Aztb4dQCl0WhVSO9aec",
-	"gT3DYzjY328+kylmdu6wP/dDilMuuJOWh6MnUAq2YDxjkwyt5qK5ttIPh3DOpgiph6bABSq7OCunY0jZ",
-	"D5z/82ULfZ9bohg8l8IomTWP1yNfT8gBCYHe2y7J98svvwxOIvG1SgTfIlN2SXOWZShmCFLQaVaCAKTI",
-	"lk3EX/3Ozrh+HeZ1+yWt6aycBPz27xLWpymBm2VnThPiVkhNWaax3yuin656eFlgYjC98EYSd7RRWTtc",
-	"mKcHvUjzHq0SsBWFDpdWYXaOGSYG8JIlBnhudVN77GHAMcicG4s7UoEos4xQOFXsvYai3puF6foljfs9",
-	"O9ROHCR6B4+phf6vnbuukUJOfsPE2H09V8gMkl6xG3hTri29XTgdpKnAPR01FbgupIwX3Zira7XfS5m+",
-	"lAnLIk2l+c2nB+1PxiojG/xxMvgPqYzVnxeDt1ej/tMnXeqi++IrFOWWUPHkzzNulheWR8RUmjNRsqyD",
-	"Rvu9pFTK6smraPYCMz4hIz9bApmUmAIxHZZBwrKkzJy1E6ZwxgKDxMks+40kYFpYyXc/v+lcBjeY0z6q",
-	"PzYJkACjU2OlCFm0p27cvjdp/T9rBGBKseXK+Ve773cAMKxqHV5UK9jppLIObhgshUHieG6GKcTrOgYh",
-	"4feSCeOUFo1qURGzX+NEygyZIKCmtwFkG72vg3q/JWn1e5L2cTFTsiy2O8zXNPIHO7B9nu0T7PcWTHHm",
-	"XVe3/sK/3KDm7E+2Qhaycwg0/egQo/W0IbAOcV4XQSZsgTb3eZjf3HyWheIJXuRcSNUtvCInkv/fZom2",
-	"AZjxtzbDzGHIAwEuZ5cXmmQtph6AbndPbnCb0dNbDO2U+7sdl0O8XYjuviiiseUW8Or1rT1elTrJug0j",
-	"TRIsDBNJQ9YVKFILlE5hZ9kqS0z8vkyK4VTKdOgcW4tx90jSWtILZhrUkDKDA8MJACtjpmU25VnuzaZq",
-	"fTx5VxadH6kHXBRKzhRq3dS1zYU2zJoF3TI03cbd0m+4i7YaWLBle1c3rc1aVVkZ2F4F+wJF5+uVY2mr",
-	"dRlUDvNZlr2e9o5+vZkGyDfRu37btkNPK7WazRRiGhwHghV6Ls3QeS9RXzADXJN1mCJLMy6QfJVTrrSB",
-	"ImMJWlB51UgEp6dUkFjEzbwKJafOCepwsJvOmt69yPVWYXWAQAP1+jGd1GfXjW2Ng2pg/TrCdQDcjnB3",
-	"IaZYT71JmazP5vbzb4tr9qS3Y7cEqfQlF7iq4mxguXegU3IV3DTkFb1kqbq2DW9tuY5vsly3HLoj3UvD",
-	"su10lZ3UlbUUuAZ0ESjCYfRjk8PhUHP9DaJroPJGCnR4taViZDCvrOhVFuyF90WkWrRjFz7ck8wlTxAy",
-	"NsFME/vzdnUcAf4DlRyQpgd+xiE4DYRlNEZmKSoXEMT3jt+S17oisC22Rgr4xc6anxu+FjRey995ej9+",
-	"zfwtzKu2En+3scTmhF1oUjObp6MOg8odtafYm/ZzHl4OnOxDUF+/Vwpu5dLWRsgtpvb22i3hXwOnH1FM",
-	"a5aO9TYBs454zz2V7WQS3hHL74bGt0HTzbsOOLQD17rjnrcT3K0zupmegoemYfk9e3aT8AsYdT8HEuDU",
-	"mDda2802WXVKu/lpt9eQVljLFkrSPWkvLSCuFexuc+sgF5xNjx6eW3p4KK5/jlpvzwQZ5aFcGPkORaeO",
-	"Uiqro0iKhv0DsYBC8QUzeAwaRUrxJWAaJi4SFWJ8lVs18ubLZHZRZ35cDN5eHaxx4m9vgbSA19jVjWrg",
-	"35Fl9pi3ApxGteBN34lMigEr+BqTnJmy4Y+Q77qjfg3p6Ub1q691Lb8ZW2lFIUpFZrgs2O8lAq9ePfbR",
-	"Bq9qgsU0a1fPpTb270Z8qzvBsN97xQSbYUrRqBvB145UExb51LacJrLGNOgyz5laxtHiydK9dqSQpUP4",
-	"vswykNMp2mVAKpPSDtQ+ncCDr3rBDeptNqI3cY1z91/apPv/f7M8cwl31ZQuLJeemPFoMsan+19b8LRD",
-	"bXf+ygs34Y8sx8nkcMz20xF9R7GpuVgf8XzJDGoDmi0sJQfAhff79titeRHyJQwluCk/Ygg/Spd9R9xc",
-	"zykvzg3dHATt1B5v5tK3gsRpmu5P8WDMxs7EF+UFSexElk5wtPxRBnOgZ+CTETIHk8p9aaeA8XA0HAGB",
-	"s78BJP0qNEx5dWI142AIXoZpSmbES6OYS/KzVKexYMoiP4n2YQtmNwWOt/Jo3AqYVYZdevgNTvf3vyGg",
-	"lkUaUUgnRhGkCCRg2XIfpizLLG5NWPIOjHRkC0RrFl0gSg4gwFg0crE5n3OpQ/Ki+6dz69m5tWF50cC3",
-	"20uDDu9DgzRbToMWOa2iVwM2XRz5VfAcba2+NNIpb1ZCFqgCyUcjD7YM4zs110/VtZ/Xnme8iVjMB3ZY",
-	"Bra+/lMN6oiM9Ydx993JS9eZy2PZbMVi+86XbfkAcRtcWNGdWLEG3gcNVrBZPVrHGQKEvPcWFGghyloP",
-	"XoejrjrAFnW53Xdh2VnGEqyiWbtZTVsHjchRdjeoVFM0AgedO/SZe0dXbQrxGSetTCUXQslZMucCB/a8",
-	"6QdUSiqwY4brff2mZcc1p37u3okzmqB+Hyx7jp9dhIy8HSR+WM56/SQsxomTObLULWAlH3CHr7vcvU4/",
-	"JBe6Cn82F/Sz4FZbdnCWifc5Yx9KJY6sMuzyy62ks5pBnD9Xpd6By5hr6tGK9zbaBpXReNjwdxyMOvdm",
-	"uMm6Xazuh6sbvtzCY3oaZu3Xtkfisnk8JCO4daI4IU0QGHfMTdtZKrQLaYqMJ9w43Wwg31uL1mE3FEr+",
-	"5rwmQ/B4mC071cKQSfmxJM7nGmC6rQxpqWTbBIUqtFiPkWwXB/FdElB3xooNfHIuNYqAubX95lOtq3zV",
-	"OYoqafXuiaq7hhV1qQsq/1rdyJmSVp9Rsf4vF6gUT/GYch+lt+1Rx9ZA4gAQm5/ttL3bYlsDpeqldiGQ",
-	"t6GeyzyX4ru8cFUYo6+/xvH4myc34tS6+bZ1KNxadd7ZlbB9yuK2tvoD+6d2tX4fepm38p/dg011l9Tv",
-	"B0uQuovx3km+oTR2h0jZ7QMwDVdoI/Yy7opx1VW6dwHN2vzqc8fQPplaDKa75NmpMKgEy4AZo/gkZIyl",
-	"djZt7OcWCG5w3xffONmXLYPe5mrGIkQ+HN2MyA3JdIMA6YJAPEO1u65j+EVxg7XzZJcTmDCNG0yn7/zy",
-	"fBVBbEMdOw+mow4duTDv4L3dTf/+VpYilERHpdmTpa8R1IZRrr6rzVI4s6e/dJXWoWLCPeO6pZp7r5VX",
-	"0b9MZc640Hv2hT37wt5i7ClpuGR59tUQfhbvhHwv3IRVZXfkwb1wn/ryYH//q4B2mmeu/C2kAnYbAlvo",
-	"8y00ax7zrTRbyjxJSsXNkuScwxdXEXZSuniWi8p9Hw7Zia9efyXKt5CJ8yxcFpw0r8BwB75g39VNw3nl",
-	"5vaVgPTYebbrEE3f//3eon+/GYnpk9+3+oleoZPWSLNE5ZHuo9olf762W/KfG0JUFWdfnDKelQqjOv3x",
-	"MTCHam6WqoDeYpyqqsY76hnttCZD72Gz02k4GD0ZwgtcYCYLelBYBdYelYUV1y2eRXUmXkvXfCbKwr5D",
-	"NYcB7bmGkHdaVecRG6IDq5FrbkxRRXibZ9v2FUmF4bS8muJLrKs6RRfKYZCU2sgclcVnWQrT9+m5tVrT",
-	"b4AkmuE2aw3a/cblhhCIX2rhxwxiSMq4yPK4az11TMWRphMHN6zwmnw/U9mh5hHzdP6BcDwO/X5+fmZB",
-	"8i0m75w7ypIUxcSJqU1kylEfR3WXYV0JS+ZItBU6NeiM23FB7fRYTgNcdxIjQQqMOhoE4EALOHOmgdXR",
-	"pBoswMqUuwLWEyHFMpelrvtraEvm5BDJlpBikhH1elZC5Olx10XRozzDwPI1lW8rtMzW7msxtlvP5QJT",
-	"mHLMUqqIDV00cmTCBRxdZJaBwPeQs9+kgpOz05oQ4DuWzBs9cEBhgnxh4QlTaqDT8LVR85y2ww28l3WY",
-	"yBRDdvliDJSlzXLXPSPl9txzLpiR6piKh2lPEwQ2kaU5mmRMvBtW7rCj3uvnZ3CWMWNP3i47Cpkc9UbD",
-	"8XDkEqRQsIL3jnpPhqPhE5cAMSfOvMcKbsURHeJeOF29dxUpt9d7xDn13lUwVa/3iqb/Yoamuw8GV9hA",
-	"hwprYgbwE1MzNDUp8RoZgimTNxDTNSPBy4KRCPcoQelPHp1O095R78Ru6gc0sbOl1Y9ifzTaUAq/ZQl8",
-	"9JmOMvjgUFZYKNQoTJWOEpVn36HC/8BtpWtEteW9dhsAGjfecdyTHccd7DZu/9lO4w53XGfVX2nrsZES",
-	"RAUrXbLn17fXb63KTnklZHZoqzT74HTRwFjDZtrqY2fdLNeqYZcDRwS9o14gsZ79NahzTgjbp/XMpPr0",
-	"Wg251tTX1K/sRa1vrvs3vh2azdjdFuUmLtFh1BDfZyCkIM5HXYLINnPmzRC+W6BaQiLznN5MF1b86Sho",
-	"FBx3brrCldeijlRJnwhaGyBwUqbc0Kd56DlU93Oij9nHRuY8YVm2HMKL4BHkeYFKS2E5XfjCEEJjMGoZ",
-	"sf90f3xwAJOlz4Tv4FirdnJv2zNqNcSywPf65bcyXd4bx1tv0V83bQlrgF2vsN7xg7Fe54xpNFbQZWaO",
-	"W42YQkuw0Nrupv5c9kQfGfjtx+3GwA/GO65zfLijoNl/FFArAsrTumuJsyKloqDJBxRYLiOT1h8UVzIn",
-	"t1BcyQlDaSxErg8m+qTulH2JVKl29ahkwxtJzMZOmKG1fiuORRv1YWJnGU+lApdEMoRKipbC5RWnQHWj",
-	"JMaCG64qe2k0oABmFWw6v8w7TKx1xxMcUB51fMqtfDiF5CoBrnUZvjiEc5Y3+ipRb0S7jLApL4oCd7Wy",
-	"cODM/IRlsD8axzVmrm+X27GrtB3CCaR8OkWvTrvJQjqGPgbmX0+YcOW6LiHc2q908n3ABQoohUXNeqZ3",
-	"uNRD+FFGHjVyGiXv4rYc/ZDqRO6IQjnLxgKHU8dPa4pRUxVnWE+YSeargr6ZVvSpyvfu5KcHlu01lDok",
-	"e9SysgLwo0R+lMifimRdcZG2xSqRGDDPyB1/glIT54u7FIQuAEG0Pg/uUmuPoHKJT5FQJXHRLVHpG0cu",
-	"BHNfsnTvKnRivl7rD3ptmTB1zI3dws4fbObMt1ZIvbZNTiImKKEUuBnCazNH5V7XwQUHB6ODIVC1tHPh",
-	"07DaZRy5PGv3bDPjO+SksKzO7HBuQ+9XsjKZujxwbeyx+H4ObY7+Axo67JipfzBX0yNPfOSJf16eGHxh",
-	"pEARwX+hGwzyPvnggzrBbn71tu3wr9/elXG7bgwf3whyzhnLYmtjx6AY5FyUJnT3rYJQNU64UHyVMRu1",
-	"mAAUaSG5MDVHd2GDqndP3SA2tHIngRvsBp+dwIQkmeMnrxr+rJEAbiOVEHBddD6MYt5Zyv0R9HLfaulR",
-	"Bj3KoHv3lG3VdfzzEGxeUY0cMdUlK0FO3YNcIyZ2b/q9ExN7V6GgKNbv12vANfP7gBrwWu5TdTGiRQ/h",
-	"O9ehzdViW25Opdmtfm6P7OlPpEK+oQDOAps6ZHWZyb1b0w+tRXZc3BFV/N3DxR2xermZY6y190/Jh0s+",
-	"6bpK342xWpemC5GsfU4gdElotQroQgynL/rAdOL6f/bjxv21Qf+FjoKtP2uEOo8ZmMu0sb8ET/EX2vuU",
-	"3b1Fx8Ag55o8Lv4moxyZ0L4g33IIusLpjM18BlXmM4BTHbpjhxaSwBIlta6u6KFtGqZMfTmSZzpshlab",
-	"dW5uu7732dLrnQFG8H4utYWABi2Viav+g0PfrXcIJ2HlXAODQmruPNW0uqDpgrtuR0oyo6aVdhtg94V2",
-	"H15VbF9ybVy5wtaO6tvfp7WjbbTm3irnEf9AsqdO3u+6lMTZKpi6Q5ZTcFGrcKzHrsECJTnlhVm6yigh",
-	"w6nnIWDw15JFH0emVPLConh9Au68fCp4FMkKpBJJjipj0qettgRHNKJDdtTZyXeTHRsCjD4sGOU+D+FF",
-	"VBdUxfIsoyImHUxq50V1fMOnsK+zeV2ByScaxOq4nOKBLWVff7PRSg4JKVUN90oKCrUSDjkoVAZNLu+/",
-	"ag7K52Ehf2S2FnxrXpty1uYDsDRiNA3b89ZW583pxFHbra4oTGBGH1b8b8rwjcDr4K4oz+PRwPxMqOYN",
-	"shSYWDnHT03sb+N934UU92TUMWMzTTYb2wHVrNTBV69RJMywTM7aN1atUHDVqOMDEvFK96gOevYNxSI0",
-	"cIWMdZMDZ/7V1q3f4SOlf06UHlvUzQPuIvg1HqLNFN8gj08n5b5d8dgo+HR31uLvJcsaIKJWSF9SGa+v",
-	"g82WXw3huc+/q+oTwzxVmyb48mD07CtXu9PuvzSE01bFrS/JddnYv2Fi9GpHQx1folhfn6hdnewQXlE+",
-	"t6/ysqTsSuK8F8fdfmbkDTn5jXrpT9XI6SzqfmAz5zYs9dHieYwl/hnyWSoJclJQVnwje6EpREI2n6gq",
-	"nBqs9P5lzB2Mr0rj2wur13tX4c/rbdXATbrdm1rEflQdrwoVrju+R07zWVltdYxv3YF+5kpdd/BPxeS0",
-	"Lvi33a0Ju5mMtykMr9usU79pDVykSK1rhAE5jdrFDOGE6vKdG4VCaRqYibuCWkW0k9M8Vn0/Vn1/XGYU",
-	"V065DsN/cnuyo4T7GJBqtKOq2Q3l2o3CLxByIAvLAkJ8vlKpqtvPh/CcCSFN1amx7jDh2mE54/JN06a9",
-	"5NoM4dweSR8YaXCu1o1Vpd/WGFl6G6Wr5nuLou6VK+g/2UjZurvyH6u5HxnzY47qZyF4zpwv2pmbLInM",
-	"UKkqtvkQNqcTfp9rUULVoaoPKWZ8Yvk5ZksQUgzqriBHgCyZxzykqkYOJQSkvq4vbBjCi9KxSf+Dhjlb",
-	"IAgZDoSzDHA6xcS0CtciHZikmstuJW+ac5NhKOoeQlUrsEeF3RpK7TLJMpm8C33HG7foULu4qiebH1X1",
-	"M4MfZSilbpRGW1iRuC+UzLnGqliaks+qsmqr8/tkt1qS0tWK0Lj1Eeh2MSgFN7rfIWpDYi+lvWXM2JVW",
-	"JR6FwkSKtJkKJ12nraq8sLqueV1qy1++kmNV2nrEretmovaFK7UzrqImNDrswOlPQOA+CsC/TJFGI0n8",
-	"X77rq2svSNcYM7BiCOILYm+bI+4E3t1koGvyod2liZ9QbR5oXKAYpGzZ76rejpo8TqWned2Py+3IomJk",
-	"15GhxY0G+d6X0lVdN1zfz0hk+HruSFrQmp3AI0FZdy6JswqiDpNc6zLInKb09sEkl6xrJImeqH+Kb4FZ",
-	"WFPSNUWhiBT3rb6oFRkaYBMrSwsljb+xY1NdYLgO8wO149p8J8ADS5XGhh9LBB+lz4NIH8K6WPrsJ+xw",
-	"9Gz07JOTPudUGOIZ6ByTd1ZBCoqS6zceUg4eUgTdmPMVmUZRy97agqgvL3K3E8EJ3QTTr29/IcZbdauv",
-	"goYaGF2V6rtlH1gVk6Uhi2zgYgCNhsVNlkwXXiSS7A8uUrzcEBZ4iBSz1pc+q+DAX6tFa4Muv1Xyva7T",
-	"nXzuoqwRZltqfMgUzzndGr1nrfBNdbov+QKFXeUHRH9/gXUH2p8pSY11rNmehdb0AYj1DZLAtEZ1vxTx",
-	"QTDmueXelu/RrjIPW+dzqLYlFaTMsAnT0RYjbHpddUJfx9TbRbAd9a+oFgHJSpX1jnp7pNz7b1yFaHH0",
-	"LYth/teVnOauZxWuRw9XCSF6uK4H5PXb6/8PAAD//9L/2va0pAAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

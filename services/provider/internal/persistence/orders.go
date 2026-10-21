@@ -16,21 +16,24 @@ var ErrQuoteUsed = errors.New("quote already placed")
 
 // Food owns these state names. They are not a universal commerce lifecycle.
 type FoodOrder struct {
-	ID                 uuid.UUID `json:"id"`
-	MerchantID         uuid.UUID `json:"merchant_id"`
-	StoreID            uuid.UUID `json:"store_id"`
-	Contract           string    `json:"contract"`
-	Terms              FoodQuote `json:"terms"`
-	Fulfilment         string    `json:"fulfilment"`
-	Acceptance         string    `json:"acceptance"`
-	Payment            string    `json:"payment"`
-	FulfilmentProgress string    `json:"fulfilment_progress"`
-	Resolution         string    `json:"resolution"`
-	CreatedAt          time.Time `json:"created_at"`
+	ID                 uuid.UUID        `json:"id"`
+	MerchantID         uuid.UUID        `json:"merchant_id"`
+	StoreID            uuid.UUID        `json:"store_id"`
+	Contract           string           `json:"contract"`
+	Terms              FoodQuote        `json:"terms"`
+	Fulfilment         string           `json:"fulfilment"`
+	Acceptance         string           `json:"acceptance"`
+	Payment            string           `json:"payment"`
+	FulfilmentProgress string           `json:"fulfilment_progress"`
+	Resolution         string           `json:"resolution"`
+	CreatedAt          time.Time        `json:"created_at"`
+	Revision           int64            `json:"revision,omitempty"`
+	History            []FoodOrderEvent `json:"history,omitempty"`
 }
 
 // PlaceFoodOrder runs within the replay transaction. There are no external
-// effects in this batch: acceptance/payment/kitchen work belongs to later slices.
+// effects here: merchant decisions use the operational row; payment and kitchen
+// work are not triggered by placement.
 func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, requestID uuid.UUID) (FoodOrder, error) {
 	var order FoodOrder
 	// The store lock also serializes quote pruning, publication, and placement.
@@ -90,6 +93,11 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	if err != nil {
 		return order, err
 	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_order_operations(merchant_id,store_id,order_id) VALUES($1,$2,$3)`, guest.MerchantID, guest.StoreID, order.ID)
+	if err != nil {
+		return order, err
+	}
+	order.Revision = 1
 	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_order_events(merchant_id,store_id,order_id,sequence,event,actor_id,request_id) VALUES($1,$2,$3,1,'placed',$4,$5)`, guest.MerchantID, guest.StoreID, order.ID, guest.ID, requestID)
 	return order, err
 }
@@ -103,16 +111,8 @@ func GetGuestFoodOrder(ctx context.Context, db *sql.DB, guest Principal, id uuid
 	if err = checkGuest(ctx, tx, guest); err != nil {
 		return FoodOrder{}, err
 	}
-	var body []byte
-	err = tx.QueryRowContext(ctx, `SELECT body FROM commerce.food_orders WHERE merchant_id=$1 AND store_id=$2 AND id=$3 AND guest_id=$4`, guest.MerchantID, guest.StoreID, id, guest.ID).Scan(&body)
-	if errors.Is(err, sql.ErrNoRows) {
-		return FoodOrder{}, ErrNotFound
-	}
+	order, err := readFoodOrder(ctx, tx, guest, guest.StoreID, id, false)
 	if err != nil {
-		return FoodOrder{}, err
-	}
-	var order FoodOrder
-	if err = json.Unmarshal(body, &order); err != nil {
 		return order, err
 	}
 	return order, tx.Commit()

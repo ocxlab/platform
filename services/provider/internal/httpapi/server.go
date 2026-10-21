@@ -45,10 +45,10 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 		problem(w, 400, "invalid_request", "Request does not match the API contract.", nil)
 	}})
 	scopes := map[string]string{}
-	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true}
+	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:cancel": true, "order:manage": true, "order:inspect": true}
 	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true}
-	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true}
-	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true}
+	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true}
+	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true}
 	for _, path := range spec.Paths.Map() {
 		for _, operation := range path.Operations() {
 			expectedAccess := "merchant"
@@ -106,7 +106,7 @@ func NewHandler(db *sql.DB) (http.Handler, error) {
 					return nil, errors.New("provider operation has wrong credential audience")
 				}
 			}
-			if !provider[operation.OperationID] && strings.HasPrefix(scope, "publication:") {
+			if !provider[operation.OperationID] && (strings.HasPrefix(scope, "publication:") || scope == "order:inspect") {
 				return nil, errors.New("provider scope on merchant operation")
 			}
 		}
@@ -229,6 +229,9 @@ func problem(w http.ResponseWriter, status int, code, detail string, current *in
 		if code == "publication_conflict" {
 			field = "current_generation"
 		}
+		if code == "order_revision_conflict" {
+			field = "current_order_revision"
+		}
 		body[field] = *current
 	}
 	if status == 401 {
@@ -243,7 +246,14 @@ func write(w http.ResponseWriter, value any, err error) {
 	if err != nil {
 		var conflict *persistence.RevisionConflict
 		var publicationConflict *persistence.PublicationConflict
+		var orderConflict *persistence.OrderRevisionConflict
 		switch {
+		case errors.Is(err, persistence.ErrOrderCursor):
+			problem(w, 400, "invalid_request", "The order continuation cursor is invalid.", nil)
+		case errors.As(err, &orderConflict):
+			problem(w, 409, "order_revision_conflict", "Order progress has changed. Read its current revision before retrying.", &orderConflict.Current)
+		case errors.Is(err, persistence.ErrOrderTransition):
+			problem(w, 409, "order_transition_conflict", "This action is not available for the current order state.", nil)
 		case errors.Is(err, persistence.ErrUnauthenticated):
 			problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
 		case errors.Is(err, persistence.ErrQuoteExpired):

@@ -1,5 +1,5 @@
 receipt-title = Pickup order placed
-receipt-intro = Awaiting restaurant acceptance. This development order has not been charged or sent to the kitchen.
+receipt-intro = Review your agreed selection and the restaurant's response. This development order has not been charged or sent to the kitchen.
 receipt-details = Order details
 receipt-selection = Your agreed selection
 receipt-progress = Fulfilment: pickup · Payment: not started · Preparation: not started

@@ -21,6 +21,7 @@ import (
 	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"github.com/google/uuid"
+	"github.com/pressly/goose/v3"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/persistence"
 )
@@ -35,6 +36,11 @@ type fixture struct {
 }
 
 func setup(t *testing.T) *fixture {
+	return setupAtVersion(t, 0)
+}
+
+// A bounded historical version supports real upgrade tests, not simulated DDL.
+func setupAtVersion(t *testing.T, version int64) *fixture {
 	t.Helper()
 	dsn := os.Getenv("OCP_TEST_DATABASE_URL")
 	if dsn == "" {
@@ -60,8 +66,15 @@ func setup(t *testing.T) *fixture {
 	admin, err := persistence.Open(ctx, parsed.String())
 	must(t, err)
 	t.Cleanup(func() { admin.Close() })
-	must(t, persistence.Migrate(ctx, admin))
-	must(t, persistence.Migrate(ctx, admin))
+	if version == 0 {
+		must(t, persistence.Migrate(ctx, admin))
+		must(t, persistence.Migrate(ctx, admin))
+	} else {
+		provider, err := goose.NewProvider(goose.DialectPostgres, admin, os.DirFS("../persistence/migrations"))
+		must(t, err)
+		_, err = provider.UpTo(ctx, version)
+		must(t, err)
+	}
 	parsed.User = url.UserPassword("ocp_app", "ocp_app_local_only")
 	app, err := persistence.Open(ctx, parsed.String())
 	must(t, err)
@@ -70,7 +83,7 @@ func setup(t *testing.T) *fixture {
 	if persistence.CheckRuntimeRole(ctx, admin) == nil {
 		t.Fatal("administrative runtime role accepted")
 	}
-	p, token, err := persistence.Provision(ctx, admin, "Example restaurant", []string{"store:read", "store:write", "offering:read", "offering:write"}, time.Now().Add(time.Hour))
+	p, token, err := persistence.Provision(ctx, admin, "Example restaurant", []string{"store:read", "store:write", "offering:read", "offering:write", "order:read", "order:manage"}, time.Now().Add(time.Hour))
 	must(t, err)
 	handler, err := httpapi.NewHandler(app)
 	must(t, err)

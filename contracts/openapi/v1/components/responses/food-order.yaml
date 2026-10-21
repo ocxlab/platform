@@ -1,0 +1,8 @@
+description: Order state with immutable agreed terms and current revision.
+headers:
+  X-Request-ID:
+    $ref: ../headers/request-id.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../../domains/food/order/v1/schema.yaml#/FoodOrder

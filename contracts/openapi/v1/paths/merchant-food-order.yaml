@@ -1,0 +1,25 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - $ref: ../components/parameters/order-id.yaml
+get:
+  operationId: GetMerchantFoodOrder
+  x-access: merchant
+  x-required-scope: order:read
+  tags: [Merchant commerce]
+  summary: Read an order and its durable progress
+  responses:
+    '200':
+      $ref: ../components/responses/food-order.yaml
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
