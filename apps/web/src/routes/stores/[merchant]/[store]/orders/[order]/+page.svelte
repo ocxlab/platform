@@ -10,7 +10,7 @@
 <h1>{t('receipt-title')}</h1>
 <p>{t('receipt-intro')}</p>
 {#if form?.error}<Notice text={form.error} error />{/if}
-<p><a href={`?revision=${data.order.revision}`}>{t('orders-refresh')}</a></p>
+<p><a data-sveltekit-reload href={`/stores/${data.order.merchant_id}/${data.order.store_id}/orders/${data.order.id}`}>{t('orders-refresh')}</a></p>
 <OrderDetails order={data.order} />
 {#if data.order.resolution === 'open' && data.order.payment === 'not_started' && data.order.fulfilment_progress === 'not_started'}
   <form method="POST" action="?/cancel"><input type="hidden" name="revision" value={data.order.revision} />

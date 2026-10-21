@@ -9,7 +9,7 @@
   let { data, form } = $props();
 </script>
 <h1>{t('orders-order')}</h1>
-<p><a href={`/merchant/stores/${data.order.merchant_id}/${data.order.store_id}/orders`}>{t('orders-inbox')}</a> · <a href={`?revision=${data.order.revision}`}>{t('orders-refresh')}</a></p>
+<p><a href={`/merchant/stores/${data.order.merchant_id}/${data.order.store_id}/orders`}>{t('orders-inbox')}</a> · <a data-sveltekit-reload href={`/merchant/stores/${data.order.merchant_id}/${data.order.store_id}/orders/${data.order.id}`}>{t('orders-refresh')}</a></p>
 {#if form?.error}<Notice text={form.error} error />{/if}
 {#if form?.success}<Notice text={form.success} />{/if}
 <OrderDetails order={data.order} />

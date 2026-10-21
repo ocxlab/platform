@@ -130,12 +130,16 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
   await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Accept order', exact: true })).toHaveCount(0);
-  await guest.goto(receipt);
+  await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
+  await expect(guest.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
+  await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(guest.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await guest.getByRole('button', { name: 'Cancel order', exact: true }).click();
   await expect(guest.getByText('This order is cancelled.', { exact: false })).toBeVisible();
   await expect(guest.getByRole('button', { name: 'Cancel order', exact: true })).toHaveCount(0);
-  await page.reload();
+  await page.getByRole('link', { name: 'Refresh status', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Cancelled');
+  await page.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Cancelled');
   await expect(page.getByRole('region', { name: 'Order details' }).getByRole('listitem')).toHaveCount(3);
   await page.goto(workspace);

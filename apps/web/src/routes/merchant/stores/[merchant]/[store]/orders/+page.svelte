@@ -7,7 +7,7 @@
 </script>
 <h1>{t('orders-title')}</h1>
 <p><bdi dir="auto">{data.store.display_name}</bdi> · {t('orders-inbox-help')}</p>
-<p><a href={root}>{t('orders-back')}</a> · <a href={`${root}/orders`}>{t('orders-refresh')}</a></p>
+<p><a href={root}>{t('orders-back')}</a> · <a data-sveltekit-reload href={`${root}/orders`}>{t('orders-refresh')}</a></p>
 {#if !data.orders.items.length}<p>{t('orders-empty')}</p>{:else}
 <div class="order-table"><table>
   <thead><tr><th>{t('receipt-reference')}</th><th>{t('orders-created')}</th><th>{t('orders-total')}</th><th>{t('orders-status')}</th></tr></thead>
