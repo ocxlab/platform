@@ -6,6 +6,7 @@
   import LogIn from '@lucide/svelte/icons/log-in';
   import LogOut from '@lucide/svelte/icons/log-out';
   import Plus from '@lucide/svelte/icons/plus';
+  import { merchantStorePath } from '$lib/merchant-paths';
   let { data, form } = $props();
   const dateFormat = $derived(new Intl.DateTimeFormat(locale(), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Berlin' }));
 </script>
@@ -27,7 +28,7 @@
           <thead><tr><th scope="col">{t('merchant-store-name')}</th><th scope="col">{t('merchant-menu-count')}</th><th scope="col">{t('merchant-draft-revision')}</th><th scope="col">{t('merchant-updated')}</th></tr></thead>
           <tbody>{#each data.stores as store (store.id)}
             <tr>
-              <th scope="row"><a href={`/merchant/stores/${data.merchant}/${store.id}`}><bdi dir="auto">{store.display_name}</bdi></a>{#if store.handle}<br /><small><bdi dir="ltr">{store.handle}</bdi></small>{/if}</th>
+              <th scope="row"><a href={merchantStorePath(store)}><bdi dir="auto">{store.display_name}</bdi></a></th>
               <td>{store.menu_item_count ?? '—'}</td>
               <td>{store.draft_revision || t('merchant-no-draft')}</td>
               <td><time datetime={store.updated_at}>{dateFormat.format(new Date(store.updated_at))}</time></td>

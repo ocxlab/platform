@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { PageServerLoad } from './$types';
 import { api, message, text } from '$lib/server/api';
 import { connect, disconnect, session } from '$lib/server/sessions';
+import { merchantStorePath } from '$lib/merchant-paths';
 export const load: PageServerLoad = async ({ cookies, url }) => {
   const current = session(cookies, 'merchant');
   const base = { merchant: current?.merchant ?? '', request_key: randomUUID(),
@@ -35,6 +36,6 @@ export const actions = {
       body: { display_name: String(form.get('name') ?? '') },
     });
     if (error || !data) return fail(400, { error: message(error) });
-    redirect(303, `/merchant/stores/${current.merchant}/${data.id}`);
+    redirect(303, merchantStorePath(data));
   },
 };

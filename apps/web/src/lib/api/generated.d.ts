@@ -1429,6 +1429,8 @@ export interface operations {
     ListStores: {
         parameters: {
             query?: {
+                /** @description Exact provider-local readable store handle. Still restricted to the authorized merchant. */
+                handle?: string;
                 /** @description Maximum resources per page. Defaults to 50, with an upper bound of 100. */
                 limit?: components["parameters"]["ComponentsParametersPageLimitYaml06bb837c"];
                 /** @description Exclusive store-ID cursor from the previous StorePage.next_after. */

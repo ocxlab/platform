@@ -42,6 +42,19 @@ func TestManagedStoreList(t *testing.T) {
 	if len(page.Items) != 2 || page.NextAfter != nil {
 		t.Fatalf("default page: %+v", page)
 	}
+	selected := page.Items[0]
+	filtered := readPage(f.merchantPath+"?handle="+selected.Handle, f.token)
+	if len(filtered.Items) != 1 || filtered.Items[0].ID != selected.ID || filtered.NextAfter != nil {
+		t.Fatal("exact handle lookup must return the selected store")
+	}
+	filtered = readPage(f.merchantPath+"?handle="+foreign.Handle, f.token)
+	if len(filtered.Items) != 0 {
+		t.Fatal("handle lookup exposed another merchant's store")
+	}
+	filtered = readPage(f.merchantPath+"?handle=store-999999999999999999", f.token)
+	if len(filtered.Items) != 0 {
+		t.Fatal("unknown handle matched a store")
+	}
 	seen := map[uuid.UUID]bool{}
 	path := f.merchantPath + "?limit=1"
 	var previous string
@@ -83,7 +96,7 @@ func TestManagedStoreList(t *testing.T) {
 			t.Fatal("foreign cursor exposed another tenant")
 		}
 	}
-	for _, query := range []string{"?limit=0", "?limit=101", "?limit=wrong", "?after=not-a-uuid"} {
+	for _, query := range []string{"?limit=0", "?limit=101", "?limit=wrong", "?after=not-a-uuid", "?handle=store-01", "?handle=other", "?handle=store-9999999999999999999"} {
 		f.request(t, "GET", f.merchantPath+query, f.token, "", "", 400)
 	}
 	f.request(t, "GET", f.merchantPath, "", "", "", 401)

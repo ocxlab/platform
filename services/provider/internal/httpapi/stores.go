@@ -12,6 +12,6 @@ func (s *Server) ListStores(w http.ResponseWriter, r *http.Request, merchant uui
 	if params.Limit != nil {
 		limit = *params.Limit
 	}
-	page, err := persistence.ListStores(r.Context(), s.db, merchant, params.After, limit)
+	page, err := persistence.ListStores(r.Context(), s.db, merchant, params.After, limit, params.Handle)
 	write(w, page, err)
 }

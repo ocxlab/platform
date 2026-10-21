@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,8 +25,16 @@ type StorePage struct {
 
 // ListStores uses the same tenant transaction and restricted role as store reads.
 // One extra row determines continuation without an unbounded count or offset scan.
-func ListStores(ctx context.Context, db *sql.DB, merchant uuid.UUID, after *uuid.UUID, limit int) (StorePage, error) {
+func ListStores(ctx context.Context, db *sql.DB, merchant uuid.UUID, after *uuid.UUID, limit int, handle *string) (StorePage, error) {
 	page := StorePage{Items: make([]ManagedStore, 0)}
+	var number *int64
+	if handle != nil {
+		value, err := strconv.ParseInt(strings.TrimPrefix(*handle, "store-"), 10, 64)
+		if err != nil || value < 1 || *handle != "store-"+strconv.FormatInt(value, 10) {
+			return page, errors.New("invalid store handle")
+		}
+		number = &value
+	}
 	if limit < 1 || limit > 100 {
 		return page, errors.New("store page limit outside bounds")
 	}
@@ -43,7 +53,8 @@ func ListStores(ctx context.Context, db *sql.DB, merchant uuid.UUID, after *uuid
  FROM commerce.stores s LEFT JOIN commerce.offering_revisions r
  ON r.merchant_id=s.merchant_id AND r.store_id=s.id AND r.revision=s.offering_revision
  WHERE s.merchant_id=$1 AND ($2::uuid IS NULL OR s.id>$2)
- ORDER BY s.id LIMIT $3`, merchant, after, limit+1)
+ AND ($4::bigint IS NULL OR s.display_number=$4)
+ ORDER BY s.id LIMIT $3`, merchant, after, limit+1, number)
 	if err != nil {
 		return page, err
 	}

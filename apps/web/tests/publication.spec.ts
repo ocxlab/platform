@@ -13,7 +13,16 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await page.getByLabel('Store name').fill('Neighbourhood Kitchen');
   await page.getByRole('button', { name: 'Create store', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Neighbourhood Kitchen' })).toBeVisible();
-  const workspace = page.url(); const store = new URL(workspace).pathname.split('/').at(-1)!;
+  const workspace = page.url();
+  expect(new URL(workspace).pathname).toMatch(/^\/merchant\/stores\/neighbourhood-kitchen-store-[1-9][0-9]*$/);
+  const storefrontLink = await page.getByRole('link', { name: 'Open customer storefront', exact: true }).getAttribute('href');
+  const store = storefrontLink!.split('/').at(-1)!;
+  const tabs = page.getByRole('navigation', { name: 'Store workspace' });
+  await expect(tabs.getByRole('link', { name: 'Menu', exact: true })).toHaveAttribute('aria-current', 'page');
+  await tabs.getByRole('link', { name: 'Orders', exact: true }).click();
+  await expect(tabs.getByRole('link', { name: 'Orders', exact: true })).toHaveAttribute('aria-current', 'page');
+  await tabs.getByRole('link', { name: 'Menu', exact: true }).click();
+  await expect(page).toHaveURL(workspace);
   await page.goto('/merchant');
   await expect(page.getByRole('region', { name: 'Your stores' }).getByRole('link', { name: 'Neighbourhood Kitchen' })).toBeVisible();
   await expect(page.getByLabel('Store identifier', { exact: true })).toHaveCount(0);
@@ -137,7 +146,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await unrelatedContext.close();
   // Merchant and customer operations use the same durable order through separate APIs.
   const orderId = new URL(receipt).pathname.split('/').at(-1)!;
-  await page.getByRole('link', { name: 'Order inbox', exact: true }).click();
+  await page.getByRole('link', { name: 'Orders', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Pickup orders', exact: true })).toBeVisible();
   await page.locator(`a[href$="/orders/${orderId}"]`).click();
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
@@ -168,6 +177,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   const payableId = new URL(payableReceipt).pathname.split('/').at(-1)!;
   await page.goto(`${workspace}/orders/${payableId}`);
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
+  await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await guest.getByRole('button', { name: 'Pay order', exact: true }).click();
   await expect(guest).toHaveURL(`${payableReceipt}/checkout`);
@@ -181,6 +191,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(guest.getByText('Payment failed. You can try again.', { exact: true })).toBeVisible();
   await guest.getByRole('button', { name: 'Pay order', exact: true }).click();
   await guest.getByRole('button', { name: 'Simulate successful payment', exact: true }).click();
+  await expect(guest.getByText('Paid in the development simulation.', { exact: true })).toBeVisible();
   await guest.goto(`${payableReceipt}/checkout`);
   await expect(guest).toHaveURL(payableReceipt);
   await expect(guest.getByText('Paid in the development simulation.', { exact: true })).toBeVisible();
@@ -265,6 +276,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   const declinedId = new URL(declinedReceipt).pathname.split('/').at(-1)!;
   await page.goto(`${workspace}/orders/${declinedId}`);
   await page.getByRole('button', { name: 'Decline order', exact: true }).click();
+  await expect(page.getByText('The restaurant declined this order.', { exact: false })).toBeVisible();
   await guest.reload();
   await expect(guest.getByText('The restaurant declined this order.', { exact: false })).toBeVisible();
   await expect(guest.getByRole('button', { name: 'Cancel order', exact: true })).toHaveCount(0);
@@ -279,19 +291,24 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   const pickupId = new URL(pickupReceipt).pathname.split('/').at(-1)!;
   await page.goto(`${workspace}/orders/${pickupId}`);
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
+  await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start preparation', exact: true })).toHaveCount(0);
   await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await guest.getByRole('button', { name: 'Pay order', exact: true }).click();
   await guest.getByRole('button', { name: 'Simulate successful payment', exact: true }).click();
+  await expect(guest.getByText('Paid in the development simulation.', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await page.getByRole('button', { name: 'Start preparation', exact: true }).click();
+  await expect(page.getByText('The restaurant is preparing your order.', { exact: true })).toBeVisible();
   await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(guest.getByText('The restaurant is preparing your order.', { exact: true })).toBeVisible();
   await expect(guest.getByRole('button', { name: 'Cancel order', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Mark ready for pickup', exact: true }).click();
+  await expect(page.getByText('Your order is ready for pickup.', { exact: true })).toBeVisible();
   await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(guest.getByText('Your order is ready for pickup.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Record customer pickup', exact: true }).click();
+  await expect(page.getByText('The restaurant recorded customer pickup.', { exact: true })).toBeVisible();
   await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(guest.getByText('The restaurant recorded customer pickup.', { exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Pickup progress' })).toHaveCount(0);

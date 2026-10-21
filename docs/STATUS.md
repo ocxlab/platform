@@ -1,5 +1,43 @@
 # Development status
 
+## Readable merchant workspaces and aligned administration controls
+
+22 October 2026, Europe/Berlin (UTC+02:00). Open stores from the merchant list
+to use readable workspace URLs such as
+`/merchant/stores/doener-karlsruhe-store-1`. The name makes the URL recognizable;
+the persistent provider-local handle disambiguates stores. Each page and mutation
+resolves that handle through the authenticated, merchant-scoped list API's exact
+`handle` filter. Unknown and foreign handles return no record. The UI does not
+scan every store or read the database directly. UUIDs still identify API resources.
+As requested for this pre-launch app, the previous UUID workspace routes are
+removed rather than retained as compatibility routes. Customer storefront and
+receipt URLs, custom domains, and subdomains are separate work.
+
+Menu and Orders tabs now share a store heading and a route back to Your stores.
+They remain visible on order details and identify the current area. The dangling
+store-handle paragraph is removed. Administration now separates aligned filter
+fields from an aligned Search/Clear filters action row. Clear filters and Refresh
+status have secondary-button styling while retaining navigation-link semantics.
+English, German, and Arabic labels are included, with logical-direction styling.
+
+`task check` passed, including real PostgreSQL isolation/lookup cases, generated
+Go/TypeScript drift checks, 56 web unit tests, and zero Svelte diagnostics.
+`task smoke` passed and updated the local API without resetting development data.
+All four built-app browser regressions passed, including tab navigation, readable
+workspace links, toolbar geometry, narrow-screen/RTL layout, no-JavaScript admin
+navigation, and the existing ordering/development-payment/pickup journey. Desktop merchant
+and administration screenshots and the mobile administration screenshot were
+visually inspected. An initial browser assertion read the URL before navigation
+completed; it now waits for the expected route. No application workaround was
+needed for that test-timing issue. All four Vite browser regressions also passed
+after adding explicit completed-state assertions before cross-browser refreshes
+and subsequent navigation. The initial Vite run refreshed the customer before
+merchant acceptance finished; the tests now wait for saved acceptance, payment,
+and kitchen progress rather than relying on relative browser speed. Mutation
+tools were not rerun for this navigation/layout batch.
+Automatic status updates, order-history styling, and customer URL changes remain
+in [the interface backlog](UI-UX-NEXT.md); this batch does not implement them.
+
 ## Browse administration and make menu extras discoverable
 
 22 October 2026, Europe/Berlin (UTC+02:00). Provider administration now has

@@ -6,11 +6,15 @@
   import Check from '@lucide/svelte/icons/check';
   import X from '@lucide/svelte/icons/x';
   import { fulfilmentAction } from '$lib/orders';
+  import MerchantStoreNav from '$lib/components/MerchantStoreNav.svelte';
+  import { merchantStorePath } from '$lib/merchant-paths';
   const { t } = useI18n();
   let { data, form } = $props();
+  const root = $derived(merchantStorePath(data.store));
 </script>
-<h1>{t('orders-order')}</h1>
-<p><a href={`/merchant/stores/${data.order.merchant_id}/${data.order.store_id}/orders`}>{t('orders-inbox')}</a> · <a data-sveltekit-reload href={`/merchant/stores/${data.order.merchant_id}/${data.order.store_id}/orders/${data.order.id}`}>{t('orders-refresh')}</a></p>
+<MerchantStoreNav store={data.store} active="orders" />
+<h2>{t('orders-order')}</h2>
+<p><a data-sveltekit-reload href={`${root}/orders/${data.order.id}`}>{t('orders-refresh')}</a></p>
 {#if form?.error}<Notice text={form.error} error />{/if}
 {#if form?.success}<Notice text={form.success} />{/if}
 <OrderDetails order={data.order} />

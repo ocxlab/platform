@@ -24,6 +24,18 @@ test('admin browses paged records and customers select paid and free pizza extra
   await page.getByLabel('Temporary merchant credential').fill(fixture.extras_merchant_token);
   await page.getByRole('button', { name: 'Connect merchant' }).click();
   await page.getByRole('link', { name: 'Pizza extras test 00', exact: true }).click();
+  await expect(page).toHaveURL(/\/merchant\/stores\/pizza-extras-test-00-store-[1-9][0-9]*$/);
+  const workspace = page.url();
+  expect(new URL(workspace).pathname).toMatch(/^\/merchant\/stores\/pizza-extras-test-00-store-[1-9][0-9]*$/);
+  await page.screenshot({ path: 'test-results/merchant-tabs-desktop.png', fullPage: true });
+  for (const locale of ['ar', 'en']) {
+    await page.locator('.language-picker summary').click();
+    await page.locator(`.language-picker button[value=${locale}]`).click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(page.locator('nav a[aria-current="page"]')).toHaveCount(1);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole('button', { name: 'Add menu item', exact: true }).click();
   await page.getByLabel('Item name', { exact: true }).fill('Pizza');
   await page.getByLabel('Variant name', { exact: true }).fill('Small');
@@ -67,6 +79,12 @@ test('admin browses paged records and customers select paid and free pizza extra
   await page.getByLabel('Rows per page').selectOption('10');
   await page.getByRole('button', { name: 'Search', exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(10);
+  const fieldBottoms = await page.locator('.admin-filters label input, .admin-filters label select').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().bottom));
+  expect(Math.max(...fieldBottoms) - Math.min(...fieldBottoms)).toBeLessThanOrEqual(1);
+  const searchBox = await page.getByRole('button', { name: 'Search', exact: true }).boundingBox();
+  const clearBox = await page.getByRole('link', { name: 'Clear filters', exact: true }).boundingBox();
+  expect(Math.abs(searchBox!.y - clearBox!.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(searchBox!.height - clearBox!.height)).toBeLessThanOrEqual(1);
   await page.screenshot({ path: 'test-results/admin-stores-desktop.png', fullPage: true });
   await page.getByRole('link', { name: 'Next page', exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(2);
@@ -107,7 +125,7 @@ test('admin browses paged records and customers select paid and free pizza extra
   await plain.getByRole('link', { name: 'Next page', exact: true }).click();
   await expect(plain.locator('tbody tr')).toHaveCount(2);
   // Leave no additional public store for the existing publication journey.
-  await page.goto(`/merchant/stores/${fixture.extras_merchant_id}/${store}`);
+  await page.goto(workspace);
   await page.getByRole('button', { name: 'Withdraw menu', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('withdrawn');
   expect(errors).toEqual([]);

@@ -1,20 +1,28 @@
 # Next interface improvements
 
-Recorded 22 October 2026, Europe/Berlin (UTC+02:00). These are follow-ups, not
-features delivered by the admin browsing/extras batch. Keep the restaurant journey
+Recorded 22 October 2026, Europe/Berlin (UTC+02:00). Remaining follow-ups are not
+delivered features. Keep the restaurant journey
 usable without turning this into a general dashboard redesign.
 
-## Navigation and controls
+## Completed navigation and control fixes
 
-- Use consistent store-level Menu and Orders navigation in the merchant workspace.
-  Preserve the selected store and a clear route back to the managed-store list.
-- Align the admin search/status/page-size controls and Search action on the same
-  visual baseline. Account for the global button margin rather than applying
-  arbitrary positional offsets. Verify desktop, narrow screens, and RTL.
-- Present Clear filters and Refresh status as recognizable secondary controls.
-  Navigation may remain an anchor styled as a button; a real scripted action uses
-  a button. Appearance and correct HTML semantics are separate decisions. Retain
-  useful no-JavaScript behavior and accessible names.
+- Store-level Menu and Orders tabs preserve the selected store, include a route
+  back to the managed-store list, and remain visible on order details.
+- Admin search/status/page-size fields share a baseline; Search and Clear filters
+  occupy an aligned action row. Global button and inline-wrapper spacing are reset
+  within that toolbar, without positional offsets.
+- Clear filters and Refresh status are recognizable secondary controls.
+  They remain navigation links styled as buttons, retaining no-JavaScript
+  navigation and accessible names.
+- Merchant workspace links use a readable shop name plus the persistent store
+  handle, such as `/merchant/stores/doener-karlsruhe-store-1`. Resolution uses an
+  exact tenant-scoped API lookup, not a scan of every store or a new database path
+  in the UI. UUID API identity remains unchanged. Pre-launch UUID web links are
+  not retained; enter stores through the merchant list. This does not yet change
+  customer storefront or receipt URLs or implement custom domains.
+
+## Remaining navigation improvements
+
 - Rework order history as a compact event timeline with Lucide icons, clear event
   labels, actor/time context where available, aligned content, and no default list
   indentation. Do not use color or icons as the sole description of an event.

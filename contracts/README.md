@@ -113,8 +113,12 @@ grant and returns private managed stores, including unpublished stores. The web
 workspace uses this same API to offer store-name links instead of ID entry.
 The table shows latest draft item counts, revision numbers, and update times.
 These summaries are authorized store-management metadata under `store:read`;
-full offering documents still require `offering:read`. Counts exclude variants
-and extras, are zero before the first save, and are null for unsupported models.
+full offering documents still require `offering:read`. The optional `handle`
+query performs an exact lookup of a readable store handle within the same
+authorized merchant; unknown or foreign handles
+return an empty page. It does not replace UUID identity in other API operations.
+Counts exclude variants and extras, are zero before the first save, and are null
+for unsupported models.
 Update times reflect the latest draft save (or store creation), not publication
 or moderation. `StorePage` uses `ManagedStore`, reusing Store property definitions;
 pagination parameters

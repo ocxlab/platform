@@ -1,12 +1,15 @@
 <script lang="ts">
   import { useI18n } from '$lib/i18n/context';
   import { money } from '$lib/money';
+  import MerchantStoreNav from '$lib/components/MerchantStoreNav.svelte';
+  import { merchantStorePath } from '$lib/merchant-paths';
   const { t, locale } = useI18n();
   let { data } = $props();
-  const root = $derived(`/merchant/stores/${data.store.merchant_id}/${data.store.id}`);
+  const root = $derived(merchantStorePath(data.store));
 </script>
-<h1>{t('orders-title')}</h1>
-<p><bdi dir="auto">{data.store.display_name}</bdi> · {t('orders-inbox-help')}</p>
+<MerchantStoreNav store={data.store} active="orders" />
+<h2>{t('orders-title')}</h2>
+<p>{t('orders-inbox-help')}</p>
 <p><a href={root}>{t('orders-back')}</a> · <a data-sveltekit-reload href={`${root}/orders`}>{t('orders-refresh')}</a></p>
 {#if !data.orders.items.length}<p>{t('orders-empty')}</p>{:else}
 <div class="order-table"><table>

@@ -2,6 +2,7 @@
   import { useI18n } from '$lib/i18n/context';
   const { t } = useI18n();
   import Notice from '$lib/components/Notice.svelte';
+  import MerchantStoreNav from '$lib/components/MerchantStoreNav.svelte';
   import MenuEditor from '$lib/components/MenuEditor.svelte';
   import ActionButton from '$lib/components/ActionButton.svelte';
   import Upload from '@lucide/svelte/icons/upload';
@@ -9,10 +10,8 @@
   import Save from '@lucide/svelte/icons/save';
   let { data, form } = $props();
 </script>
-<h1><bdi dir="auto">{data.store.display_name}</bdi></h1>
-{#if data.store.handle}<p><bdi dir="ltr">{data.store.handle}</bdi></p>{/if}
+<MerchantStoreNav store={data.store} active="menu" />
 <p>{t('merchant-edit-intro')}</p>
-<p><a href={`/merchant/stores/${data.store.merchant_id}/${data.store.id}/orders`}>{t('orders-inbox')}</a></p>
 {#if form?.error}<Notice text={form.error} error />{/if}
 {#if form?.success}<Notice text={form.success} />{/if}
 <section><h2>{t('merchant-publication')}</h2>

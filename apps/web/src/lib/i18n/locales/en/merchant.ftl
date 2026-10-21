@@ -40,3 +40,6 @@ merchant-expired = Your development credential has expired or is no longer valid
 merchant-invalid-credential = Enter the merchant identifier and its temporary merchant credential.
 merchant-connect-first = Connect your merchant credential first.
 merchant-open-required = Connect a merchant and enter a store identifier.
+merchant-menu-tab = Menu
+merchant-orders-tab = Orders
+merchant-workspace-navigation = Store workspace

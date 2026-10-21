@@ -11,6 +11,7 @@
   import Store from '@lucide/svelte/icons/store';
   import ClipboardList from '@lucide/svelte/icons/clipboard-list';
   import RefreshCw from '@lucide/svelte/icons/refresh-cw';
+  import FilterX from '@lucide/svelte/icons/filter-x';
   const { t, locale } = useI18n();
   let { data, form } = $props();
   const dateFormat = $derived(new Intl.DateTimeFormat(locale(), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Berlin' }));
@@ -32,14 +33,14 @@
     <form method="POST" action="?/disconnect"><ActionButton icon={LogOut} label={t('admin-disconnect')} iconOnly /></form>
   </div>
   <section aria-labelledby="admin-list-heading">
-    <div class="list-heading"><h2 id="admin-list-heading">{t(data.tab === 'stores' ? 'admin-stores' : 'admin-orders')}</h2><a class="refresh" href={data.refresh_url} data-sveltekit-reload><RefreshCw size={18} aria-hidden="true" />{t('orders-refresh')}</a></div>
+    <div class="list-heading"><h2 id="admin-list-heading">{t(data.tab === 'stores' ? 'admin-stores' : 'admin-orders')}</h2><a class="secondary-control" href={data.refresh_url} data-sveltekit-reload><RefreshCw size={18} aria-hidden="true" />{t('orders-refresh')}</a></div>
     <form method="GET" action="/admin" class="admin-filters">
       <input type="hidden" name="tab" value={data.tab} />
       <label>{t('admin-search')}<input type="search" name="q" value={data.q} maxlength="160" dir="auto" placeholder={t(data.tab === 'stores' ? 'admin-search-stores' : 'admin-search-orders')} /></label>
       <label>{t('admin-filter-status')}<select name="status" value={data.status}><option value="">{t('admin-all-statuses')}</option>{#each statuses as status}<option value={status}>{t(`admin-state-${status}`)}</option>{/each}</select></label>
       <label>{t('admin-page-size')}<select name="limit" value={String(data.limit)}>{#each [10, 25, 50] as size}<option value={String(size)}>{size}</option>{/each}</select></label>
-      <ActionButton icon={Search} label={t('ui-search')} />
-      <a href={`/admin?tab=${data.tab}`}>{t('admin-clear')}</a>
+      <div class="filter-actions"><ActionButton icon={Search} label={t('ui-search')} />
+      <a class="secondary-control" href={`/admin?tab=${data.tab}`}><FilterX size={18} aria-hidden="true" />{t('admin-clear')}</a></div>
     </form>
     {#if data.list_error}<Notice text={data.list_error} error />
     {:else if data.stores.length || data.orders.length}
@@ -82,12 +83,18 @@
 <style>
   .admin-toolbar, .list-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .admin-tabs { display: flex; gap: .5rem; }
-  .admin-tabs a, .refresh { display: inline-flex; gap: .5rem; align-items: center; }
+  .admin-tabs a { display: inline-flex; gap: .5rem; align-items: center; }
   .admin-tabs a { padding: .75rem 1rem; border-block-end: 3px solid transparent; text-decoration: none; }
   .admin-tabs a[aria-current] { border-color: #20586f; background: #edf4f7; font-weight: 700; }
-  .admin-filters { display: flex; gap: 1rem; align-items: end; flex-wrap: wrap; margin-block: 1rem; }
-  .admin-filters label:first-of-type { flex: 1 1 16rem; }
-  .admin-filters label { margin: 0; }
+  .admin-filters { display: grid; grid-template-columns: minmax(12rem, 1fr) auto auto; gap: 1rem; align-items: end; margin-block: 1rem; }
+  .admin-filters label { margin: 0; min-width: 0; }
+  .admin-filters input, .admin-filters select { min-height: 44px; box-sizing: border-box; }
+  .filter-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+  .filter-actions :global(button) { margin: 0; }
+  .filter-actions :global(.action) { display: inline-flex; }
+  .secondary-control { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; box-sizing: border-box; min-height: 44px; padding: .55rem .7rem; border: 1px solid #708692; border-radius: .3rem; background: #fff; text-decoration: none; }
+  .secondary-control:hover { background: #edf4f7; }
+  @media (max-width: 600px) { .admin-filters { grid-template-columns: 1fr 1fr; } .admin-filters label:first-of-type { grid-column: 1 / -1; } }
   .admin-table { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: start; padding: .75rem; border-block-end: 1px solid #ccd8de; vertical-align: middle; }
