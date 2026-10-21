@@ -1,8 +1,24 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
+import type { PageServerLoad } from './$types';
 import { api, message } from '$lib/server/api';
 import { connect, disconnect, session } from '$lib/server/sessions';
-export const load = ({ cookies }) => ({ merchant: session(cookies, 'merchant')?.merchant ?? '', request_key:randomUUID() });
+export const load: PageServerLoad = async ({ cookies, url }) => {
+  const current = session(cookies, 'merchant');
+  const base = { merchant: current?.merchant ?? '', request_key: randomUUID(),
+    stores: [] as import('$lib/api/generated').components['schemas']['Store'][],
+    next_after: undefined as string | undefined, after: url.searchParams.get('after') ?? '', stores_error: '' };
+  if (!current) return base;
+  const result = await api(current.token).GET('/api/v1/merchants/{merchant_id}/stores', {
+    params: { path: { merchant_id: current.merchant }, query: { limit: 50, ...(base.after ? { after: base.after } : {}) } },
+  });
+  if (result.response.status === 401) {
+    disconnect(cookies, 'merchant');
+    return { ...base, merchant: '', stores_error: 'Your development credential has expired or is no longer valid. Connect a credential again.' };
+  }
+  if (!result.data) return { ...base, stores_error: message(result.error) };
+  return { ...base, stores: result.data.items, next_after: result.data.next_after };
+};
 export const actions = {
   connect: async ({ request, cookies }) => {
     const form = await request.formData();

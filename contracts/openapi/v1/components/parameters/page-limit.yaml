@@ -1,0 +1,9 @@
+name: limit
+in: query
+required: false
+description: Maximum resources per page. Defaults to 50, with an upper bound of 100.
+schema:
+  type: integer
+  minimum: 1
+  maximum: 100
+  default: 50

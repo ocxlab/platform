@@ -1,5 +1,41 @@
 parameters:
   - $ref: ../components/parameters/merchant-id.yaml
+get:
+  operationId: ListStores
+  x-access: merchant
+  x-required-scope: store:read
+  tags: [Merchant account]
+  summary: List stores managed by the authorized merchant
+  description: >-
+    Includes unpublished stores. Results are ordered by immutable store ID, ascending,
+    within the credential's merchant. Use next_after as the next request's after
+    cursor; a missing cursor means the last page. Pages are live reads, not a snapshot
+    across requests. Restart from the first page to include newly created stores
+    whose IDs sort before the current cursor. A cursor is a position, not authority
+    or a lookup of another merchant's store.
+  parameters:
+    - $ref: ../components/parameters/page-limit.yaml
+    - $ref: ../components/parameters/store-after.yaml
+  responses:
+    '200':
+      description: A bounded page of managed stores; items is empty when no stores match.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/stores/list.yaml#/StorePage
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    default:
+      $ref: ../components/responses/problem.yaml
 post:
   operationId: CreateStore
   x-access: merchant

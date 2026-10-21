@@ -106,6 +106,18 @@ ONIX integration and selected UCP capabilities remain planned connected slices.
 Before importing their schemas, record exact versions, adopted capabilities, and
 material-specific reuse rights rather than copying an ecosystem wholesale.
 
+## Managed store listing
+
+`GET /api/v1/merchants/{merchant_id}/stores` requires the merchant's `store:read`
+grant and returns private managed stores, including unpublished stores. The web
+workspace uses this same API to offer store-name links instead of ID entry.
+`StorePage` lives with the store resources and reuses `Store`; pagination parameters
+are separate reusable definitions. The default page size is 50, capped at 100.
+Pass `next_after` as `after` to continue in ascending immutable store-ID order.
+These are live pages, not a multi-request snapshot; return to the first page to
+include stores created before the current cursor. A cursor does not confer access
+to another merchant's stores. An empty list is `items: []`, not an error or null.
+
 ## Publication and quote behavior
 
 Publication selects an exact immutable revision and advances a separate generation.

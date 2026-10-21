@@ -63,6 +63,8 @@ components:
       $ref: schemas/common/identifier.yaml
     Store:
       $ref: schemas/stores/store.yaml#/Store
+    StorePage:
+      $ref: schemas/stores/list.yaml#/StorePage
     CreateStoreRequest:
       $ref: schemas/stores/store.yaml#/CreateStoreRequest
     WriteOfferingRequest:

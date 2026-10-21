@@ -1,0 +1,12 @@
+StorePage:
+  type: object
+  additionalProperties: false
+  required: [items]
+  properties:
+    items:
+      type: array
+      maxItems: 100
+      items:
+        $ref: store.yaml#/Store
+    next_after:
+      $ref: ../common/identifier.yaml

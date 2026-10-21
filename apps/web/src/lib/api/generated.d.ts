@@ -42,7 +42,11 @@ export interface paths {
             };
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List stores managed by the authorized merchant
+         * @description Includes unpublished stores. Results are ordered by immutable store ID, ascending, within the credential's merchant. Use next_after as the next request's after cursor; a missing cursor means the last page. Pages are live reads, not a snapshot across requests. Restart from the first page to include newly created stores whose IDs sort before the current cursor. A cursor is a position, not authority or a lookup of another merchant's store.
+         */
+        get: operations["ListStores"];
         put?: never;
         /**
          * Create a store for the authorized merchant
@@ -412,6 +416,10 @@ export interface components {
             id: components["schemas"]["Identifier"];
             merchant_id: components["schemas"]["Identifier"];
         };
+        StorePage: {
+            items: components["schemas"]["Store"][];
+            next_after?: components["schemas"]["Identifier"];
+        };
         SuspendPublicationRequest: {
             /** Format: int64 */
             expected_generation: number;
@@ -460,6 +468,10 @@ export interface components {
         };
     };
     parameters: {
+        /** @description Maximum resources per page. Defaults to 50, with an upper bound of 100. */
+        ComponentsParametersPageLimitYaml06bb837c: number;
+        /** @description Exclusive store-ID cursor from the previous StorePage.next_after. */
+        ComponentsParametersStoreAfterYaml1f36d549: components["schemas"]["Identifier"];
         /** @description One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention. */
         IdempotencyKey: string;
         /** @description Requested merchant; must match the authenticated grant. */
@@ -546,6 +558,40 @@ export interface operations {
             415: components["responses"]["ProblemResponse"];
             422: components["responses"]["ProblemResponse"];
             429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    ListStores: {
+        parameters: {
+            query?: {
+                /** @description Maximum resources per page. Defaults to 50, with an upper bound of 100. */
+                limit?: components["parameters"]["ComponentsParametersPageLimitYaml06bb837c"];
+                /** @description Exclusive store-ID cursor from the previous StorePage.next_after. */
+                after?: components["parameters"]["ComponentsParametersStoreAfterYaml1f36d549"];
+            };
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A bounded page of managed stores; items is empty when no stores match. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorePage"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };

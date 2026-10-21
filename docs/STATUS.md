@@ -1,5 +1,25 @@
 # Development status
 
+## Managed store navigation
+
+21 October 2026, Europe/Berlin (UTC+02:00). Replaced the merchant workspace's
+store-ID entry form with Your stores: named links to the merchant's managed store
+workspaces, including stores without published menus. Empty and failed lists have
+distinct feedback. Expired/revoked credentials return the user to credential entry.
+
+Added the merchant-scoped `ListStores` OpenAPI operation and regenerated Go and
+TypeScript artifacts. It requires `store:read`, retains forced tenant RLS, and
+uses bounded cursor pagination (50 default, 100 maximum) over immutable IDs. The
+store page resource and pagination parameters have separate reusable source files.
+No migration or persistent seed data is needed; existing stores appear immediately.
+
+`task check` passed, including real PostgreSQL list/pagination, empty response,
+generated-client, scope/audience, and cross-merchant negative tests. The expanded
+`task test:browser` journey passed: an empty merchant creates two stores, sees
+both by name, and reopens the first by its link rather than identifier entry.
+The development stack is rebuilt with `task web:dev`; its web restart clears
+development sessions, but does not reset merchants/stores or their credentials.
+
 ## Menu item removal
 
 21 October 2026, Europe/Berlin (UTC+02:00). Added a labelled, non-submitting

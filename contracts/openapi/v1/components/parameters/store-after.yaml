@@ -1,0 +1,6 @@
+name: after
+in: query
+required: false
+description: Exclusive store-ID cursor from the previous StorePage.next_after.
+schema:
+  $ref: ../../schemas/common/identifier.yaml

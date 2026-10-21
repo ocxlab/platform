@@ -6,6 +6,10 @@ offering and requests quotes, and `/admin` manages publication visibility. They
 share components, not authorization. Business rules remain in the Go API, with no
 direct database access from this application.
 
+The merchant workspace lists managed stores by name, including unpublished stores.
+Choose a store link to reopen its editor; remembering an identifier is unnecessary.
+The same authorized, paginated list operation is available to other API clients.
+
 ## Development and verification
 
 Use root `task web:dev` to build and start the application on localhost:18181.
