@@ -1,0 +1,12 @@
+version: "2"
+sql:
+  - engine: postgresql
+    schema: internal/persistence/migrations
+    queries: internal/persistence/queries
+    gen:
+      go:
+        package: sqlgen
+        out: internal/persistence/sqlgen
+        sql_package: database/sql
+        emit_empty_slices: true
+        omit_unused_structs: true

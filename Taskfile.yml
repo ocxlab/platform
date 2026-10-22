@@ -6,6 +6,39 @@ vars:
   DOMAINS_COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml --file deploy/local/network.compose.yaml --file deploy/local/domains.compose.yaml
 
 tasks:
+  test:contracts:
+    desc: Exercise selected REST contracts with Schemathesis against disposable PostgreSQL
+    cmds:
+      - task: generate:go
+      - defer: '{{.COMPOSE}} stop browser-api test-db'
+      - '{{.COMPOSE}} build browser-api'
+      - '{{.COMPOSE}} up --force-recreate --detach --wait test-db'
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable tools go run ./cmd/migrate'
+      - '{{.COMPOSE}} up --force-recreate --detach --wait browser-api'
+      - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/browser-fixture | {{.COMPOSE}} run --rm --no-deps -T contract-tests /workspace/contracts/testing/test_api.py'
+
+  sql:generate:
+    desc: Generate ignored Go queries from owned SQL and Goose migrations
+    deps: [tools:build]
+    sources: [services/provider/sqlc.yaml, services/provider/internal/persistence/queries/*.sql, services/provider/internal/persistence/migrations/*.sql]
+    generates: [services/provider/internal/persistence/sqlgen/*.go]
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools sqlc generate'
+
+  sql:check:
+    desc: Check SQL queries and deterministic generation without tracking outputs
+    cmds:
+      - task: sql:generate
+      - '{{.COMPOSE}} run --rm --no-deps tools sqlc vet'
+      - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/check-sql-generation.sh'
+
+  lint:go:
+    desc: Run focused pinned Go correctness linters
+    deps: [generate:go]
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps go-lint golangci-lint config verify --config /workspace/.golangci.yml'
+      - '{{.COMPOSE}} run --rm --no-deps go-lint golangci-lint run --config /workspace/.golangci.yml ./...'
+
   dev:internal-credential:
     desc: Print a one-hour internal cohort credential (STORE, DOMAIN, optional MANAGEMENT=true and CUSTOMER=UUID)
     env:
@@ -65,14 +98,14 @@ tasks:
 
   generate:go:
     desc: Prepare generated Go API and embedded error catalog before compilation
-    deps: [contracts:generate, contracts:internal:generate, errors:generate]
+    deps: [contracts:generate, contracts:internal:generate, errors:generate, sql:generate]
 
   generated:check:
     desc: Reject generated outputs accidentally added to Git tracking
     cmds:
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
-        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/provider/internal/httpapi/generated.go services/provider/internal/ucpcontract/generated.go services/provider/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
+        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/provider/internal/httpapi/generated.go services/provider/internal/ucpcontract/generated.go services/provider/internal/persistence/sqlgen services/provider/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
 
   media:start:
     desc: Start optional local S3-compatible storage without changing application data
@@ -274,6 +307,8 @@ tasks:
       - task: fmt:check
       - task: contracts:check
       - task: contracts:lint
+      - task: sql:check
+      - task: lint:go
       - task: vet
       - task: test:race
       - task: test:integration

@@ -13,7 +13,11 @@ get:
     - name: q
       description: Literal case-insensitive store-name substring, trimmed before matching.
       in: query
-      schema: { type: string, maxLength: 160 }
+      schema:
+        allOf:
+          - $ref: ../schemas/common/text.yaml#/PlainText
+        type: string
+        maxLength: 160
     - name: after
       in: query
       description: Opaque continuation value bound to the trimmed search query. A different query returns 400; omit after to begin a new search.

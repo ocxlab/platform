@@ -67,7 +67,7 @@ func TestContractRoutingSuppliesSafeTelemetryAndProblemCodes(t *testing.T) {
 			if a.Key == attribute.Key("ocp.error.code") {
 				code = a.Value.AsString()
 			}
-			if strings.Contains(a.Value.Emit(), "private-") || strings.Contains(a.Value.Emit(), "11111111") {
+			if strings.Contains(a.Value.String(), "private-") || strings.Contains(a.Value.String(), "11111111") {
 				t.Fatal("raw path leaked")
 			}
 		}

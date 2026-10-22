@@ -12,6 +12,22 @@ import (
 	"ocp.local/platform/internal/offering/food"
 )
 
+func TestStoreNameContractRejectsNUL(t *testing.T) {
+	spec, err := httpapi.GetSwagger()
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema := spec.Components.Schemas["CreateStoreRequest"].Value
+	for _, name := range []string{"Döner العربية", "literal \\u0000"} {
+		if err := schema.VisitJSON(map[string]any{"display_name": name}); err != nil {
+			t.Fatalf("rejected valid name: %v", err)
+		}
+	}
+	if err := schema.VisitJSON(map[string]any{"display_name": "bad\x00name"}); err == nil {
+		t.Fatal("contract accepted a NUL character")
+	}
+}
+
 func TestContractExamples(t *testing.T) {
 	spec, err := httpapi.GetSwagger()
 	if err != nil {

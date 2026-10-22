@@ -259,6 +259,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 				}
 				r = r.WithContext(context.WithValue(r.Context(), principalKey{}, principal))
 			}
+			var requestData []byte
 			if r.Body != nil {
 				r.Body = http.MaxBytesReader(w, r.Body, 262144)
 				data, err := io.ReadAll(r.Body)
@@ -271,6 +272,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 					}
 					return
 				}
+				requestData = data
 				r.Body = io.NopCloser(bytes.NewReader(data))
 			}
 			if (r.Method == http.MethodPost || r.Method == http.MethodPut) && route.Operation.RequestBody != nil {
@@ -284,6 +286,11 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 				Options: &openapi3filter.Options{AuthenticationFunc: openapi3filter.NoopAuthenticationFunc}}
 			if err := openapi3filter.ValidateRequest(r.Context(), input); err != nil {
 				problem(w, 400, "invalid_request", "Request does not match the API contract or size limit.", nil)
+				return
+			}
+			// Schema constraints are primary; this also covers opaque JSON document strings/keys.
+			if len(requestData) > 0 && validateJSONText(requestData) != nil {
+				problem(w, 400, "invalid_request", "Request must be valid JSON without NUL characters.", nil)
 				return
 			}
 			generated.ServeHTTP(w, r)

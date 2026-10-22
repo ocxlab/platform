@@ -1,0 +1,4 @@
+PlainText:
+  type: string
+  pattern: '^[^\x00]*$'
+  description: Unicode text without NUL characters. Context-specific length limits are defined by the owning resource.

@@ -131,7 +131,14 @@ Customer tools, production OAuth, and the MCPs administration tab remain next.
 | `task smoke` | Start the stack and check actual HTTP and SQL connectivity |
 | `task stop` | Stop the stack without deleting persisted data |
 
-Run integration and browser tasks serially: they share a disposable test database.
+Additional quality tools and their limits are documented in
+[QUALITY-TOOLING.md](docs/QUALITY-TOOLING.md): `task test:contracts` runs bounded
+Schemathesis exploration, `task sql:check` checks source-only sqlc generation,
+and `task lint:go` runs the focused Go lint gate. SQL and lint checks also run
+inside `task check`. See [the cleanup proposal](docs/REPOSITORY-CLEANUP.md) for
+the four approved empty remnants removed from the old layout; no source files were deleted.
+
+Run integration, contract exploration and browser tasks serially: they share a disposable test database.
 Keep web checks and mutation runs separate from `test:browser:dev`, because those
 tools regenerate the Docker development SvelteKit graph.
 

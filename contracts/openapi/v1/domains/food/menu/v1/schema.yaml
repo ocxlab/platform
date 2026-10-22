@@ -44,6 +44,8 @@ Item:
     id:
       $ref: '#/LocalIdentifier'
     name:
+      allOf:
+        - $ref: ../../../../schemas/common/text.yaml#/PlainText
       type: string
       minLength: 1
       maxLength: 160
@@ -71,6 +73,8 @@ Category:
     id:
       $ref: '#/LocalIdentifier'
     name:
+      allOf:
+        - $ref: ../../../../schemas/common/text.yaml#/PlainText
       type: string
       minLength: 1
       maxLength: 80
@@ -84,6 +88,8 @@ Variant:
     id:
       $ref: '#/LocalIdentifier'
     name:
+      allOf:
+        - $ref: ../../../../schemas/common/text.yaml#/PlainText
       type: string
       minLength: 1
       maxLength: 80
@@ -109,6 +115,8 @@ OptionGroup:
     id:
       $ref: '#/LocalIdentifier'
     name:
+      allOf:
+        - $ref: ../../../../schemas/common/text.yaml#/PlainText
       type: string
       minLength: 1
       maxLength: 80
@@ -142,6 +150,8 @@ Option:
     id:
       $ref: '#/LocalIdentifier'
     name:
+      allOf:
+        - $ref: ../../../../schemas/common/text.yaml#/PlainText
       type: string
       minLength: 1
       maxLength: 80
@@ -172,6 +182,8 @@ NameTranslations:
     ar:
       $ref: '#/TranslatedName'
 TranslatedName:
+  allOf:
+    - $ref: ../../../../schemas/common/text.yaml#/PlainText
   type: string
   minLength: 1
   maxLength: 160

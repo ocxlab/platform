@@ -40,7 +40,7 @@ func main() {
 		if err != nil {
 			os.Exit(1)
 		}
-		res.Body.Close()
+		_ = res.Body.Close() // Read-only health response; no buffered write to flush.
 		if res.StatusCode != http.StatusOK {
 			os.Exit(1)
 		}

@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 }
-func run() error {
+func run() (resultErr error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	admin, err := persistence.Open(ctx, "postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable")
@@ -83,7 +83,13 @@ func run() error {
 		return err
 	}
 	// Keep only the attributable audit identity after this explicit bootstrap.
-	defer admin.ExecContext(context.Background(), `UPDATE auth.grants SET revoked=true WHERE id=$1`, principal.ID)
+	defer func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := admin.ExecContext(cleanupCtx, `UPDATE auth.grants SET revoked=true WHERE id=$1`, principal.ID); err != nil {
+			resultErr = errors.Join(resultErr, fmt.Errorf("revoke temporary demo grant: %w", err))
+		}
+	}()
 	transport := &http.Transport{DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 		if addr != "localhost:18900" {
 			return nil, errors.New("unexpected upload destination")
@@ -149,7 +155,7 @@ func run() error {
 		if err != nil {
 			return errors.New("direct demo photo upload failed")
 		}
-		response.Body.Close()
+		_ = response.Body.Close() // No response payload is used; this is not a buffered output stream.
 		if response.StatusCode != 200 {
 			return fmt.Errorf("direct upload failed for %s: %d", id, response.StatusCode)
 		}

@@ -94,6 +94,8 @@ FoodQuote:
       type: string
       format: date-time
 CustomerNote:
+  allOf:
+    - $ref: ../../../../schemas/common/text.yaml#/PlainText
   type: string
   maxLength: 500
   description: Optional plain-text customer request, not a guaranteed change to ingredients, allergens, price, or agreed options.

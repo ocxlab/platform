@@ -21,7 +21,7 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		fail(fmt.Errorf("API liveness returned HTTP %d", res.StatusCode))
 	}
@@ -46,7 +46,7 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
-	defer negative.Body.Close()
+	defer func() { _ = negative.Body.Close() }()
 	if negative.StatusCode != 401 {
 		fail(fmt.Errorf("credential lookup negative control returned HTTP %d", negative.StatusCode))
 	}

@@ -43,6 +43,11 @@ The entry document composes resources through local `$ref` references. Keep
 shared concepts in their owning file rather than copying them into operations.
 Group small, cohesive resource/request schemas in one file; split a file when
 its contents have different owners or lifecycles, not just to maximize file count.
+`schemas/common/text.yaml` owns reusable `PlainText` (Unicode without NUL).
+Resource schemas compose it with their own length/semantic constraints; do not
+duplicate its pattern in handlers. The outer offering document remains opaque
+until its selected model is validated, so the HTTP boundary also checks decoded
+JSON keys/strings as a storage-safety backstop after OpenAPI request validation.
 No remote references are fetched during generation. Files outside the selected
 entry document's contract root are rejected. Dependencies and image digests are
 pinned separately from API versions. The internal contract is a bounded

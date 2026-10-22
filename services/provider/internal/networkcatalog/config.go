@@ -26,7 +26,7 @@ func LoadPublisher(path string, local bool) (Publisher, error) {
 	if err != nil {
 		return Publisher{}, errors.New("publisher configuration unavailable")
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // Configuration file is read-only.
 	var c PublisherConfig
 	decoder := json.NewDecoder(io.LimitReader(f, 256*1024+1))
 	decoder.DisallowUnknownFields()

@@ -145,7 +145,7 @@ func TestHTTPClassifiesOutcomesAndPreservesResponses(t *testing.T) {
 func attrs(values []attribute.KeyValue) map[string]string {
 	out := map[string]string{}
 	for _, value := range values {
-		out[string(value.Key)] = value.Value.Emit()
+		out[string(value.Key)] = value.Value.String()
 	}
 	return out
 }

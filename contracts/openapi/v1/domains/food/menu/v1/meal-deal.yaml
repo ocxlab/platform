@@ -6,6 +6,8 @@ MealDeal:
     id:
       $ref: schema.yaml#/LocalIdentifier
     name:
+      allOf:
+        - $ref: ../../../../schemas/common/text.yaml#/PlainText
       type: string
       minLength: 1
       maxLength: 160

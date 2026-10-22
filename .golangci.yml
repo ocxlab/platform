@@ -1,0 +1,29 @@
+version: "2"
+run:
+  timeout: 5m
+linters:
+  default: none
+  enable:
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - errcheck
+  settings:
+    staticcheck:
+      checks: ["all", "-ST*", "-QF*"]
+    errcheck:
+      exclude-functions:
+        # Teardown only: commit/query/iteration errors are checked by callers.
+        - (*database/sql.DB).Close
+        - (*database/sql.Tx).Rollback
+        - (*database/sql.Rows).Close
+  exclusions:
+    generated: strict
+    rules:
+      # Tests deliberately discard fixture cleanup errors; production checks remain enabled.
+      - path: _test\.go
+        linters: [errcheck]
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

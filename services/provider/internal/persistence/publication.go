@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/offering"
+	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 type Publication struct {
@@ -28,11 +29,21 @@ func (e *PublicationConflict) Error() string { return "publication generation co
 
 func publication(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, lock bool) (Publication, error) {
 	p := Publication{MerchantID: merchant, StoreID: store}
-	query := `SELECT publication_generation,published_revision,publication_suspended FROM commerce.stores WHERE merchant_id=$1 AND id=$2`
+	queries := sqlgen.New(tx)
+	var revision sql.NullInt64
+	var err error
 	if lock {
-		query += ` FOR UPDATE`
+		var row sqlgen.LockPublicationRow
+		row, err = queries.LockPublication(ctx, sqlgen.LockPublicationParams{MerchantID: merchant, ID: store})
+		p.Generation, revision, p.Suspended = row.PublicationGeneration, row.PublishedRevision, row.PublicationSuspended
+	} else {
+		var row sqlgen.ReadPublicationRow
+		row, err = queries.ReadPublication(ctx, sqlgen.ReadPublicationParams{MerchantID: merchant, ID: store})
+		p.Generation, revision, p.Suspended = row.PublicationGeneration, row.PublishedRevision, row.PublicationSuspended
 	}
-	err := tx.QueryRowContext(ctx, query, merchant, store).Scan(&p.Generation, &p.Revision, &p.Suspended)
+	if revision.Valid {
+		p.Revision = &revision.Int64
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return p, ErrNotFound
 	}
@@ -73,7 +84,7 @@ func ChangePublication(ctx context.Context, tx *sql.Tx, actor Principal, store u
 			action = "suspend"
 		}
 		p.Suspended = *suspension
-		_, err = tx.ExecContext(ctx, `UPDATE commerce.stores SET publication_suspended=$3,publication_generation=publication_generation+1 WHERE merchant_id=$1 AND id=$2`, actor.MerchantID, store, p.Suspended)
+		err = sqlgen.New(tx).SetPublicationSuspended(ctx, sqlgen.SetPublicationSuspendedParams{MerchantID: actor.MerchantID, ID: store, PublicationSuspended: p.Suspended})
 	} else {
 		if actor.Provider {
 			return p, errors.New("merchant principal required")

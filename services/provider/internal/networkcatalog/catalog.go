@@ -124,7 +124,7 @@ func (p Publisher) Deliver(ctx context.Context, e persistence.Effect) error {
 	if err != nil {
 		return errors.New("native publisher unavailable")
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var result struct {
 		Status  string `json:"status"`
 		Results []struct {

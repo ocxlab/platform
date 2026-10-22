@@ -1,12 +1,16 @@
+StoreDisplayName:
+  allOf:
+    - $ref: ../common/text.yaml#/PlainText
+  type: string
+  minLength: 1
+  maxLength: 160
 CreateStoreRequest:
   type: object
   additionalProperties: false
   required: [display_name]
   properties:
     display_name:
-      type: string
-      minLength: 1
-      maxLength: 160
+      $ref: '#/StoreDisplayName'
 Store:
   type: object
   additionalProperties: false
@@ -21,9 +25,7 @@ Store:
     merchant_id:
       $ref: ../common/identifier.yaml
     display_name:
-      type: string
-      minLength: 1
-      maxLength: 160
+      $ref: '#/StoreDisplayName'
     created_at:
       type: string
       format: date-time

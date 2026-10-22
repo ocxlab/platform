@@ -1,5 +1,31 @@
 # Development status
 
+## Quality tooling verified
+
+23 October 2026. Pinned Docker tooling now includes Schemathesis, sqlc and
+golangci-lint; see [the usage guide](QUALITY-TOOLING.md). SQL generation is applied
+to three publication queries, not the entire persistence layer. SQL checks and
+the focused Go lint gate passed. The final bounded Schemathesis run
+validated 258 responses; five fixed-input read operations have explicitly
+inapplicable negative generation. Earlier runs found a NUL-containing store name
+returning 503. Contract-first `PlainText` constraints and a JSON storage backstop
+correct that boundary; direct schema/guard tests and the three explicit HTTP NUL
+regressions passed. Full `task check` passed: deterministic generation, source-only
+tracking guard, Spectral, formatting, Go lint/vet/race, real PostgreSQL integration
+(80.237 seconds), 94 frontend tests, zero Svelte diagnostics, and API/web image
+builds. `task smoke` also passed after rebuilding/restarting the development API;
+no development data was reset. Mutation and browser suites were not rerun for
+this tooling-only batch; their preceding results remain recorded below.
+
+With explicit approval, the four verified empty root trees `backend/`, `cmd/`,
+`internal/` and `tools/` were removed. Active sources under `services/provider/`
+and all data/cache volumes were preserved; see [cleanup](REPOSITORY-CLEANUP.md).
+No alternative migration tooling has been installed or evaluated experimentally.
+The founder requested sqlc expansion and a bounded open-source migration-tool
+assessment before merchant/customer Food MCP work. MCP and admin redesign remain
+paused. OAuth/account payments and later pre-authenticated chat are follow-up
+requirements, not capabilities implemented by this tooling change.
+
 ## Sole Food model with optional meal upgrades
 
 23 October 2026. The newer Food implementation is now the sole

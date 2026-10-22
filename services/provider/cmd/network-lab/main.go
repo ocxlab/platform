@@ -293,7 +293,7 @@ func serve(ctx context.Context) error {
 					return err
 				}
 			}
-			defer files.Close()
+			defer func() { _ = files.Close() }() // Read-only private-key source.
 			mux.Handle("GET "+prefix, http.StripPrefix(prefix, http.FileServerFS(files.FS())))
 		}
 	}

@@ -63,7 +63,7 @@ func (s *Storage) Process(ctx context.Context, original, final, mediaType, check
 	if err != nil {
 		return 0, 0, err
 	}
-	defer obj.Body.Close()
+	defer func() { _ = obj.Body.Close() }() // Read-only object stream; read errors are checked below.
 	if obj.ContentLength == nil || *obj.ContentLength != size || obj.ContentType == nil || *obj.ContentType != mediaType {
 		return 0, 0, ErrInvalid
 	}

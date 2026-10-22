@@ -12,6 +12,7 @@ info:
     removed fields or changed meaning require a new major API contract.
     Each HTTP attempt receives a fresh X-Request-ID UUID response header.
     Problem.code is the v1 programmatic discriminator; type may be about:blank.
+    JSON string values and object keys must not contain NUL characters.
 servers:
   - url: /
 tags:
@@ -124,6 +125,10 @@ components:
     ProviderBearerAuth:
       $ref: components/security/provider-bearer.yaml
   schemas:
+    PlainText:
+      $ref: schemas/common/text.yaml#/PlainText
+    StoreDisplayName:
+      $ref: schemas/stores/store.yaml#/StoreDisplayName
     MediaUploadRequest:
       $ref: schemas/media/upload.yaml#/UploadRequest
     MediaAsset:
