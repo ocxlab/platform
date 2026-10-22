@@ -45,6 +45,13 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	if err != nil {
 		return order, err
 	}
+	ordering, err := foodOrdering(ctx, tx, guest.MerchantID, guest.StoreID, false)
+	if err != nil {
+		return order, err
+	}
+	if !ordering.AcceptingOrders {
+		return order, ErrOrderingPaused
+	}
 	var body []byte
 	var expires time.Time
 	err = tx.QueryRowContext(ctx, `SELECT body,expires_at FROM commerce.food_quotes WHERE merchant_id=$1 AND store_id=$2 AND id=$3 AND guest_id=$4`, guest.MerchantID, guest.StoreID, quoteID, guest.ID).Scan(&body, &expires)
@@ -105,6 +112,23 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	order.Revision = 1
 	order.Reference = orderReference(number)
 	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_order_events(merchant_id,store_id,order_id,sequence,event,actor_id,request_id) VALUES($1,$2,$3,1,'placed',$4,$5)`, guest.MerchantID, guest.StoreID, order.ID, guest.ID, requestID)
+	if err != nil {
+		return order, err
+	}
+	if ordering.AcceptanceMode == "automatic" {
+		// Attribute acceptance to the merchant grant that enabled the policy,
+		// never to the customer placing an order. Payment/preparation stay separate.
+		if !ordering.actor.Valid {
+			return order, errors.New("automatic policy has no merchant actor")
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE commerce.food_order_operations SET acceptance='accepted',revision=2 WHERE merchant_id=$1 AND store_id=$2 AND order_id=$3`, guest.MerchantID, guest.StoreID, order.ID)
+		if err != nil {
+			return order, err
+		}
+		_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_order_events(merchant_id,store_id,order_id,sequence,event,actor_id,request_id) VALUES($1,$2,$3,2,'accepted',$4,$5)`, guest.MerchantID, guest.StoreID, order.ID, ordering.actor.UUID, requestID)
+		order.Acceptance = "accepted"
+		order.Revision = 2
+	}
 	return order, err
 }
 

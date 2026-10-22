@@ -102,6 +102,18 @@ export const errorCodes = {
     "title": "Publication conflict",
     "message_key": "error-offering-publication-conflict"
   },
+  "ordering_paused": {
+    "module": "orders",
+    "status": 409,
+    "title": "New orders paused",
+    "message_key": "error-orders-ordering-paused"
+  },
+  "ordering_revision_conflict": {
+    "module": "orders",
+    "status": 409,
+    "title": "Ordering settings changed",
+    "message_key": "error-orders-ordering-revision-conflict"
+  },
   "development_payments_disabled": {
     "module": "orders",
     "status": 503,

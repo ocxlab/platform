@@ -1,0 +1,14 @@
+error-orders-ordering-paused = This store has paused new orders. Your existing orders remain available.
+error-orders-ordering-revision-conflict = Ordering settings changed. Refresh and review them before saving again.
+ordering-title = Ordering controls
+ordering-help = Pause new orders while keeping your menu visible. Existing orders are not affected.
+ordering-open = New orders are open
+ordering-paused = New orders are paused
+ordering-accepting = Accept new orders
+ordering-mode = Acceptance of new orders
+ordering-manual = Review each order
+ordering-automatic = Accept automatically
+ordering-mode-help = Automatic acceptance applies only to new orders. Payment and kitchen progress remain separate.
+ordering-save = Save ordering settings
+ordering-saved = Ordering settings saved.
+ordering-paused-customer = This restaurant has paused new orders. You can still browse the menu and view existing orders.

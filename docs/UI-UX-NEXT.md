@@ -95,8 +95,12 @@ or preparation work. Preserve that distinction when improving the screen.
 Plan a cohesive, mobile-first UI/UX pass before a merchant pilot: product tiles,
 simple category navigation, a visible cart, clear checkout/status, and a lean
 merchant workspace. Do not postpone operational usability until final decoration.
-After the order-detail/live-update batch, resume ordering controls
-(pause/resume and manual/automatic acceptance). Keep native ONIX publication and
+Ordering controls now provide pause/resume and manual/automatic acceptance through
+the Orders view and maintained APIs. Timed reopening and availability push updates
+remain follow-ups. Next, exercise merchant setup through a thin MCP adapter and
+Inspector before embedded chat; see [the plan](API-ERRORS-AND-AGENT-PLAN.md).
+Continue category/presentation contracts and the shared tile/list cart afterward.
+Keep native ONIX publication and
 peer discovery as an explicit joined-network milestone, not an indefinite UI
 follow-up or a claim already fulfilled by the local directory.
 

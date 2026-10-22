@@ -4,12 +4,31 @@
   import MerchantStoreNav from '$lib/components/MerchantStoreNav.svelte';
   import { merchantStorePath } from '$lib/merchant-paths';
   import OrderLiveUpdates from '$lib/components/OrderLiveUpdates.svelte';
+  import Notice from '$lib/components/Notice.svelte';
   const { t, locale } = useI18n();
-  let { data } = $props();
+  let { data, form } = $props();
   const root = $derived(merchantStorePath(data.store));
   const dateFormat = $derived(new Intl.DateTimeFormat(locale(), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Berlin' }));
 </script>
 <MerchantStoreNav store={data.store} active="orders" />
+<section aria-labelledby="ordering-heading">
+  <h2 id="ordering-heading">{t('ordering-title')}</h2>
+  <p>{t('ordering-help')}</p>
+  <p role="status"><strong>{t(data.ordering.accepting_orders ? 'ordering-open' : 'ordering-paused')}</strong></p>
+  {#if form?.error}<Notice text={form.error} error />{/if}
+  {#if form?.saved}<Notice text={t('ordering-saved')} />{/if}
+  <form method="POST" action="?/ordering">
+    <input type="hidden" name="revision" value={data.ordering.revision} />
+    <input type="hidden" name="key" value={data.settingsKey} />
+    <label><input type="checkbox" name="accepting" checked={data.ordering.accepting_orders} /> {t('ordering-accepting')}</label>
+    <label>{t('ordering-mode')}<select name="mode" value={data.ordering.acceptance_mode}>
+      <option value="manual">{t('ordering-manual')}</option>
+      <option value="automatic">{t('ordering-automatic')}</option>
+    </select></label>
+    <p class="muted">{t('ordering-mode-help')}</p>
+    <button type="submit">{t('ordering-save')}</button>
+  </form>
+</section>
 <section aria-labelledby="orders-heading">
 <div class="list-heading"><h2 id="orders-heading">{t('orders-title')}</h2>
 </div>

@@ -1,0 +1,42 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+get:
+  operationId: GetPublicFoodOrdering
+  tags: [Customer commerce]
+  summary: Read ordering availability for a published store
+  description: >-
+    Unpublished and suspended stores return 404. Settings are advisory to the UI;
+    quote creation and placement recheck them atomically. No merchant actor or private audit is exposed.
+  security: []
+  x-access: public
+  responses:
+    '200':
+      description: Ordering settings. Successful mutations return the retained replay result.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/ordering/v1/schema.yaml#/FoodOrdering
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml

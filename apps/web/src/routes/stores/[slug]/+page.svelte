@@ -22,6 +22,7 @@
 </script>
 <h1><bdi dir="auto">{data.offering.display_name}</bdi></h1>
 <p>{t('storefront-intro')}</p>
+{#if !data.ordering.accepting_orders}<Notice text={t('ordering-paused-customer')} />{/if}
 {#if form?.error}<Notice text={form.error} error />{/if}
 <section><h2>{t('storefront-choose')}</h2>
 <form method="POST" action="?/quote">
@@ -36,7 +37,7 @@
       </fieldset>
     {/each}
     <label>{t('storefront-quantity')}<input name="quantity" type="number" min="1" max="99" value="1" required /></label>
-    <ActionButton icon={Calculator} label={t('storefront-check')} disabled={!item.available} />
+    <ActionButton icon={Calculator} label={t('storefront-check')} disabled={!item.available || !data.ordering.accepting_orders} />
     {/key}
   {/if}
 </form></section>

@@ -185,6 +185,13 @@ func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 	if err != nil {
 		return q, err
 	}
+	ordering, err := foodOrdering(ctx, tx, merchant, store, false)
+	if err != nil {
+		return q, err
+	}
+	if !ordering.AcceptingOrders {
+		return q, ErrOrderingPaused
+	}
 	if p.Generation != expected {
 		return q, &PublicationConflict{p.Generation}
 	}

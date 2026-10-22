@@ -134,7 +134,7 @@ export interface paths {
         put?: never;
         /**
          * Place a pickup order using agreed quote terms
-         * @description Records agreement to the complete immutable guest-owned quote for pickup. Requires unexpired terms and current selection availability at a visible store; price-only publication changes do not rewrite issued terms. Same authorized key and complete request return byte-identical 201, including after quote expiry. A different request conflicts; a quote can place only one order, even under different keys. No acceptance, stock reservation, payment, or preparation is performed in this batch.
+         * @description Records agreement to the complete immutable guest-owned quote for pickup. Requires unexpired terms, current selection availability, and new ordering enabled at a visible store; price-only publication changes do not rewrite issued terms. Same authorized key and complete request return byte-identical 201, including after quote expiry or ordering pause. A different request conflicts; a quote can place only one order, even under different keys. The current merchant policy determines manual or automatic acceptance. Stock reservation, payment, and preparation are not performed.
          */
         post: operations["PlaceFoodOrder"];
         delete?: never;
@@ -361,6 +361,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        /** Read store ordering settings */
+        get: operations["GetFoodOrdering"];
+        /**
+         * Pause or resume new orders and select acceptance mode
+         * @description Uses expected_revision and Idempotency-Key. Serializes against quote creation and placement. Pausing preserves browsing and existing orders, but prevents new quotes and first placements, including placements using previously issued quotes. Successful placement retries remain available. Mode changes affect new placements only. Automatic acceptance neither pays nor starts preparation. Every successful settings command advances revision, including a no-op; audit and replay commit together.
+         */
+        put: operations["ChangeFoodOrdering"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders": {
         parameters: {
             query?: never;
@@ -538,6 +563,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Read ordering availability for a published store
+         * @description Unpublished and suspended stores return 404. Settings are advisory to the UI; quote creation and placement recheck them atomically. No merchant actor or private audit is exposed.
+         */
+        get: operations["GetPublicFoodOrdering"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes": {
         parameters: {
             query?: never;
@@ -680,6 +729,11 @@ export interface components {
             /** Format: int64 */
             expected_revision: number;
         };
+        ChangeFoodOrderingRequest: {
+            acceptance_mode: components["schemas"]["DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a"];
+            accepting_orders: components["schemas"]["DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptingOrders8015f5a8"];
+            expected_revision: components["schemas"]["DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesRevision1d131dc9"];
+        };
         ChangePublicationRequest: {
             /** Format: int64 */
             expected_generation: number;
@@ -702,6 +756,11 @@ export interface components {
         };
         /** Format: int64 */
         DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0: number;
+        /** @enum {string} */
+        DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a: "manual" | "automatic";
+        DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptingOrders8015f5a8: boolean;
+        /** Format: int64 */
+        DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesRevision1d131dc9: number;
         FoodFulfilmentRequest: {
             /** @enum {string} */
             action: "start_preparation" | "mark_ready" | "record_collection";
@@ -790,6 +849,13 @@ export interface components {
             items: components["schemas"]["FoodOrder"][];
             /** @description Opaque position for the next page in newest-first order, not an authorization credential. */
             next_after?: string;
+        };
+        FoodOrdering: {
+            /** @enum {string} */
+            acceptance_mode: "manual" | "automatic";
+            accepting_orders: boolean;
+            /** Format: int64 */
+            revision: number;
         };
         FoodQuote: {
             /** Format: date-time */
@@ -1694,6 +1760,83 @@ export interface operations {
             default: components["responses"]["ProblemResponse"];
         };
     };
+    GetFoodOrdering: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ordering settings. Successful mutations return the retained replay result. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodOrdering"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    ChangeFoodOrdering: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeFoodOrderingRequest"];
+            };
+        };
+        responses: {
+            /** @description Ordering settings. Successful mutations return the retained replay result. */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodOrdering"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
     ListMerchantFoodOrders: {
         parameters: {
             query?: {
@@ -1994,6 +2137,41 @@ export interface operations {
             415: components["responses"]["ProblemResponse"];
             422: components["responses"]["ProblemResponse"];
             429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    GetPublicFoodOrdering: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ordering settings. Successful mutations return the retained replay result. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodOrdering"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };

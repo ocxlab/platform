@@ -21,6 +21,10 @@ tags:
 security:
   - BearerAuth: []
 paths:
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering:
+    $ref: paths/food-ordering.yaml
+  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering:
+    $ref: paths/public-food-ordering.yaml
   /api/v1/merchants/{merchant_id}/stores/{store_id}/food/order-updates:
     $ref: paths/merchant-order-updates.yaml
   /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/order-updates/{order_id}:
@@ -99,6 +103,10 @@ components:
     ProviderBearerAuth:
       $ref: components/security/provider-bearer.yaml
   schemas:
+    FoodOrdering:
+      $ref: domains/food/ordering/v1/schema.yaml#/FoodOrdering
+    ChangeFoodOrderingRequest:
+      $ref: domains/food/ordering/v1/schema.yaml#/ChangeFoodOrderingRequest
     AdminStorePage:
       $ref: schemas/admin/directory.yaml#/StorePage
     AdminOrderPage:

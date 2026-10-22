@@ -178,7 +178,7 @@ separate work. Previous pre-launch UUID web routes are not preserved.
 
 Checkout uses a GuestBearerAuth audience and guest-owned
 quotes. Anonymous preview quotes do not confer placement authority. Pickup
-placement retains agreed quote terms, pending acceptance, without payment or
+placement retains agreed quote terms, using the merchant's acceptance mode, without payment or
 preparation. Quote expiry limits first placement; it does not expire an order.
 Guest credentials are merchant/store scoped and expire after seven days. Receipt
 identifiers alone do not authorize reads. Placement and its event/replay commit
@@ -187,6 +187,23 @@ The web retains one checkout intent per store, including its original retry key.
 See `docs/STATUS.md` for executed checks and remaining product boundaries.
 
 ## Restaurant decisions and guest cancellation
+
+Store ordering settings have their own Food resource:
+`GET/PUT /api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering`.
+Read requires `order:read`; changes require `order:manage`, an expected settings
+revision, and an idempotency key. Defaults preserve existing behavior: open and
+manual acceptance. Pause/resume is independent of publication. Pausing blocks
+new quotes and first placements, including previously quoted selections, but
+does not change existing orders or successful placement replays. The public GET
+under `/api/v1/public/merchants/…/food/ordering` exposes settings only for visible
+stores, never the authorizing merchant grant or audit.
+
+Changes, actor/request audit, and replay commit atomically. Settings, publication,
+quotes, and placement serialize on the same store row. Automatic acceptance uses
+the merchant policy current at placement, records acceptance under the grant
+that enabled it, and leaves payment and preparation untouched. Later setting
+changes do not rewrite prior orders. Timed reopening and live availability hints
+are not part of this increment; current reads are advisory and writes recheck.
 
 The merchant Food order API provides a newest-first inbox, individual reads,
 and explicit accept/reject decisions. Its operations require `order:read` or
@@ -272,8 +289,8 @@ attempt/transition set. Expanded enums require coordinated draft-client updates.
 `collected` is terminal fulfilment, not a change to the separate resolution axis.
 Automatic guest cancellation ends when preparation starts; that is a capability
 limit, not a statement about statutory or support rights. Merchant reports are
-not independent physical proof. Own delivery, cash payment conditions, automatic
-acceptance, preparation deadlines, and post-preparation support/refunds remain
+not independent physical proof. Own delivery, cash payment conditions,
+preparation deadlines, and post-preparation support/refunds remain
 separate work. No ingredient inventory is required by this progression.
 
 ## Provider administration browsing

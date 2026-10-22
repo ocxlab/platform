@@ -54,6 +54,24 @@ func (e DevelopmentPaymentRequestAction) Valid() bool {
 	}
 }
 
+// Defines values for DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a.
+const (
+	DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09aAutomatic DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a = "automatic"
+	DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09aManual    DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a = "manual"
+)
+
+// Valid indicates whether the value is a known member of the DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a enum.
+func (e DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a) Valid() bool {
+	switch e {
+	case DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09aAutomatic:
+		return true
+	case DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09aManual:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FoodFulfilmentRequestAction.
 const (
 	MarkReady        FoodFulfilmentRequestAction = "mark_ready"
@@ -77,13 +95,13 @@ func (e FoodFulfilmentRequestAction) Valid() bool {
 
 // Defines values for FoodMenuAvailabilityMode.
 const (
-	Manual FoodMenuAvailabilityMode = "manual"
+	FoodMenuAvailabilityModeManual FoodMenuAvailabilityMode = "manual"
 )
 
 // Valid indicates whether the value is a known member of the FoodMenuAvailabilityMode enum.
 func (e FoodMenuAvailabilityMode) Valid() bool {
 	switch e {
-	case Manual:
+	case FoodMenuAvailabilityModeManual:
 		return true
 	default:
 		return false
@@ -288,6 +306,24 @@ func (e FoodOrderEventEvent) Valid() bool {
 	case FoodOrderEventEventReadyForPickup:
 		return true
 	case FoodOrderEventEventRejected:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FoodOrderingAcceptanceMode.
+const (
+	Automatic FoodOrderingAcceptanceMode = "automatic"
+	Manual    FoodOrderingAcceptanceMode = "manual"
+)
+
+// Valid indicates whether the value is a known member of the FoodOrderingAcceptanceMode enum.
+func (e FoodOrderingAcceptanceMode) Valid() bool {
+	switch e {
+	case Automatic:
+		return true
+	case Manual:
 		return true
 	default:
 		return false
@@ -545,6 +581,13 @@ type CancelFoodOrderRequest struct {
 	ExpectedRevision int64 `json:"expected_revision"`
 }
 
+// ChangeFoodOrderingRequest defines model for ChangeFoodOrderingRequest.
+type ChangeFoodOrderingRequest struct {
+	AcceptanceMode   DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a  `json:"acceptance_mode"`
+	AcceptingOrders  DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptingOrders8015f5a8 `json:"accepting_orders"`
+	ExpectedRevision DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesRevision1d131dc9        `json:"expected_revision"`
+}
+
 // ChangePublicationRequest defines model for ChangePublicationRequest.
 type ChangePublicationRequest struct {
 	ExpectedGeneration int64 `json:"expected_generation"`
@@ -570,6 +613,15 @@ type DevelopmentPaymentRequestAction string
 
 // DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0 defines model for DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0.
 type DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0 = int64
+
+// DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a defines model for DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a.
+type DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptanceModeebe4a09a string
+
+// DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptingOrders8015f5a8 defines model for DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptingOrders8015f5a8.
+type DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptingOrders8015f5a8 = bool
+
+// DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesRevision1d131dc9 defines model for DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesRevision1d131dc9.
+type DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesRevision1d131dc9 = int64
 
 // FoodFulfilmentRequest defines model for FoodFulfilmentRequest.
 type FoodFulfilmentRequest struct {
@@ -703,6 +755,16 @@ type FoodOrderPage struct {
 	// NextAfter Opaque position for the next page in newest-first order, not an authorization credential.
 	NextAfter *string `json:"next_after,omitempty"`
 }
+
+// FoodOrdering defines model for FoodOrdering.
+type FoodOrdering struct {
+	AcceptanceMode  FoodOrderingAcceptanceMode `json:"acceptance_mode"`
+	AcceptingOrders bool                       `json:"accepting_orders"`
+	Revision        int64                      `json:"revision"`
+}
+
+// FoodOrderingAcceptanceMode defines model for FoodOrdering.AcceptanceMode.
+type FoodOrderingAcceptanceMode string
 
 // FoodQuote defines model for FoodQuote.
 type FoodQuote struct {
@@ -1153,6 +1215,12 @@ type CreateStoreParams struct {
 	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
 }
 
+// ChangeFoodOrderingParams defines parameters for ChangeFoodOrdering.
+type ChangeFoodOrderingParams struct {
+	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
 // ListMerchantFoodOrdersParams defines parameters for ListMerchantFoodOrders.
 type ListMerchantFoodOrdersParams struct {
 	// Limit Maximum resources per page. Defaults to 50, with an upper bound of 100.
@@ -1210,6 +1278,9 @@ type CreateGuestFoodQuoteJSONRequestBody = FoodSelectionRequest
 
 // CreateStoreJSONRequestBody defines body for CreateStore for application/json ContentType.
 type CreateStoreJSONRequestBody = CreateStoreRequest
+
+// ChangeFoodOrderingJSONRequestBody defines body for ChangeFoodOrdering for application/json ContentType.
+type ChangeFoodOrderingJSONRequestBody = ChangeFoodOrderingRequest
 
 // DecideFoodOrderJSONRequestBody defines body for DecideFoodOrder for application/json ContentType.
 type DecideFoodOrderJSONRequestBody = FoodOrderDecision
@@ -1365,6 +1436,14 @@ type ClientInterface interface {
 	// WatchMerchantFoodOrders request
 	WatchMerchantFoodOrders(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetFoodOrdering request
+	GetFoodOrdering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ChangeFoodOrderingWithBody request with any body
+	ChangeFoodOrderingWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ChangeFoodOrdering(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, body ChangeFoodOrderingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListMerchantFoodOrders request
 	ListMerchantFoodOrders(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1399,6 +1478,9 @@ type ClientInterface interface {
 	ChangePublicationWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	ChangePublication(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, body ChangePublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPublicFoodOrdering request
+	GetPublicFoodOrdering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateFoodQuoteWithBody request with any body
 	CreateFoodQuoteWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1699,6 +1781,42 @@ func (c *Client) WatchMerchantFoodOrders(ctx context.Context, merchantId Merchan
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetFoodOrdering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetFoodOrderingRequest(c.Server, merchantId, storeId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ChangeFoodOrderingWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewChangeFoodOrderingRequestWithBody(c.Server, merchantId, storeId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ChangeFoodOrdering(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, body ChangeFoodOrderingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewChangeFoodOrderingRequest(c.Server, merchantId, storeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListMerchantFoodOrders(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListMerchantFoodOrdersRequest(c.Server, merchantId, storeId, params)
 	if err != nil {
@@ -1845,6 +1963,18 @@ func (c *Client) ChangePublicationWithBody(ctx context.Context, merchantId Merch
 
 func (c *Client) ChangePublication(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, body ChangePublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewChangePublicationRequest(c.Server, merchantId, storeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPublicFoodOrdering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPublicFoodOrderingRequest(c.Server, merchantId, storeId)
 	if err != nil {
 		return nil, err
 	}
@@ -2992,6 +3122,114 @@ func NewWatchMerchantFoodOrdersRequest(server string, merchantId MerchantID, sto
 	return req, nil
 }
 
+// NewGetFoodOrderingRequest generates requests for GetFoodOrdering
+func NewGetFoodOrderingRequest(server string, merchantId MerchantID, storeId StoreID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/food/ordering", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewChangeFoodOrderingRequest calls the generic ChangeFoodOrdering builder with application/json body
+func NewChangeFoodOrderingRequest(server string, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, body ChangeFoodOrderingJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewChangeFoodOrderingRequestWithBody(server, merchantId, storeId, params, "application/json", bodyReader)
+}
+
+// NewChangeFoodOrderingRequestWithBody generates requests for ChangeFoodOrdering with any type of body
+func NewChangeFoodOrderingRequestWithBody(server string, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/food/ordering", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Idempotency-Key", headerParam0)
+
+	}
+
+	return req, nil
+}
+
 // NewListMerchantFoodOrdersRequest generates requests for ListMerchantFoodOrders
 func NewListMerchantFoodOrdersRequest(server string, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams) (*http.Request, error) {
 	var err error
@@ -3531,6 +3769,47 @@ func NewChangePublicationRequestWithBody(server string, merchantId MerchantID, s
 	return req, nil
 }
 
+// NewGetPublicFoodOrderingRequest generates requests for GetPublicFoodOrdering
+func NewGetPublicFoodOrderingRequest(server string, merchantId MerchantID, storeId StoreID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/public/merchants/%s/stores/%s/food/ordering", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewCreateFoodQuoteRequest calls the generic CreateFoodQuote builder with application/json body
 func NewCreateFoodQuoteRequest(server string, merchantId MerchantID, storeId StoreID, body CreateFoodQuoteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -3928,6 +4207,14 @@ type ClientWithResponsesInterface interface {
 	// WatchMerchantFoodOrdersWithResponse request
 	WatchMerchantFoodOrdersWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*WatchMerchantFoodOrdersResponse, error)
 
+	// GetFoodOrderingWithResponse request
+	GetFoodOrderingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetFoodOrderingResponse, error)
+
+	// ChangeFoodOrderingWithBodyWithResponse request with any body
+	ChangeFoodOrderingWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ChangeFoodOrderingResponse, error)
+
+	ChangeFoodOrderingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, body ChangeFoodOrderingJSONRequestBody, reqEditors ...RequestEditorFn) (*ChangeFoodOrderingResponse, error)
+
 	// ListMerchantFoodOrdersWithResponse request
 	ListMerchantFoodOrdersWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams, reqEditors ...RequestEditorFn) (*ListMerchantFoodOrdersResponse, error)
 
@@ -3962,6 +4249,9 @@ type ClientWithResponsesInterface interface {
 	ChangePublicationWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ChangePublicationResponse, error)
 
 	ChangePublicationWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangePublicationParams, body ChangePublicationJSONRequestBody, reqEditors ...RequestEditorFn) (*ChangePublicationResponse, error)
+
+	// GetPublicFoodOrderingWithResponse request
+	GetPublicFoodOrderingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetPublicFoodOrderingResponse, error)
 
 	// CreateFoodQuoteWithBodyWithResponse request with any body
 	CreateFoodQuoteWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateFoodQuoteResponse, error)
@@ -4474,6 +4764,70 @@ func (r WatchMerchantFoodOrdersResponse) StatusCode() int {
 	return 0
 }
 
+type GetFoodOrderingResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *FoodOrdering
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetFoodOrderingResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetFoodOrderingResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ChangeFoodOrderingResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *FoodOrdering
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ChangeFoodOrderingResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ChangeFoodOrderingResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListMerchantFoodOrdersResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
@@ -4736,6 +5090,38 @@ func (r ChangePublicationResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ChangePublicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPublicFoodOrderingResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *FoodOrdering
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPublicFoodOrderingResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPublicFoodOrderingResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -5108,6 +5494,32 @@ func (c *ClientWithResponses) WatchMerchantFoodOrdersWithResponse(ctx context.Co
 	return ParseWatchMerchantFoodOrdersResponse(rsp)
 }
 
+// GetFoodOrderingWithResponse request returning *GetFoodOrderingResponse
+func (c *ClientWithResponses) GetFoodOrderingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetFoodOrderingResponse, error) {
+	rsp, err := c.GetFoodOrdering(ctx, merchantId, storeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetFoodOrderingResponse(rsp)
+}
+
+// ChangeFoodOrderingWithBodyWithResponse request with arbitrary body returning *ChangeFoodOrderingResponse
+func (c *ClientWithResponses) ChangeFoodOrderingWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ChangeFoodOrderingResponse, error) {
+	rsp, err := c.ChangeFoodOrderingWithBody(ctx, merchantId, storeId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseChangeFoodOrderingResponse(rsp)
+}
+
+func (c *ClientWithResponses) ChangeFoodOrderingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ChangeFoodOrderingParams, body ChangeFoodOrderingJSONRequestBody, reqEditors ...RequestEditorFn) (*ChangeFoodOrderingResponse, error) {
+	rsp, err := c.ChangeFoodOrdering(ctx, merchantId, storeId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseChangeFoodOrderingResponse(rsp)
+}
+
 // ListMerchantFoodOrdersWithResponse request returning *ListMerchantFoodOrdersResponse
 func (c *ClientWithResponses) ListMerchantFoodOrdersWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *ListMerchantFoodOrdersParams, reqEditors ...RequestEditorFn) (*ListMerchantFoodOrdersResponse, error) {
 	rsp, err := c.ListMerchantFoodOrders(ctx, merchantId, storeId, params, reqEditors...)
@@ -5219,6 +5631,15 @@ func (c *ClientWithResponses) ChangePublicationWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseChangePublicationResponse(rsp)
+}
+
+// GetPublicFoodOrderingWithResponse request returning *GetPublicFoodOrderingResponse
+func (c *ClientWithResponses) GetPublicFoodOrderingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetPublicFoodOrderingResponse, error) {
+	rsp, err := c.GetPublicFoodOrdering(ctx, merchantId, storeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPublicFoodOrderingResponse(rsp)
 }
 
 // CreateFoodQuoteWithBodyWithResponse request with arbitrary body returning *CreateFoodQuoteResponse
@@ -6531,6 +6952,198 @@ func ParseWatchMerchantFoodOrdersResponse(rsp *http.Response) (*WatchMerchantFoo
 	return response, nil
 }
 
+// ParseGetFoodOrderingResponse parses an HTTP response from a GetFoodOrderingWithResponse call
+func ParseGetFoodOrderingResponse(rsp *http.Response) (*GetFoodOrderingResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetFoodOrderingResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FoodOrdering
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseChangeFoodOrderingResponse parses an HTTP response from a ChangeFoodOrderingWithResponse call
+func ParseChangeFoodOrderingResponse(rsp *http.Response) (*ChangeFoodOrderingResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ChangeFoodOrderingResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest FoodOrdering
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListMerchantFoodOrdersResponse parses an HTTP response from a ListMerchantFoodOrdersWithResponse call
 func ParseListMerchantFoodOrdersResponse(rsp *http.Response) (*ListMerchantFoodOrdersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -7255,6 +7868,102 @@ func ParseChangePublicationResponse(rsp *http.Response) (*ChangePublicationRespo
 	return response, nil
 }
 
+// ParseGetPublicFoodOrderingResponse parses an HTTP response from a GetPublicFoodOrderingWithResponse call
+func ParseGetPublicFoodOrderingResponse(rsp *http.Response) (*GetPublicFoodOrderingResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPublicFoodOrderingResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FoodOrdering
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseCreateFoodQuoteResponse parses an HTTP response from a CreateFoodQuoteWithResponse call
 func ParseCreateFoodQuoteResponse(rsp *http.Response) (*CreateFoodQuoteResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -7695,6 +8404,12 @@ type ServerInterface interface {
 	// Watch change hints for this store's order inbox
 	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/food/order-updates)
 	WatchMerchantFoodOrders(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
+	// Read store ordering settings
+	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering)
+	GetFoodOrdering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
+	// Pause or resume new orders and select acceptance mode
+	// (PUT /api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering)
+	ChangeFoodOrdering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params ChangeFoodOrderingParams)
 	// Read a bounded pickup order inbox
 	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders)
 	ListMerchantFoodOrders(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params ListMerchantFoodOrdersParams)
@@ -7722,6 +8437,9 @@ type ServerInterface interface {
 	// Publish an exact revision or withdraw
 	// (PUT /api/v1/merchants/{merchant_id}/stores/{store_id}/publication)
 	ChangePublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params ChangePublicationParams)
+	// Read ordering availability for a published store
+	// (GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering)
+	GetPublicFoodOrdering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Validate and price a food selection
 	// (POST /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes)
 	CreateFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
@@ -8677,6 +9395,114 @@ func (siw *ServerInterfaceWrapper) WatchMerchantFoodOrders(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// GetFoodOrdering operation middleware
+func (siw *ServerInterfaceWrapper) GetFoodOrdering(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetFoodOrdering(w, r, merchantId, storeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ChangeFoodOrdering operation middleware
+func (siw *ServerInterfaceWrapper) ChangeFoodOrdering(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ChangeFoodOrderingParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ChangeFoodOrdering(w, r, merchantId, storeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMerchantFoodOrders operation middleware
 func (siw *ServerInterfaceWrapper) ListMerchantFoodOrders(w http.ResponseWriter, r *http.Request) {
 
@@ -9204,6 +10030,40 @@ func (siw *ServerInterfaceWrapper) ChangePublication(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// GetPublicFoodOrdering operation middleware
+func (siw *ServerInterfaceWrapper) GetPublicFoodOrdering(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPublicFoodOrdering(w, r, merchantId, storeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CreateFoodQuote operation middleware
 func (siw *ServerInterfaceWrapper) CreateFoodQuote(w http.ResponseWriter, r *http.Request) {
 
@@ -9525,6 +10385,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores", wrapper.CreateStore)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}", wrapper.GetStore)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/order-updates", wrapper.WatchMerchantFoodOrders)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering", wrapper.GetFoodOrdering)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering", wrapper.ChangeFoodOrdering)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders", wrapper.ListMerchantFoodOrders)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.GetMerchantFoodOrder)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions", wrapper.DecideFoodOrder)
@@ -9534,6 +10396,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision}", wrapper.GetOfferingRevision)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.GetPublication)
 	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.ChangePublication)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering", wrapper.GetPublicFoodOrdering)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes", wrapper.CreateFoodQuote)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions", wrapper.CreateGuestSession)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.GetPublicOffering)
@@ -9547,187 +10410,196 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -1,0 +1,14 @@
+error-orders-ordering-paused = Dieses Restaurant nimmt vorübergehend keine neuen Bestellungen an. Bestehende Bestellungen bleiben verfügbar.
+error-orders-ordering-revision-conflict = Die Bestelleinstellungen wurden geändert. Bitte aktualisieren und vor dem Speichern prüfen.
+ordering-title = Bestellannahme
+ordering-help = Pausieren Sie neue Bestellungen, ohne die Speisekarte auszublenden. Bestehende Bestellungen sind nicht betroffen.
+ordering-open = Neue Bestellungen sind möglich
+ordering-paused = Neue Bestellungen sind pausiert
+ordering-accepting = Neue Bestellungen zulassen
+ordering-mode = Annahme neuer Bestellungen
+ordering-manual = Jede Bestellung prüfen
+ordering-automatic = Automatisch annehmen
+ordering-mode-help = Die automatische Annahme gilt nur für neue Bestellungen. Zahlung und Küchenfortschritt bleiben getrennt.
+ordering-save = Bestelleinstellungen speichern
+ordering-saved = Bestelleinstellungen gespeichert.
+ordering-paused-customer = Dieses Restaurant nimmt vorübergehend keine neuen Bestellungen an. Sie können die Speisekarte und bestehende Bestellungen weiterhin ansehen.

@@ -1,5 +1,51 @@
 # Development status
 
+## Ordering controls and the early agent-facing plan
+
+22 October 2026, Europe/Berlin (UTC+02:00). The store Orders tab now exposes
+pause/resume and manual/automatic acceptance through three maintained OpenAPI
+operations. Existing stores default to open/manual, preserving existing behavior.
+Pause keeps browsing and existing purchases available, but blocks new quotes and
+first placements, including old quotes. Successful placement retries still return
+their original result. Settings use their own revision, scoped authorization,
+idempotency, and append-only actor/request audit, serialized on the existing store
+lock. Automatic acceptance records the merchant policy's authorizing actor and
+does not collect payment or start preparation. Later policy changes leave old
+orders alone. Public settings exclude the private actor and audit.
+
+The [API and agent plan](API-ERRORS-AND-AGENT-PLAN.md) records the error-boundary
+audit and moves a local merchant-setup MCP/Inspector slice ahead of embedded chat,
+without waiting for ONIX or final UI polish. Stable module-owned error codes,
+Problem Details, schema checks, scope/tenant checks, safe Fluent rendering, and
+generated artifacts already exist. The audit corrected generic problem titles
+to HTTP status phrases and added envelope regression checks. Safe field-level
+validation pointers, operation-specific code inventories, and internal versus
+transient failure classification remain improvements, not delivered features.
+
+Verification passed: `task check` (real PostgreSQL integration, Go race checks,
+generated drift checks, 70 web tests, and zero Svelte diagnostics), all five
+built-app browser tests, all five Vite browser tests, and `task smoke`.
+The large-menu browser journey now pauses ordering through the merchant UI,
+checks disabled customer quoting, resumes with automatic acceptance through the
+API, and places a configured pizza order. The real-DB test checks policy defaults,
+scope denial, malformed mode, stale revision, pause enforcement, resumed old-quote
+placement, actor attribution, unchanged payment/preparation, historical replay,
+non-retroactive settings, publication withdrawal, and audit counts. The new
+controls were inspected at 390-pixel width.
+
+Two test issues were resolved: the historical upgrade fixture called today's
+quote handler against the deliberately old schema, and a new browser selector
+incorrectly required exact text on a select's enclosing label. The historical
+fixture now constructs priced historical terms before testing the real migration
+and retained replay; no production compatibility fallback was added.
+
+Local API/database were rebuilt/migrated without resetting data; native Vite
+returned HTTP 200 and retained the substantial demo listing. No new mutation
+score, real payment, MCP execution, or joined-network result is claimed.
+Timed reopening and pushed availability updates remain follow-ups. Category/
+presentation contracts, progressive product configuration, the multi-item cart,
+and the known post-quote selection reset remain outstanding UI work.
+
 ## Substantial demo menu and customer UX research
 
 22 October 2026, Europe/Berlin (UTC+02:00). An explicit `task dev:seed` adds a

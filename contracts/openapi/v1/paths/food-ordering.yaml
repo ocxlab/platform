@@ -1,0 +1,89 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+get:
+  operationId: GetFoodOrdering
+  tags: [Merchant commerce]
+  summary: Read store ordering settings
+  x-access: merchant
+  x-required-scope: order:read
+  responses:
+    '200':
+      description: Ordering settings. Successful mutations return the retained replay result.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/ordering/v1/schema.yaml#/FoodOrdering
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml
+put:
+  operationId: ChangeFoodOrdering
+  tags: [Merchant commerce]
+  summary: Pause or resume new orders and select acceptance mode
+  description: >-
+    Uses expected_revision and Idempotency-Key. Serializes against quote creation and placement.
+    Pausing preserves browsing and existing orders, but prevents new quotes and first placements,
+    including placements using previously issued quotes. Successful placement retries remain available.
+    Mode changes affect new placements only. Automatic acceptance neither pays nor starts preparation.
+    Every successful settings command advances revision, including a no-op; audit and replay commit together.
+  x-access: merchant
+  x-required-scope: order:manage
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../domains/food/ordering/v1/schema.yaml#/ChangeFoodOrderingRequest
+  responses:
+    '201':
+      description: Ordering settings. Successful mutations return the retained replay result.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../domains/food/ordering/v1/schema.yaml#/FoodOrdering
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml

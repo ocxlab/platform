@@ -6,7 +6,7 @@ post:
   tags: [Customer commerce]
   summary: Place a pickup order using agreed quote terms
   description: >-
-    Records agreement to the complete immutable guest-owned quote for pickup. Requires unexpired terms and current selection availability at a visible store; price-only publication changes do not rewrite issued terms. Same authorized key and complete request return byte-identical 201, including after quote expiry. A different request conflicts; a quote can place only one order, even under different keys. No acceptance, stock reservation, payment, or preparation is performed in this batch.
+    Records agreement to the complete immutable guest-owned quote for pickup. Requires unexpired terms, current selection availability, and new ordering enabled at a visible store; price-only publication changes do not rewrite issued terms. Same authorized key and complete request return byte-identical 201, including after quote expiry or ordering pause. A different request conflicts; a quote can place only one order, even under different keys. The current merchant policy determines manual or automatic acceptance. Stock reservation, payment, and preparation are not performed.
   security:
     - GuestBearerAuth: []
   x-access: guest

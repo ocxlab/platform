@@ -59,7 +59,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	}})
 	scopes := map[string]string{}
 	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:cancel": true, "order:manage": true, "order:inspect": true}
-	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true, "GetPublicStoreByHandle": true}
+	public := map[string]bool{"GetPublicFoodOrdering": true, "GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true, "GetPublicStoreByHandle": true}
 	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true, "ChangeDevelopmentPayment": true, "GetGuestFoodOrderByReference": true, "WatchGuestFoodOrder": true}
 	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true, "AdminListStores": true, "AdminListFoodOrders": true}
 	for _, path := range spec.Paths.Map() {
@@ -245,9 +245,10 @@ func problem(w http.ResponseWriter, status int, code, detail string, current *in
 		status = 503
 		code = "unavailable"
 		detail = "The service could not complete this request."
-		definition, _ = problems.Lookup(code)
 	}
-	body := map[string]any{"type": "about:blank", "title": definition.Title, "status": status, "code": code, "detail": detail, "instance": "urn:uuid:" + w.Header().Get("X-Request-ID")}
+	// RFC 9457 section 4.2.1: about:blank uses the HTTP status phrase as title.
+	// The additive code extension carries our more specific failure category.
+	body := map[string]any{"type": "about:blank", "title": http.StatusText(status), "status": status, "code": code, "detail": detail, "instance": "urn:uuid:" + w.Header().Get("X-Request-ID")}
 	if current != nil {
 		field := "current_revision"
 		if code == "publication_conflict" {
@@ -271,7 +272,12 @@ func write(w http.ResponseWriter, value any, err error) {
 		var conflict *persistence.RevisionConflict
 		var publicationConflict *persistence.PublicationConflict
 		var orderConflict *persistence.OrderRevisionConflict
+		var orderingConflict *persistence.OrderingRevisionConflict
 		switch {
+		case errors.As(err, &orderingConflict):
+			problem(w, 409, "ordering_revision_conflict", "Ordering settings have changed. Read their current revision before retrying.", &orderingConflict.Current)
+		case errors.Is(err, persistence.ErrOrderingPaused):
+			problem(w, 409, "ordering_paused", "This store has paused new orders. Existing orders remain available.", nil)
 		case errors.Is(err, persistence.ErrPublicStoreCursor):
 			problem(w, 400, "invalid_request", "The store continuation cursor is invalid.", nil)
 		case errors.Is(err, persistence.ErrOrderCursor):

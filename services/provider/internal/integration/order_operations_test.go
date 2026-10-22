@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/httpapi"
+	"ocp.local/platform/internal/offering/food"
 	"ocp.local/platform/internal/persistence"
 )
 
@@ -40,8 +41,22 @@ func TestFoodOrderProgressMigrationPreservesLegacyReplay(t *testing.T) {
 	f.request(t, "PUT", private+"/publication", f.token, "legacy-menu-publish-001", `{"expected_generation":0,"revision":1}`, 201)
 	var session persistence.GuestSession
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &session))
-	var quote persistence.FoodQuote
-	must(t, json.Unmarshal(f.request(t, "POST", guest+"/food/quotes", session.Token, "", selection(1), 201), &quote))
+	// Current quote handlers require current ordering-policy columns. Build the
+	// historical terms with the same Food pricer instead of running today's
+	// application against a deliberately incomplete historical schema.
+	publication, err := persistence.GetPublicOffering(context.Background(), f.app, store.MerchantID, store.ID)
+	must(t, err)
+	var selected struct {
+		Lines []food.SelectionLine `json:"lines"`
+	}
+	must(t, json.Unmarshal([]byte(selection(1)), &selected))
+	priced, total, err := food.Price(publication.Document, selected.Lines)
+	must(t, err)
+	lines, err := json.Marshal(priced)
+	must(t, err)
+	quote := persistence.FoodQuote{ID: uuid.New(), MerchantID: store.MerchantID, StoreID: store.ID,
+		Generation: publication.Generation, Revision: publication.Revision, Model: publication.Model,
+		Currency: "EUR", Lines: lines, Total: total, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(10 * time.Minute)}
 	actor, err := persistence.AuthenticateGuest(context.Background(), f.app, session.Token)
 	must(t, err)
 	legacy := persistence.FoodOrder{ID: uuid.New(), MerchantID: store.MerchantID, StoreID: store.ID, Contract: "ocp.food.order.v1", Terms: quote, Fulfilment: "pickup", Acceptance: "pending", Payment: "not_started", FulfilmentProgress: "not_started", Resolution: "open", CreatedAt: time.Now().UTC()}

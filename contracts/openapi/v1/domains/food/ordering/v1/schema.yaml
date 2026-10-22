@@ -1,0 +1,25 @@
+FoodOrdering:
+  type: object
+  additionalProperties: false
+  required: [revision, accepting_orders, acceptance_mode]
+  properties:
+    revision:
+      type: integer
+      format: int64
+      minimum: 0
+    accepting_orders:
+      type: boolean
+    acceptance_mode:
+      type: string
+      enum: [manual, automatic]
+ChangeFoodOrderingRequest:
+  type: object
+  additionalProperties: false
+  required: [expected_revision, accepting_orders, acceptance_mode]
+  properties:
+    expected_revision:
+      $ref: '#/FoodOrdering/properties/revision'
+    accepting_orders:
+      $ref: '#/FoodOrdering/properties/accepting_orders'
+    acceptance_mode:
+      $ref: '#/FoodOrdering/properties/acceptance_mode'

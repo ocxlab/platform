@@ -12,7 +12,13 @@ interfaces and the public storefront. Modular OpenAPI contracts generate Go and
 TypeScript artifacts. Guest pickup-order placement and private receipts are
 available. The restaurant order inbox supports acceptance/rejection and private
 progress. A stateful development payment service supports simulated checkout,
-retry, cancellation, and refunds on unprepared orders. Orders and stores also
+retry, cancellation, and refunds on unprepared orders. The merchant Orders tab
+also controls pause/resume and manual or automatic acceptance of new orders.
+Pausing keeps the menu and existing orders available; automatic acceptance does
+not collect payment or begin preparation. A documented
+[MCP and onboarding-assistant slice](docs/API-ERRORS-AND-AGENT-PLAN.md) follows,
+starting with Inspector checks against the same authorized APIs.
+Orders and stores also
 have readable references alongside their UUIDs. Merchants can report preparation,
 readiness, and customer pickup for accepted, paid orders. Real payment adapters,
 merchant delivery, and native ONIX integration remain next slices; this is not yet a

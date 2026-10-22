@@ -18,7 +18,9 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
     const saved = await api(guest.token()).GET('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}', { params: { path: { merchant_id: store.merchant_id, store_id: store.id, quote_id: intent.quote } } });
     quote = saved.data;
   }
-  return { offering: result.data, menu: result.data.document as components['schemas']['FoodMenu'], quote, intent };
+  const ordering = await api().GET('/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering', { params: { path: { merchant_id: store.merchant_id, store_id: store.id } } });
+  if (!ordering.data) error(ordering.response.status, message(ordering.error));
+  return { offering: result.data, menu: result.data.document as components['schemas']['FoodMenu'], quote, intent, ordering: ordering.data };
 };
 export const actions: Actions = {
   quote: async ({ params, request, cookies }) => {

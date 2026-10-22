@@ -29,6 +29,23 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   await expect(page.getByLabel('Item name', { exact: true })).toHaveCount(48);
   await page.screenshot({ path: 'test-results/large-menu-merchant.png' });
   const storefront = await page.getByRole('link', { name: 'Open customer storefront', exact: true }).getAttribute('href');
+  await page.getByRole('link', { name: 'Orders', exact: true }).click();
+  await page.getByLabel('Accept new orders', { exact: true }).uncheck();
+  await page.getByRole('combobox', { name: /^Acceptance of new orders/ }).selectOption('automatic');
+  await page.getByRole('button', { name: 'Save ordering settings', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'New orders are paused' })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/ordering-controls-mobile.png', fullPage: true });
+  await page.goto(storefront!);
+  await expect(page.getByText('This restaurant has paused new orders.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Check selection price' })).toBeDisabled();
+  // Existing customer screens are advisory; the backend test separately checks
+  // that quotes issued before a pause cannot bypass authoritative enforcement.
+  const resumed = await request.put(`${base}/${store.id}/food/ordering`, {
+    headers: headers(), data: { expected_revision: 1, accepting_orders: true, acceptance_mode: 'automatic' },
+  });
+  expect(resumed.status()).toBe(201);
   await page.goto(storefront!);
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
   const items = page.getByRole('combobox', { name: 'Menu item', exact: true });

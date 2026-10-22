@@ -6,7 +6,9 @@ and replay failures belong to common; offering, Food selection, and checkout
 failures stay with those responsibilities. Codes are unique across the API and
 keep their meaning; do not reuse a code for a different outcome.
 
-Each entry defines its HTTP status, safe developer-facing title, and Fluent key.
+Each entry defines its HTTP status, safe developer-facing catalog label, and Fluent key.
+The wire title uses the HTTP status phrase because the current type is
+`about:blank`, following RFC 9457 section 4.2.1. The specific category is `code`.
 The existing snake_case wire codes are retained. The wire schema leaves codes
 open for additive evolution; an older application displays a generic message for
 an unknown code, never a backend detail or exception. The server keeps safe English
