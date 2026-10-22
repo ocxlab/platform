@@ -55,14 +55,14 @@ func TestPublishedMenuSimplePriceCases(t *testing.T) {
 	if _, err = food.Validator(spec.Components.Schemas["FoodMenu"].Value)(raw); err != nil {
 		t.Fatal(err)
 	}
-	// Category metadata cannot yet round-trip through the current closed schema.
+	// Optional categories also work with otherwise uncategorized legacy items.
 	var document map[string]any
 	if err = json.Unmarshal(raw, &document); err != nil {
 		t.Fatal(err)
 	}
 	document["categories"] = []any{map[string]any{"id": "sides", "name": "Beilagen"}}
 	raw, _ = json.Marshal(document)
-	if _, err = food.Validator(spec.Components.Schemas["FoodMenu"].Value)(raw); err == nil {
-		t.Fatal("do not hide the missing category model")
+	if _, err = food.Validator(spec.Components.Schemas["FoodMenu"].Value)(raw); err != nil {
+		t.Fatal(err)
 	}
 }

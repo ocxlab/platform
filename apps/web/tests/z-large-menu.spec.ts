@@ -27,6 +27,12 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   await expect(page.getByRole('row', { name: /Large menu demo/ })).toContainText('48');
   await page.getByRole('link', { name: 'Large menu demo', exact: true }).click();
   await expect(page.getByLabel('Item name', { exact: true })).toHaveCount(48);
+  await expect(page.getByLabel('Category name', { exact: true })).toHaveCount(7);
+  await page.getByLabel('Category name', { exact: true }).first().fill('Kitchen favourites');
+  await page.getByRole('button', { name: 'Save private draft', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Draft saved');
+  await page.getByRole('button', { name: 'Publish saved draft', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Menu published');
   await page.screenshot({ path: 'test-results/large-menu-merchant.png' });
   const storefront = await page.getByRole('link', { name: 'Open customer storefront', exact: true }).getAttribute('href');
   await page.getByRole('link', { name: 'Orders', exact: true }).click();
@@ -39,6 +45,7 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   await page.screenshot({ path: 'test-results/ordering-controls-mobile.png', fullPage: true });
   await page.goto(storefront!);
   await expect(page.getByText('This restaurant has paused new orders.', { exact: false })).toBeVisible();
+  await page.getByRole('link', { name: /Choose.*Pizza Margherita/ }).click();
   await expect(page.getByRole('button', { name: 'Check selection price' })).toBeDisabled();
   // Existing customer screens are advisory; the backend test separately checks
   // that quotes issued before a pause cannot bypass authoritative enforcement.
@@ -48,10 +55,32 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   expect(resumed.status()).toBe(201);
   await page.goto(storefront!);
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
+  await expect(page.locator('.card-grid .menu-card')).toHaveCount(48);
+  await expect(page.getByRole('heading', { name: 'Kitchen favourites', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Categories' }).getByRole('link')).toHaveCount(7);
+  await expect(page.getByRole('combobox', { name: /^Variant/ })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Choose.*Baklava/ })).toHaveAttribute('aria-disabled', 'true');
+  await page.locator('.language-picker summary').click();
+  await page.locator('.language-picker button[value=ar]').click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('.menu-card').first()).toHaveCSS('direction', 'rtl');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/menu-cards-arabic-mobile.png' });
+  await page.locator('.language-picker summary').click();
+  await page.locator('.language-picker button[value=en]').click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+  await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
+  await page.getByLabel('Search the menu', { exact: true }).fill('pizza');
+  await expect(page.locator('.menu-card')).toHaveCount(12);
+  await page.getByLabel('Search the menu', { exact: true }).fill('');
+  await page.getByRole('button', { name: 'List', exact: true }).click();
+  await expect(page.locator('.menu-list .menu-card')).toHaveCount(48);
+  await page.getByRole('button', { name: 'Dropdown', exact: true }).click();
   const items = page.getByRole('combobox', { name: 'Menu item', exact: true });
-  await expect(items.locator('option')).toHaveCount(48);
+  await expect(items.locator('option')).toHaveCount(49);
   await expect(items.locator('option[value=baklava]')).toHaveJSProperty('disabled', true);
   await items.selectOption('pizza-margherita');
+  await expect(page.getByRole('heading', { name: /Customize.*Pizza Margherita/ })).toBeFocused();
   await page.getByRole('combobox', { name: /^Variant/ }).selectOption('large');
   await page.getByLabel('Extra Käse', { exact: false }).check();
   await page.getByLabel('Knoblauch', { exact: false }).check();

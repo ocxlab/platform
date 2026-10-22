@@ -49,6 +49,11 @@ test('merchant uploads directly to private storage and publishes only a checked 
   expect(image.status()).toBe(200); expect(image.headers()['content-type']).toBe('image/jpeg');
   await page.getByRole('link', { name: 'Open customer storefront', exact: true }).click();
   await expect(page.getByRole('img', { name: document.items[0].name, exact: true })).toBeVisible();
+  await expect.poll(() => page.getByRole('img', { name: document.items[0].name, exact: true }).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  await page.screenshot({ path: 'test-results/menu-photo-card.png' });
+  await page.getByRole('link', { name: /^Choose / }).click();
+  await expect(page.locator('#configure-item h2')).toBeFocused();
+  await expect.poll(() => page.locator('#configure-item img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
   expect(errors).toEqual([]);
   } finally {
     // Other journeys intentionally begin with an empty public directory. Keep

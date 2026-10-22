@@ -25,6 +25,12 @@ implementation checkpoint is recorded in STATUS.md.
 
 ## Media checkpoint
 
+The founder inserted visual customer menu browsing before stages 3–4: categories,
+image cards, list/dropdown alternatives, and dish-specific customization. This
+also requires editable, publishable category data and preserving enrichment of
+the existing demo. MCP intentions follow that slice; notify the founder before
+the later admin redesign so they can supply reference screenshots.
+
 Stages 1 and 2 are implemented: all 48 prepared images are attached to the
 fictional restaurant through owned media records, verified derivatives, and a
 preserving revision update. Generation ran in parallel with application work.

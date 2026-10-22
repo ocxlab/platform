@@ -135,6 +135,15 @@ to another merchant's stores. An empty list is `items: []`, not an error or null
 
 ## Publication and quote behavior
 
+The coordinated draft Food menu increment adds optional ordered `categories`
+(at most 50) and item `category_id` references. Category identifiers must be
+unique and all references must resolve; older menus without categories remain
+valid. Categories and assignments are explicitly included in the public
+projection. They organize browsing and do not change pricing, availability, or
+agreed purchase terms. An uncategorized item remains visible. These additions
+require updated servers/clients because the old menu schema was closed; retaining
+the draft model label does not establish compatibility with old validators.
+
 `GET /api/v1/public/stores` supplies the homepage's anonymous local directory.
 It exposes only names and merchant/store identifiers for visible publications,
 not drafts, suspended stores, account data, or private operational records. A

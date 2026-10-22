@@ -96,6 +96,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await noScript.getByRole('button', { name: 'Search', exact: true }).click();
   await noScript.getByRole('region', { name: 'Published stores' }).getByRole('link', { name: 'Neighbourhood Kitchen', exact: true }).click();
   await expect(noScript.getByRole('heading', { name: 'Neighbourhood Kitchen', exact: true })).toBeVisible();
+  await noScript.getByRole('link', { name: /Choose.*Döner/ }).click();
   await noScript.getByLabel('Garlic').check();
   await noScript.getByLabel('Quantity', { exact: true }).fill('2');
   await noScript.getByRole('button', { name: 'Check selection price' }).click();
@@ -111,6 +112,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.getByRole('button', { name: 'Search', exact: true }).click();
   await guest.getByRole('region', { name: 'Published stores' }).getByRole('link', { name: 'Neighbourhood Kitchen', exact: true }).click();
   await expect(guest).toHaveURL(new RegExp(storefront + '$'));
+  await guest.getByRole('link', { name: /Choose.*Döner/ }).click();
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await expect(guest.getByRole('alert')).toContainText('Select available items');
   await guest.getByLabel('Garlic').check();
@@ -200,6 +202,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(page.getByRole('region', { name: 'Order history' }).getByRole('listitem')).toHaveCount(3);
   // Development payment goes through the same authorized API and retained order.
   await guest.goto(storefront);
+  await guest.getByRole('link', { name: /Choose.*Döner/ }).click();
   await guest.getByLabel('Garlic').check();
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('7.50');
@@ -267,12 +270,12 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(storeRow.getByRole('cell').nth(1)).toHaveText('2');
   await storeRow.getByRole('link').click();
   await guest.goto(storefront);
-  await expect(guest.getByRole('option', { name: 'Döner', exact: true })).toBeAttached();
+  await expect(guest.getByRole('link', { name: /Choose.*Döner/ })).toBeVisible();
   await page.getByRole('button', { name: 'Publish saved draft' }).click();
   await expect(page.getByRole('status')).toHaveText('Menu published.');
   await guest.goto(storefront);
-  await expect(guest.getByRole('option', { name: 'Döner', exact: true })).toHaveCount(0);
-  await expect(guest.getByRole('option', { name: 'Falafel', exact: true })).toBeAttached();
+  await expect(guest.getByRole('link', { name: /Choose.*Döner/ })).toHaveCount(0);
+  await expect(guest.getByRole('link', { name: /Choose.*Falafel/ })).toBeVisible();
   // Private credentials are never serialized in rendered HTML or browser storage.
   expect((await page.content()).includes(fixture.merchant_token)).toBe(false);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
@@ -301,6 +304,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await admin.getByRole('button', { name: 'Restore visibility' }).click();
   await expect(admin.getByRole('status')).toContainText('Visibility restored');
   await guest.goto(storefront); await expect(guest.getByRole('heading', { name: 'Neighbourhood Kitchen' })).toBeVisible();
+  await guest.getByRole('link', { name: /Choose.*Falafel/ }).click();
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
   await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/O-[0-9]+$`));
@@ -318,6 +322,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await page.goto(`${workspace}/orders`);
   await expect(page.getByText('Live updates connected', { exact: true })).toBeVisible();
   await guest.goto(storefront);
+  await guest.getByRole('link', { name: /Choose.*Falafel/ }).click();
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
   await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/O-[0-9]+$`));

@@ -897,6 +897,10 @@ export interface components {
             action: "start" | "succeed" | "decline" | "abandon";
             expected_revision: components["schemas"]["DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0"];
         };
+        DomainsFoodMenuV1SchemaYamlCategory4435e648: {
+            id: components["schemas"]["FoodLocalIdentifier"];
+            name: string;
+        };
         /** Format: int64 */
         DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0: number;
         /** @enum {string} */
@@ -914,6 +918,8 @@ export interface components {
         FoodMenu: {
             /** @enum {string} */
             availability_mode: "manual";
+            /** @description Ordered menu sections. Items without a category remain visible in a separate section. */
+            categories?: components["schemas"]["DomainsFoodMenuV1SchemaYamlCategory4435e648"][];
             /**
              * @description Deliberately limited initial calculation currency, not a core restriction.
              * @enum {string}
@@ -924,6 +930,7 @@ export interface components {
         FoodMenuItem: {
             /** @description Merchant-controlled availability; no quantity reservation. */
             available: boolean;
+            category_id?: components["schemas"]["FoodLocalIdentifier"];
             id: components["schemas"]["FoodLocalIdentifier"];
             /**
              * Format: uuid

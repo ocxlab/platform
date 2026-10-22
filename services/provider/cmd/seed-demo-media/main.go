@@ -65,7 +65,7 @@ func run() error {
 	if err = json.Unmarshal(latest.Document, &doc); err != nil {
 		return err
 	}
-	_, products, err := devfixtures.Restaurant()
+	fixtureMenu, products, err := devfixtures.Restaurant()
 	if err != nil {
 		return err
 	}
@@ -94,6 +94,7 @@ func run() error {
 	client := &http.Client{Transport: transport, Timeout: 30 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	operation := commerce.Media{DB: db, Storage: storage}
 	changed := 0
+	categorized := attachCategories(doc, fixtureMenu)
 	for _, entry := range doc["items"].([]any) {
 		item := entry.(map[string]any)
 		id, _ := item["id"].(string)
@@ -157,8 +158,8 @@ func run() error {
 		changed++
 		fmt.Println("Prepared photo:", id)
 	}
-	if changed == 0 {
-		fmt.Println("No missing matching demo photos; existing edits preserved.")
+	if changed == 0 && !categorized {
+		fmt.Println("No missing matching demo photos or categories; existing edits preserved.")
 		return nil
 	}
 	spec, err := httpapi.GetSwagger()
@@ -183,9 +184,42 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Attached and published %d photos in revision %d. Other menu content preserved.\n", changed, revision.Revision)
+		fmt.Printf("Attached and published %d photos (categories added: %t) in revision %d. Other menu content preserved.\n", changed, categorized, revision.Revision)
 	} else {
 		fmt.Printf("Attached %d photos to private revision %d. Existing publication preserved; review and publish in the workspace.\n", changed, revision.Revision)
 	}
 	return nil
+}
+
+// Only enrich an old, uncategorized demo. Preserve custom category choices,
+// renamed dishes, removed products, prices, image references, and unpublished edits.
+func attachCategories(doc map[string]any, fixture devfixtures.Menu) bool {
+	if _, exists := doc["categories"]; exists {
+		return false
+	}
+	expected := map[string]devfixtures.Item{}
+	for _, item := range fixture.Items {
+		expected[item.ID] = item
+	}
+	used := map[string]bool{}
+	for _, entry := range doc["items"].([]any) {
+		item := entry.(map[string]any)
+		id, _ := item["id"].(string)
+		original, ok := expected[id]
+		if ok && original.Name == item["name"] && item["category_id"] == nil {
+			item["category_id"] = original.CategoryID
+			used[original.CategoryID] = true
+		}
+	}
+	if len(used) == 0 {
+		return false
+	}
+	categories := []devfixtures.Category{}
+	for _, category := range fixture.Categories {
+		if used[category.ID] {
+			categories = append(categories, category)
+		}
+	}
+	doc["categories"] = categories
+	return true
 }

@@ -5,6 +5,23 @@ import MenuEditor from './MenuEditor.svelte';
 
 afterEach(cleanup);
 
+test('creates, assigns, renames, reorders, and removes categories without removing dishes', async () => {
+  const { container } = render(MenuEditor, { initial: menu(), base: 1 });
+  const saved = () => JSON.parse(container.querySelector<HTMLInputElement>('input[name="document"]')!.value) as components['schemas']['FoodMenu'];
+  await fireEvent.click(screen.getByRole('button', { name: 'Add category' }));
+  await fireEvent.input(screen.getByLabelText('Category name'), { target: { value: 'Main dishes' } });
+  const id = saved().categories![0].id;
+  await fireEvent.change(screen.getAllByLabelText('Category', { exact: true })[0], { target: { value: id } });
+  expect(saved().items[0].category_id).toBe(id);
+  await fireEvent.click(screen.getByRole('button', { name: 'Add category' }));
+  await fireEvent.click(screen.getByRole('button', { name: /Move.*New category.*up/ }));
+  expect(saved().categories![1].id).toBe(id);
+  await fireEvent.click(screen.getByRole('button', { name: /Remove category.*Main dishes/ }));
+  expect(saved().items).toHaveLength(2);
+  expect(saved().items[0].category_id).toBeUndefined();
+  expect(saved().categories).toHaveLength(1);
+});
+
 function menu(): components['schemas']['FoodMenu'] {
   return {
     currency: 'EUR',

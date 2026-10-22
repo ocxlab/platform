@@ -62,6 +62,7 @@ test('admin browses paged records and customers select paid and free pizza extra
   guest.on('pageerror', error => errors.push(error.message));
   const storefront = await page.getByRole('link', { name: 'Open customer storefront', exact: true }).getAttribute('href');
   await guest.goto(storefront!);
+  await guest.getByRole('link', { name: /^Choose / }).first().click();
   await guest.getByRole('combobox', { name: /^Variant/ }).selectOption({ label: 'Large · €10.00' });
   await guest.getByLabel('Extra cheese').check();
   await guest.getByLabel('Garlic').check();

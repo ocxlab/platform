@@ -13,16 +13,22 @@ import (
 var Model = offering.Model{ID: "ocp.food.menu", Version: "1.0.0"}
 
 type menu struct {
-	Currency         string `json:"currency"`
-	AvailabilityMode string `json:"availability_mode"`
-	Items            []item `json:"items"`
+	Currency         string     `json:"currency"`
+	AvailabilityMode string     `json:"availability_mode"`
+	Items            []item     `json:"items"`
+	Categories       []category `json:"categories,omitempty"`
+}
+type category struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 type item struct {
-	ImageID   string `json:"image_id,omitempty"`
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Available bool   `json:"available"`
-	Variants  []struct {
+	CategoryID string `json:"category_id,omitempty"`
+	ImageID    string `json:"image_id,omitempty"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Available  bool   `json:"available"`
+	Variants   []struct {
 		ID    string `json:"id"`
 		Name  string `json:"name"`
 		Price int64  `json:"price_minor"`
@@ -54,8 +60,18 @@ func Validator(schema *openapi3.Schema) offering.Validator {
 		if err := json.Unmarshal(raw, &parsed); err != nil {
 			return nil, offering.ErrInvalid
 		}
+		categories := map[string]bool{}
+		for _, category := range parsed.Categories {
+			if categories[category.ID] || strings.TrimSpace(category.Name) == "" {
+				return nil, offering.ErrInvalid
+			}
+			categories[category.ID] = true
+		}
 		items := map[string]bool{}
 		for _, item := range parsed.Items {
+			if item.CategoryID != "" && !categories[item.CategoryID] {
+				return nil, offering.ErrInvalid
+			}
 			if items[item.ID] || strings.TrimSpace(item.Name) == "" {
 				return nil, offering.ErrInvalid
 			}

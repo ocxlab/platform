@@ -10,6 +10,12 @@ FoodMenu:
     availability_mode:
       type: string
       enum: [manual]
+    categories:
+      type: array
+      maxItems: 50
+      description: Ordered menu sections. Items without a category remain visible in a separate section.
+      items:
+        $ref: '#/Category'
     items:
       type: array
       minItems: 1
@@ -21,6 +27,8 @@ Item:
   additionalProperties: false
   required: [id, name, available, variants, option_groups]
   properties:
+    category_id:
+      $ref: '#/LocalIdentifier'
     image_id:
       type: string
       format: uuid
@@ -45,6 +53,17 @@ Item:
       maxItems: 20
       items:
         $ref: '#/OptionGroup'
+Category:
+  type: object
+  additionalProperties: false
+  required: [id, name]
+  properties:
+    id:
+      $ref: '#/LocalIdentifier'
+    name:
+      type: string
+      minLength: 1
+      maxLength: 80
 Variant:
   type: object
   additionalProperties: false

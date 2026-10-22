@@ -21,6 +21,15 @@
   function removeItem(id: string) {
     menu.items = menu.items.filter((item) => item.id !== id);
   }
+  function removeCategory(id: string) {
+    menu.categories = (menu.categories ?? []).filter(category => category.id !== id);
+    for (const item of menu.items) if (item.category_id === id) delete item.category_id;
+  }
+  function moveCategory(index: number, offset: number) {
+    const categories = [...(menu.categories ?? [])];
+    [categories[index], categories[index + offset]] = [categories[index + offset], categories[index]];
+    menu.categories = categories;
+  }
   function addOption(group: Menu['items'][number]['option_groups'][number]) {
     const allAllowed = group.max_selected === group.options.length;
     group.options.push({ id: identifier(), name: t('editor-default-option'), price_minor: 0 });
@@ -31,9 +40,24 @@
 <input type="hidden" name="base" value={base} />
 <p class="muted">{t('editor-removal-help')}</p>
 <details class="editor-help"><summary>{t('editor-help-title')}</summary><p>{t('editor-help-variants')}</p><p>{t('editor-help-extras')}</p></details>
+<fieldset class="category-editor"><legend>{t('menu-categories')}</legend>
+  <p class="muted">{t('menu-category-help')}</p>
+  {#each menu.categories ?? [] as category, index (category.id)}
+    <div class="category-row">
+      <label>{t('menu-category-name')}<input dir="auto" bind:value={category.name} required maxlength="80" /></label>
+      <div class="category-actions">
+        <button type="button" disabled={index === 0} aria-label={t('menu-move-up', { name: category.name })} onclick={() => moveCategory(index, -1)}>↑</button>
+        <button type="button" disabled={index === (menu.categories?.length ?? 0) - 1} aria-label={t('menu-move-down', { name: category.name })} onclick={() => moveCategory(index, 1)}>↓</button>
+        <ActionButton type="button" icon={Trash2} iconOnly danger label={t('menu-remove-category', { name: category.name })} onclick={() => removeCategory(category.id)} />
+      </div>
+    </div>
+  {/each}
+  <ActionButton type="button" icon={Plus} label={t('menu-add-category')} disabled={(menu.categories?.length ?? 0) >= 50} onclick={() => { menu.categories = [...(menu.categories ?? []), { id: identifier(), name: t('menu-new-category') }]; }} />
+</fieldset>
 {#each menu.items as item (item.id)}
   <fieldset><legend>{t('editor-item')}</legend>
     <label>{t('editor-name')}<input dir="auto" bind:value={item.name} required maxlength="160" /></label>
+    <label>{t('menu-category')}<select value={item.category_id ?? ''} onchange={(event) => { const id = event.currentTarget.value; if (id) item.category_id = id; else delete item.category_id; }}><option value="">{t('menu-uncategorized')}</option>{#each menu.categories ?? [] as category}<option value={category.id} dir="auto">{category.name}</option>{/each}</select></label>
     <label><input type="checkbox" bind:checked={item.available} />{t('editor-available')}</label>
     {#if mediaEndpoint}<MenuPhoto bind:imageId={item.image_id} endpoint={mediaEndpoint} name={item.name} onbusy={(busy) => uploadStatus(item.id, busy)} />{/if}
     <h3>{t('editor-variants-heading')}</h3>
@@ -65,6 +89,10 @@
 {/if}
 <ActionButton type="button" icon={Plus} label={t('editor-add-item')} onclick={addItem} disabled={menu.items.length >= 200} />
 <style>
+  .category-row { display: flex; align-items: end; flex-wrap: wrap; gap: .75rem; }
+  .category-row label { flex: 1; min-inline-size: 10rem; }
+  .category-actions { display: flex; align-items: center; gap: .4rem; margin-block-end: 1rem; }
+  .category-actions button { margin: 0; }
   h3 { margin-block: 1.5rem .35rem; }
   h3 + p { margin-block-start: .35rem; }
   .editor-help { border-inline-start: 3px solid #20586f; padding: 1rem 1.2rem; background: #edf4f7; border-radius: .4rem; }

@@ -1,5 +1,49 @@
 # Development status
 
+## Categorized visual customer menu
+
+22 October 2026, Europe/Berlin. The customer storefront now opens with image
+cards grouped into merchant-defined categories. It also offers a compact list,
+a grouped dropdown, menu search, and category jump links. Choosing a dish
+reveals its sizes, extras, and quantity; keyboard focus follows that choice.
+Price checking scrolls to the retained quote, and placement remains explicit.
+Sold-out dishes remain visible. This increment preserves the single-dish quote
+flow; it does not introduce a multi-dish cart.
+
+Categories are real optional Food menu data, not fixture-only labels. Merchants
+can add, rename, reorder, remove, and assign categories in their draft. Removing
+a category leaves its dishes under Other dishes. Save and publish use the existing
+authorized application operations. The modular schema, generated Go/TypeScript,
+semantic validation, and public projection agree. Duplicate/blank categories and
+dangling references are rejected; legacy uncategorized menus still validate.
+This is a coordinated draft-contract change, not backward compatibility with old
+closed menu validators. Category metadata does not affect prices or order terms.
+
+The existing illustrated demo was enriched to revision 3 with seven categories;
+all 48 item photos and other content were retained. A repeated enrichment was a
+no-op. Custom stores were not reset. The running API was rebuilt and the native
+Vite frontend continues to hot-reload. Open the [demo storefront](http://localhost:18181/stores/marktplatz-kueche-demo-store-2).
+
+Verification includes category validation/projection and unchanged-price tests,
+preserving seed tests, browser component tests, and the six updated browser
+journeys. They exercise category editing/publication, cards/list/dropdown/search,
+progressive customization, configured pizza pricing, sold-out state, narrow RTL
+layout, no-JavaScript dish selection, and existing order/payment workflows.
+The UI references and design choices are recorded in [UI-UX.md](UI-UX.md).
+Final `task check` passed: 76 frontend tests, zero Svelte errors/warnings,
+contract-generation drift checks, Go race/vet tests, real PostgreSQL integration,
+and runtime builds. `task test:browser` passed all six journeys (31.7 seconds),
+including decoded photo checks in both the card and customization views.
+`task smoke` passed; a repeated demo enrichment added no revision. Local HTTP
+reads confirmed revision 3, seven categories, 48 items, 48 photo references, and
+successful JPEG delivery. A separate Docker-to-native-Vite visual probe needed
+hostname translation and could not decode its translated image response; it is
+not counted as a passed visual check. The normal local image URL and the
+disposable browser journey both delivered the photo successfully. Browser
+screenshots of the photo card and narrow RTL menu were inspected separately.
+Merchant/customer MCP expansion follows this slice. Admin redesign has not
+started; notify the founder first for reference screenshots.
+
 ## Authorized menu photos and complete demo assets
 
 22 October 2026, Europe/Berlin. All 48 fictional restaurant products have

@@ -32,7 +32,7 @@ tasks:
       - '{{.COMPOSE}} --profile media stop object-store'
 
   dev:seed-media:
-    desc: Attach all prepared photos to matching fictional demo items without overwriting edits
+    desc: Attach photos and missing categories to matching demo items without overwriting edits
     cmds:
       - task: dev:seed
       - task: media:seed

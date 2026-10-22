@@ -4,6 +4,7 @@ package devfixtures
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
 )
 
 //go:embed restaurant.json
@@ -30,29 +31,41 @@ type OptionGroup struct {
 	Options []Variant `json:"options"`
 }
 type Item struct {
-	ImageID   string        `json:"image_id,omitempty"`
-	ID        string        `json:"id"`
-	Name      string        `json:"name"`
-	Available bool          `json:"available"`
-	Variants  []Variant     `json:"variants"`
-	Groups    []OptionGroup `json:"option_groups"`
+	CategoryID string        `json:"category_id,omitempty"`
+	ImageID    string        `json:"image_id,omitempty"`
+	ID         string        `json:"id"`
+	Name       string        `json:"name"`
+	Available  bool          `json:"available"`
+	Variants   []Variant     `json:"variants"`
+	Groups     []OptionGroup `json:"option_groups"`
 }
 type Menu struct {
-	Currency     string `json:"currency"`
-	Availability string `json:"availability_mode"`
-	Items        []Item `json:"items"`
+	Categories   []Category `json:"categories,omitempty"`
+	Currency     string     `json:"currency"`
+	Availability string     `json:"availability_mode"`
+	Items        []Item     `json:"items"`
+}
+type Category struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
-// Restaurant keeps intended categories in the fixture source, not fake prefixes
-// in product names. The current v1 menu has no category field; that is a real gap.
+// Restaurant retains category order from the fictional fixture, independently of dish names.
 func Restaurant() (Menu, []Product, error) {
 	var products []Product
 	if err := json.Unmarshal(restaurant, &products); err != nil {
 		return Menu{}, nil, err
 	}
 	menu := Menu{Currency: "EUR", Availability: "manual", Items: []Item{}}
+	categories := map[string]string{}
 	for _, product := range products {
+		if categories[product.Section] == "" {
+			id := fmt.Sprintf("section-%d", len(categories)+1)
+			categories[product.Section] = id
+			menu.Categories = append(menu.Categories, Category{ID: id, Name: product.Section})
+		}
 		item := Item{ID: product.ID, Name: product.Name, Available: product.ID != "baklava", Variants: []Variant{{"regular", "Normal", product.Price}}, Groups: []OptionGroup{}}
+		item.CategoryID = categories[product.Section]
 		switch product.Kind {
 		case "kebab":
 			item.Variants = append(item.Variants, Variant{"large", "Groß", product.Price + 200})

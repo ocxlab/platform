@@ -6,7 +6,7 @@ import { guestCheckout } from '$lib/server/guest';
 import { foodSelection } from '$lib/server/food-selection';
 import { customerStore, rememberCustomerStore, customerReceiptScope } from '$lib/server/customer-store';
 import { customerStorePath } from '$lib/merchant-paths';
-export const load: PageServerLoad = async ({ params, cookies }) => {
+export const load: PageServerLoad = async ({ params, cookies, url }) => {
   const store = await customerStore(params.slug);
   const result = await api().GET('/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering', { params: { path: { merchant_id: store.merchant_id, store_id: store.id } } });
   if (!result.data) error(result.response.status, result.response.status === 404 ? text('storefront-no-menu') : message(result.error));
@@ -20,7 +20,9 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
   }
   const ordering = await api().GET('/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering', { params: { path: { merchant_id: store.merchant_id, store_id: store.id } } });
   if (!ordering.data) error(ordering.response.status, message(ordering.error));
-  return { offering: result.data, menu: result.data.document as components['schemas']['FoodMenu'], quote, intent, ordering: ordering.data };
+  const menu = result.data.document as components['schemas']['FoodMenu'];
+  const selectedItem = menu.items.find(item => item.id === url.searchParams.get('item') && item.available)?.id ?? '';
+  return { offering: result.data, menu, selectedItem, quote, intent, ordering: ordering.data };
 };
 export const actions: Actions = {
   quote: async ({ params, request, cookies }) => {
@@ -43,7 +45,7 @@ export const actions: Actions = {
     rememberCustomerStore(cookies, store);
     // Post/redirect/get retains the quote and placement key across refresh/lost
     // placement responses. The cookie stores references, never authoritative prices.
-    redirect(303, customerStorePath(store));
+    redirect(303, `${customerStorePath(store)}#selection-quote`);
   },
   place: async ({ params, cookies, request }) => {
     // Replay remains possible after withdrawal: the routing cookie is only a

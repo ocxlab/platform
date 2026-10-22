@@ -67,7 +67,30 @@ left-to-right inside RTL pages. Verify keyboard, narrow-screen, and no-JavaScrip
 navigation where the feature supports it; a native form does not make the dynamic
 menu editor JavaScript-free.
 
-## Pattern references
+## Visual menu browsing
+
+The customer menu opens with category sections and image cards. List view uses
+the same dishes with smaller photos; a grouped dropdown remains available for
+compact selection. Search narrows every view, and category links jump directly
+to their section. Display the lowest size price as “From” when variants exist;
+the server still calculates the actual selection including extras. Sold-out
+dishes remain visible and cannot be chosen.
+
+Choosing a dish reveals its customization form and moves keyboard focus to its
+heading. Sizes, extras, and quantity are disclosed at that point, not repeated
+on every card. The price check and explicit placement remain separate. This is
+still the existing single-dish selection flow, not a new multi-dish cart.
+Real item links and category anchors work without JavaScript; view switching
+and live menu search require JavaScript and are disabled until it is ready.
+Merchant category changes follow the same draft/save/publish process as dishes.
+
+This pattern is informed by [Uber Eats' menu structure guidance](https://merchants.ubereats.com/ar/en/resources/learning-center/menu-and-photos/)
+(categories, items, and modifier groups) and [Deliveroo's category management](https://help.deliveroo.com/en/articles/6060280-how-to-add-edit-and-remove-menu-categories-in-menu-manger)
+(add, rename, reorder, and publish categories), examined 22 October 2026. Neither
+source establishes cards as a universal best layout: our default and view choices
+are a design decision to evaluate with the illustrated 48-item demo and merchants.
+
+## Other pattern references
 
 The [WAI tooltip pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/)
 describes focus/hover activation, Escape dismissal, and supplementary non-focusable
