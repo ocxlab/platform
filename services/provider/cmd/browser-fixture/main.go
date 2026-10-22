@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"ocp.local/platform/internal/devfixtures"
 	"ocp.local/platform/internal/persistence"
 )
 
@@ -36,7 +37,19 @@ func main() {
 		fail()
 	}
 	// stdout is piped directly to the browser runner, never a tracked fixture or log.
-	if json.NewEncoder(os.Stdout).Encode(map[string]string{"merchant_id": p.MerchantID.String(), "merchant_token": token, "provider_token": provider, "extras_merchant_id": additional.MerchantID.String(), "extras_merchant_token": additionalToken}) != nil {
+	demo, demoToken, err := persistence.Provision(ctx, db, "Large menu browser merchant", []string{"store:read", "store:write", "offering:read", "offering:write", "order:read", "order:manage"}, time.Now().Add(time.Hour))
+	if err != nil {
+		fail()
+	}
+	menu, _, err := devfixtures.Restaurant()
+	if err != nil {
+		fail()
+	}
+	rawMenu, err := json.Marshal(menu)
+	if err != nil {
+		fail()
+	}
+	if json.NewEncoder(os.Stdout).Encode(map[string]string{"merchant_id": p.MerchantID.String(), "merchant_token": token, "provider_token": provider, "extras_merchant_id": additional.MerchantID.String(), "extras_merchant_token": additionalToken, "demo_merchant_id": demo.MerchantID.String(), "demo_merchant_token": demoToken, "demo_menu": string(rawMenu)}) != nil {
 		fail()
 	}
 }

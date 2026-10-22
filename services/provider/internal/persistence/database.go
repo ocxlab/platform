@@ -122,6 +122,36 @@ func Provision(ctx context.Context, db *sql.DB, name string, scopes []string, ex
 	return p, token, nil
 }
 
+// ProvisionMerchantGrant is an explicit administrative bootstrap, not public
+// account recovery. It creates a new credential without altering existing grants.
+func ProvisionMerchantGrant(ctx context.Context, db *sql.DB, merchant uuid.UUID, scopes []string, expiry time.Time) (Principal, string, error) {
+	var entropy [32]byte
+	if _, err := rand.Read(entropy[:]); err != nil {
+		return Principal{}, "", err
+	}
+	token := "ocp_" + base64.RawURLEncoding.EncodeToString(entropy[:])
+	digest := sha256.Sum256([]byte(token))
+	p := Principal{ID: uuid.New(), MerchantID: merchant, Scopes: scopes}
+	encoded, err := json.Marshal(scopes)
+	if err != nil {
+		return Principal{}, "", err
+	}
+	result, err := db.ExecContext(ctx, `INSERT INTO auth.grants(id,merchant_id,token_hash,scopes,expires_at)
+	 SELECT $1,id,$3,ARRAY(SELECT jsonb_array_elements_text($4::jsonb)),$5
+	 FROM auth.merchants WHERE id=$2`, p.ID, merchant, digest[:], string(encoded), expiry)
+	if err != nil {
+		return Principal{}, "", err
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return Principal{}, "", err
+	}
+	if count != 1 {
+		return Principal{}, "", ErrNotFound
+	}
+	return p, token, nil
+}
+
 func TenantTransaction(ctx context.Context, db *sql.DB, merchant uuid.UUID) (*sql.Tx, error) {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {

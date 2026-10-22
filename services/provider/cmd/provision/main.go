@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"ocp.local/platform/internal/devsetup"
 	"ocp.local/platform/internal/persistence"
 	"os"
 	"time"
@@ -13,6 +14,7 @@ import (
 
 func main() {
 	provider := flag.Bool("provider", false, "Provision a separate local provider administration credential")
+	list := flag.Bool("list", false, "List local stores and their owning merchants without credentials")
 	flag.Parse()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -22,6 +24,20 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+	merchant, store := os.Getenv("OCP_DEV_MERCHANT"), os.Getenv("OCP_DEV_STORE")
+	if (*provider || *list) && (merchant != "" || store != "") {
+		fmt.Fprintln(os.Stderr, "merchant/store selectors cannot be used for administration credentials or listings")
+		os.Exit(1)
+	}
+	if *list {
+		stores, err := devsetup.Stores(ctx, db)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "store listing failed")
+			os.Exit(1)
+		}
+		_ = json.NewEncoder(os.Stdout).Encode(stores)
+		return
+	}
 	if *provider {
 		p, token, err := persistence.ProvisionProvider(ctx, db, []string{"publication:read", "publication:manage", "order:inspect"}, time.Now().Add(24*time.Hour))
 		if err != nil {
@@ -31,7 +47,20 @@ func main() {
 		_ = json.NewEncoder(os.Stdout).Encode(map[string]any{"provider_grant_id": p.ID, "token": token, "expires_in_hours": 24})
 		return
 	}
-	p, token, err := persistence.Provision(ctx, db, "Local example merchant", []string{"store:read", "store:write", "offering:read", "offering:write", "order:read", "order:manage"}, time.Now().Add(24*time.Hour))
+	scopes := []string{"store:read", "store:write", "offering:read", "offering:write", "order:read", "order:manage"}
+	var p persistence.Principal
+	var token string
+	if merchant != "" || store != "" {
+		id, resolveErr := devsetup.ResolveMerchant(ctx, db, merchant, store)
+		if resolveErr != nil {
+			fmt.Fprintln(os.Stderr, "merchant selection failed:", resolveErr)
+			os.Exit(1)
+		}
+		p, token, err = persistence.ProvisionMerchantGrant(ctx, db, id, scopes, time.Now().Add(24*time.Hour))
+	} else {
+		fmt.Fprintln(os.Stderr, "Creating a NEW merchant. Use STORE=store-N or MERCHANT=<UUID> to access an existing merchant.")
+		p, token, err = persistence.Provision(ctx, db, "Local example merchant", scopes, time.Now().Add(24*time.Hour))
+	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "provisioning failed")
 		os.Exit(1)

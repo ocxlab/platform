@@ -1,5 +1,52 @@
 # Development status
 
+## Substantial demo menu and customer UX research
+
+22 October 2026, Europe/Berlin (UTC+02:00). An explicit `task dev:seed` adds a
+fictional 48-product restaurant under its own merchant. Repeating it preserves
+edits, withdrawal, purchases, credentials, and existing stores. It is not a data
+migration or automatic startup reset. The local demo is currently `store-2`;
+`store-1` remains Döner Karlsruhe. Use `task dev:stores` to inspect local ownership,
+then `task dev:credential STORE=store-2` (or `MERCHANT=<UUID>`) to issue a 24-hour
+credential for that merchant. Credentials are not global; unknown selectors fail
+instead of creating a merchant. Omitting selectors still creates a new merchant,
+with an explicit warning. No production identity/login mechanism is implied.
+
+The fixture covers sizes, required sauce/side choices, free/paid extras, and a
+sold-out item. Real PostgreSQL integration checks tenant isolation, repeat-seed
+preservation, a two-line €33 quote, and rejected unavailable/incomplete selections.
+A separate three-product public-menu mapping validates limited real data shapes;
+it is not a lossless real-menu import. Categories remain fixture metadata because
+the current closed menu contract cannot yet represent them. Descriptions, photos,
+allergens, and deposit breakdowns are also explicit gaps before pilot acceptance.
+
+[The UX benchmark](RESTAURANT-UX-BENCHMARK.md) records seven merchant/menu sources
+and four additional customer-UX sources, including 2025 form guidance and a 2026
+food-delivery benchmark. Proposed browsing uses categorized photo tiles and a
+compact list, with one shared configuration/cart flow. Select a dish, show required
+choices, then optional extras and the configured total. Simple fixed items may
+later offer quick-add. This is evidence-informed design, not our own usability
+study. The operating controls and cart remain the next two implementation slices.
+
+`task check` passed, including real PostgreSQL integration, Go race tests,
+generated-contract drift checks, 70 web unit tests, and zero Svelte diagnostics.
+Local seeding, repeated seeding, store listing, and selected credential issuance
+were executed successfully. Native Vite returned HTTP 200 and listed the demo.
+All five built-app browser tests passed after correcting two new test assertions:
+the accessible name is `Menu item`, and a native option's disabled DOM property
+needs an explicit assertion. The large-menu journey also passed in Vite after
+explicitly waiting for hydration before client-bound selection. A separate Vite
+run exposed an existing language-switch test reading the page during navigation;
+it now waits for the target language and hydration before measuring layout.
+All five Vite browser tests passed on the final rerun. `task smoke` passed without
+resetting data. The built-app suite passed before these final synchronization-only
+test adjustments; no application UI code changed in this batch.
+Desktop merchant and narrow customer screenshots were inspected. The latter
+exposes a current post-quote form reset, recorded for the cart/configuration slice;
+the validated quote retains the selected pizza. The current UI is not the proposed
+tile/list design. No new mutation or production usability tests are claimed.
+See [demo instructions](DEMO-RESTAURANT.md) for login and walkthrough examples.
+
 ## Order detail timelines and SSE updates
 
 22 October 2026, Europe/Berlin (UTC+02:00). Customer pickup receipts and merchant

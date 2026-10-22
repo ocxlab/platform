@@ -41,7 +41,11 @@ PostgreSQL has no published host port; access it through Compose.
 Open <http://localhost:18181> for the web application. **Browse a store** lists
 this provider's published stores, with name search and scrollable results. Open
 a store to browse and place a guest pickup order without a merchant login.
-Run `task dev:credential`
+For a ready-to-use fictional 48-product restaurant, run `task dev:seed`, then the
+printed `task dev:credential STORE=store-N` command. Use `task dev:stores` to find
+other local stores and their owning merchants. A selected credential belongs to
+that merchant, not the whole provider. See [demo access](docs/DEMO-RESTAURANT.md).
+Run `task dev:credential` without a selector to create a **new** merchant,
 and enter the printed merchant ID and temporary token at `/merchant`. Create a
 store, save a menu, and publish its saved revision; the workspace links to its
 public storefront. `task dev:admin-credential` supplies a separate temporary
@@ -92,7 +96,11 @@ credentials out of source control; none are needed for the current checks.
 | `task test:race` | Run unit tests with the race detector |
 | `task test:integration` | Exercise authorized HTTP/SQL behavior in disposable isolated databases |
 | `task db:prepare` | Explicitly provision development role and apply embedded migrations |
-| `task dev:credential` | Print a new development merchant and temporary bearer credential once |
+| `task dev:seed` | Add a separate 48-product demo restaurant once, preserving existing data |
+| `task dev:stores` | List local store names, handles, and merchant owners without tokens |
+| `task dev:credential STORE=store-N` | Issue a fresh temporary credential for that store's owning merchant |
+| `task dev:credential MERCHANT=UUID` | Issue a fresh temporary credential for an existing merchant |
+| `task dev:credential` | Create a new development merchant and print its temporary credential once |
 | `task dev:admin-credential` | Print a separate temporary provider-admin credential once |
 | `task dev` | Build/start API and PostgreSQL, waiting for container health |
 | `task db:check` | Run a harmless SQL connectivity query |

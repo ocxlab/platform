@@ -31,6 +31,8 @@ test('admin browses paged records and customers select paid and free pizza extra
   for (const locale of ['ar', 'en']) {
     await page.locator('.language-picker summary').click();
     await page.locator(`.language-picker button[value=${locale}]`).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.locator('nav a[aria-current="page"]')).toHaveCount(1);

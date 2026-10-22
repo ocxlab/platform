@@ -53,6 +53,8 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   for (const language of ['ar', 'en']) {
     await page.locator('.language-picker summary').click();
     await page.locator(`.language-picker button[value=${language}]`).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', language);
+    await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
     const table = page.locator('.store-table table');
     await expect(table).toHaveCSS('direction', language === 'ar' ? 'rtl' : 'ltr');
     for (const cell of await table.locator('th, td').all()) {
@@ -168,6 +170,8 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   for (const locale of ['ar', 'en']) {
     await page.locator('.language-picker summary').click();
     await page.locator(`.language-picker button[value=${locale}]`).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const table = page.locator('.order-table table');
@@ -180,6 +184,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   }
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.locator(`a[href$="/orders/${orderId}"]`).click();
+  await expect(page).toHaveURL(new RegExp(`/orders/${orderId}$`));
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
   await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Accept order', exact: true })).toHaveCount(0);

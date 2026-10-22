@@ -73,6 +73,18 @@ pickup state columns, following the provider administration table style.
 
 ## Simple ordering and a real cart
 
+Before this slice, use the [48-product demo](DEMO-RESTAURANT.md) and the
+[restaurant task benchmark](RESTAURANT-UX-BENCHMARK.md). The public-menu comparison
+exposes missing categories/descriptions and food-information concerns. Resolve
+the model additions deliberately rather than masking them with UI-only fields.
+The founder prefers categorized photo tiles with an optional compact list view.
+Both presentations should share configuration, cart state, and pricing; use
+progressive disclosure for product choices and a text-first fallback without photos.
+The larger-menu browser walkthrough also exposes a confusing current state:
+after quoting a configured pizza, the quote retains that pizza but the selection
+form returns to the first menu item. Preserve the active item and choices in the
+cart/configuration slice; a valid quote alone does not make that interaction clear.
+
 The storefront currently submits one item configuration at a time to a quote;
 it is not a multi-item cart. The Food selection contract already accepts up to
 20 lines. Add a store-scoped cart with quantities, sizes, paid/free extras,
