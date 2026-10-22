@@ -14,6 +14,12 @@ workflow, not because changing frameworks is forbidden. There is no documented
 blocker requiring a framework change at this checkpoint. Installed-package and
 end-to-end compatibility still need tests.
 
+The [surface and authorization clarification](MCP-SURFACES-AND-AUTHORIZATION.md)
+supersedes any endpoint-wrapper interpretation: design intent-based tools for
+merchant commerce, merchant accounts, customer commerce, and customer accounts.
+Two audience-specific endpoints are recommended initially, not four runtimes.
+Shared business operations do not imply shared REST/MCP interface shapes.
+
 The useful workflow is not merely exchanging chat messages. Owners need to select
 a store, describe or import an offering, correct the proposed draft, and publish
 only after reviewing it. Tools must preserve the same authorization, revisions,
@@ -22,7 +28,7 @@ a missing or excessively coarse business API.
 
 | Required capability | Evidence and implication | Implementation check |
 | --- | --- | --- |
-| Network-accessible merchant tools | Streamable HTTP defines one MCP endpoint; official Go SDK documents an HTTP handler [M1, M3]. | Serve `/mcp` alongside the provider; no mandatory new runtime. |
+| Network-accessible merchant tools | Each Streamable HTTP server has one MCP endpoint; official Go SDK documents an HTTP handler [M1, M3]. | Serve audience-specific MCP endpoints alongside the provider; no mandatory new runtime. |
 | Streamed chat in our UI | AI SDK documents SvelteKit endpoints, the Svelte `Chat` class, and streaming [A1]. | Verify native Vite and built Node/Docker behavior. |
 | Multi-step tool use | Core tool calling supports bounded loops and cancellation [A3]. | Exercise listing, reading, editing, and rereading the substantial demo menu. |
 | Chat uses the actual MCP interface | AI SDK has an HTTP MCP client [A2]. | Connect the server-side chat route to our allowlisted MCP endpoint. |
@@ -47,9 +53,10 @@ one compatible set before implementation; do not copy older initialization or
 session examples into a modern-only server. Narrow supported protocol revisions
 to those actually exercised.
 
-Prefer a thin Go adapter in the existing provider runtime. It should invoke the
-same authorized application operations as REST, with explicit input/output
-validation and a small tool allowlist. This preserves the API boundary without
+Prefer a purpose-designed Go tool layer in the existing provider runtime. Its
+intent-based operations compose shared business operations, with explicit
+input/output validation and a small tool allowlist. They do not mirror REST
+endpoints or dump full resources. This preserves business invariants without
 making a loopback HTTP request or forwarding client tokens unnecessarily.
 Shared operation semantics, not a particular internal hop, are the requirement.
 If shared application operations need extraction from HTTP handlers, make that

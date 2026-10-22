@@ -1,5 +1,20 @@
 # Development status
 
+## Intent-based MCP surfaces and authorization
+
+22 October 2026, Europe/Berlin (UTC+02:00). The
+[surface clarification](MCP-SURFACES-AND-AUTHORIZATION.md) records four logical
+tool groups: merchant commerce, merchant account, customer commerce, and customer
+account. Recommend two audience-specific HTTP endpoints in one runtime, not a
+REST export or four required deployments. Tools need task-oriented inputs and
+compact outputs, with per-call authorization beneath filtered discovery.
+
+The x401 draft 0.2.0 assessment uses a pinned source commit: credential proofs can
+later inform authorization but do not supply our account permissions, delegation,
+or payment authority. Documentation-only; no authentication system or tools were
+implemented, and no x401 or application tests were run. Earlier agent-plan wording
+has been corrected to prevent an endpoint-wrapper implementation.
+
 ## Streamable HTTP and chat research
 
 22 October 2026, Europe/Berlin (UTC+02:00). The

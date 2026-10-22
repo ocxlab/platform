@@ -39,18 +39,24 @@ In particular, check whether whole-menu reads and replacements are too coarse
 for small edits. That can justify bounded item/category operations in the API
 instead of asking a model to reconstruct every unchanged product.
 
-Expose a small allowlist wrapping the same REST operations as the web app,
-with generated types and runtime input/output checks. No database shortcut,
+Design a small intent-based tool catalog from merchant use cases, sharing the
+authorized business operations beneath REST rather than exporting its endpoint
+catalog. Use agent-friendly arguments, bounded reads, compact mutation results,
+and runtime input/output checks. No database shortcut,
 arbitrary destination URL, provider-admin authority, or automatic exposure of
 every endpoint. Preserve merchant scope, revisions, and idempotency keys.
 Conflicts require rereading, not silent overwrites. Structured tool errors retain
 safe application codes and correlation IDs.
-Start with a local Streamable HTTP endpoint at `/mcp`, using an explicitly scoped
+Start with a local Streamable HTTP merchant endpoint, using an explicitly scoped
 development credential for that resource. This supersedes the earlier stdio-first
 proposal. Public OAuth authorization remains a separate deployment increment.
 Use the same authorized application operations as REST; do not blindly pass
 REST credentials through an MCP proxy. The [transport and chat investigation](MCP-AND-CHAT-RESEARCH.md)
 records protocol-version compatibility, authentication, and acceptance checks.
+The [four-surface clarification](MCP-SURFACES-AND-AUTHORIZATION.md) recommends
+merchant and customer endpoints, each with separately scoped account and commerce
+tools. These are logical surfaces, not four mandatory services. Customer tools
+follow customer intentions and do not reuse the merchant tool catalog.
 
 Pin a compatible SDK/protocol/Inspector cohort and add Task commands to run the
 adapter, launch Inspector locally, and run scripted checks, using Docker where
