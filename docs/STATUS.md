@@ -20,10 +20,14 @@ this tooling-only batch; their preceding results remain recorded below.
 With explicit approval, the four verified empty root trees `backend/`, `cmd/`,
 `internal/` and `tools/` were removed. Active sources under `services/provider/`
 and all data/cache volumes were preserved; see [cleanup](REPOSITORY-CLEANUP.md).
-No alternative migration tooling has been installed or evaluated experimentally.
-The founder requested sqlc expansion and a bounded open-source migration-tool
-assessment before merchant/customer Food MCP work. MCP and admin redesign remain
-paused. OAuth/account payments and later pre-authenticated chat are follow-up
+The separate migration-tool evaluation is now complete in sibling
+`ocp-lab/experiments/migration_tooling/README.md`: 18 migration Up sections,
+20 independent probes, and 60 generated-plan applications on disposable PostgreSQL
+18.6. Recommendation awaiting founder discussion: retain Goose, add Squawk,
+and use pgschema for reviewed drafts with explicit handling of unsupported security
+and data changes. No product migration workflow or sqlc input was changed;
+sqlc expansion, merchant/customer Food MCP, and admin redesign remain paused.
+OAuth/account payments and later pre-authenticated chat are follow-up
 requirements, not capabilities implemented by this tooling change.
 
 ## Sole Food model with optional meal upgrades
