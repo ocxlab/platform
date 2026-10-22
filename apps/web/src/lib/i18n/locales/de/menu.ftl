@@ -23,3 +23,14 @@ menu-move-up = { $name } nach oben verschieben
 menu-move-down = { $name } nach unten verschieben
 menu-remove-category = Kategorie { $name } entfernen
 menu-back = Zurück zur Speisekarte
+menu-result-count = { $count ->
+    [one] 1 Gericht
+   *[other] { $count } Gerichte
+    }
+menu-category-filter-help = Eine oder mehrere Kategorien auswählen. Ohne Auswahl werden alle Gerichte angezeigt.
+menu-all-categories = Alle Kategorien anzeigen
+menu-clear-filters = Suche und Filter zurücksetzen
+menu-close-controls = Menüoptionen schließen
+menu-current-view = Menüansicht: { $name }
+menu-active-categories = Ausgewählte Kategorien
+menu-remove-filter = Filter { $name } entfernen

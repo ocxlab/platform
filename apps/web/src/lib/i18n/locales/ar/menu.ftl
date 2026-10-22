@@ -23,3 +23,17 @@ menu-move-up = نقل { $name } إلى الأعلى
 menu-move-down = نقل { $name } إلى الأسفل
 menu-remove-category = حذف الفئة { $name }
 menu-back = العودة إلى القائمة
+menu-result-count = { $count ->
+    [zero] لا توجد أطباق
+    [one] طبق واحد
+    [two] طبقان
+    [few] { $count } أطباق
+   *[other] { $count } طبقًا
+    }
+menu-category-filter-help = اختر فئة أو أكثر. بدون تحديد تظهر جميع الأطباق.
+menu-all-categories = عرض جميع الفئات
+menu-clear-filters = مسح البحث والفلاتر
+menu-close-controls = إغلاق خيارات القائمة
+menu-current-view = عرض القائمة: { $name }
+menu-active-categories = الفئات المحددة
+menu-remove-filter = إزالة فلتر { $name }

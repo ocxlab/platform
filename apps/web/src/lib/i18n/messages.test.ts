@@ -29,7 +29,7 @@ describe('module-owned errors and Fluent messages', () => {
   it('keeps every UI message and interpolation available in all three languages', () => {
     const resources = import.meta.glob('./locales/*/*.ftl', { query: '?raw', import: 'default', eager: true }) as Record<string,string>;
     const byLocale = new Map<string, Set<string>>();
-    const args = { name: 'Döner', published: 1, draft: 2, min: 1, max: 2, amount: '€15.00', time: '12:00', generation: 1, revision: 1, visibility: 'ok' };
+    const args = { name: 'Döner', count: 2, published: 1, draft: 2, min: 1, max: 2, amount: '€15.00', time: '12:00', generation: 1, revision: 1, visibility: 'ok' };
     for (const { locale } of languages) {
       const keys = new Set<string>();
       for (const [path, source] of Object.entries(resources)) if (path.includes('/'+locale+'/')) {

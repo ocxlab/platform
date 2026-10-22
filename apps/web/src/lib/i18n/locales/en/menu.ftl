@@ -23,3 +23,14 @@ menu-move-up = Move { $name } up
 menu-move-down = Move { $name } down
 menu-remove-category = Remove category { $name }
 menu-back = Back to menu
+menu-result-count = { $count ->
+    [one] 1 dish
+   *[other] { $count } dishes
+    }
+menu-category-filter-help = Choose one or more categories. No selection shows all dishes.
+menu-all-categories = Show all categories
+menu-clear-filters = Clear search and filters
+menu-close-controls = Close menu controls
+menu-current-view = Menu view: { $name }
+menu-active-categories = Selected categories
+menu-remove-filter = Remove { $name } filter

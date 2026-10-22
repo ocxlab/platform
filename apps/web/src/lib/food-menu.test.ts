@@ -1,11 +1,18 @@
 import { expect, test } from 'vitest';
-import { basketPrice, basketSignature, menuName, validBasketLine, type FoodMenu } from './food-menu';
+import { basketPrice, basketSignature, menuName, menuSearchKey, validBasketLine, type FoodMenu } from './food-menu';
 const menu: FoodMenu = { currency: 'EUR', availability_mode: 'manual', items: [{ id: 'pizza', name: 'Pizza', translations: { ar: 'بيتزا' }, available: true,
   variants: [{ id: 'large', name: 'Large', price_minor: 1000 }], option_groups: [{ id: 'extras', name: 'Extras', min_selected: 0, max_selected: 2,
     options: [{ id: 'cheese', name: 'Cheese', price_minor: 100 }, { id: 'garlic', name: 'Garlic', price_minor: 0 }] }] }] };
 test('localizes labels with a stable source-name fallback', () => {
   expect(menuName(menu.items[0], 'ar')).toBe('بيتزا');
   expect(menuName(menu.items[0], 'de')).toBe('Pizza');
+});
+
+test('search ignores accents, casing, Arabic vowel marks, and surrounding whitespace', () => {
+  expect(menuSearchKey(' DÖNER ')).toBe(menuSearchKey('Doner'));
+  expect(menuSearchKey('Crème')).toBe(menuSearchKey('Crème'));
+  expect(menuSearchKey('Straße')).toBe(menuSearchKey('STRASSE'));
+  expect(menuSearchKey('مَاء')).toBe(menuSearchKey('ماء'));
 });
 test('estimates variants and free/paid extras for every quantity', () => {
   expect(basketPrice(menu, { item_id: 'pizza', variant_id: 'large', quantity: 2, options: [{ group_id: 'extras', option_id: 'cheese' }, { group_id: 'extras', option_id: 'garlic' }] })).toBe(2200);

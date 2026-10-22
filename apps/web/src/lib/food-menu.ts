@@ -3,6 +3,9 @@ import type { Locale } from '$lib/i18n/locales';
 
 export type FoodMenu = components['schemas']['FoodMenu'];
 export type BasketLine = components['schemas']['FoodSelectionRequest']['lines'][number];
+export function menuSearchKey(value: string) {
+  return value.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/ß/g, 'ss').trim();
+}
 export function menuName(value: { name: string; translations?: Partial<Record<Locale, string>> }, locale: Locale) {
   return value.translations?.[locale] || value.name;
 }

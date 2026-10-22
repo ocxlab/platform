@@ -71,8 +71,20 @@ menu editor JavaScript-free.
 
 The customer menu opens with category sections and image cards. List view uses
 the same dishes with smaller photos; a grouped dropdown remains available for
-compact selection. Search narrows every view, and category links jump directly
-to their section. Display the lowest size price as “From” when variants exist;
+compact selection. One floating view control discloses those options; a separate
+category control filters the menu with multiple selections. No category selection
+means all categories; selected categories combine, while search narrows that set.
+The search bar stays at the top while scrolling. Matching ignores accents and
+case and searches default and translated dish names. A result count, selected
+category count, and clear-filters action make the current state visible. Removable
+category chips and the matching dish count share a row below search; the reset
+button aligns with the input. The square view trigger is icon-only with an
+accessible name; its options retain labels, a selection mark, and hover feedback.
+On narrow screens, menu controls sit above the basket/language row to avoid
+overlap; panels dismiss on outside click or Escape.
+Floating view/category controls occupy inline-start and basket/language controls
+inline-end, so their positions and panel anchors mirror for Arabic.
+Display the lowest size price as “From” when variants exist;
 the server still calculates the actual selection including extras. Sold-out
 dishes remain visible and cannot be chosen.
 
@@ -101,7 +113,8 @@ Tab-local session storage retains selections and notes across reloads, not price
 or credentials. Do not silently discard a basket because a menu was republished:
 unavailable selections block checkout until corrected. The JavaScript basket is
 bounded to 20 selections, each with quantity up to 99. Without JavaScript, real
-item/category links and the existing single-dish native quote/place forms remain.
+item links and the existing single-dish native quote/place forms remain;
+interactive search and floating view/category filters require JavaScript.
 Merchant categories, translations, and defaults use draft/save/publish operations.
 DE/EN/AR names are optional for categories, dishes, variants, and options; missing
 translations fall back to the merchant's default name. Isolate user-entered text.
@@ -111,6 +124,11 @@ This pattern is informed by [Uber Eats' menu structure guidance](https://merchan
 (add, rename, reorder, and publish categories), examined 22 October 2026. Neither
 source establishes cards as a universal best layout: our default and view choices
 are a design decision to evaluate with the illustrated 48-item demo and merchants.
+
+The [Scottish Government search-filter pattern](https://designsystem.gov.scot/patterns/search-results/search-filters),
+examined 22 October 2026, supports removable selected-filter tags above results.
+Placing the dish count alongside those tags is our layout choice, not a requirement
+of that guidance.
 
 [Uber's ordering journey](https://developer.uber.com/docs/eats/guides/order-integration),
 examined 22 October 2026, describes browsing, customization, cart building, and

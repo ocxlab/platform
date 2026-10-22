@@ -1,5 +1,34 @@
 # Development status
 
+## Compact menu controls and category filtering
+
+22 October 2026. Customers switch between cards, list, and dropdown through one
+floating view control at the bottom inline-start corner. A second control opens multi-select
+category filters instead of jumping to headings. Selected categories combine;
+search narrows that selection across all views. No category selection shows all
+categories. A selected-category badge, live dish count, and clear-filters action
+keep the applied state visible. Removable category chips share a row with the dish
+count below search; the reset button aligns with the input. The view trigger is
+square and icon-only, with labeled options and visible hover/selection feedback.
+Controls dismiss on outside click or Escape.
+
+Search stays at the top while scrolling and matches default/translated dish
+names without accents or case: `Doner` finds `Döner`, and Arabic vowel marks
+are ignored. Menu controls stay within the content width; narrow screens place
+them above the basket/language row. Labels are available in DE/EN/AR, with
+floating control positions and panel anchors mirrored for Arabic,
+keyboard operation and isolated merchant-entered names. JavaScript-free item
+links and single-item ordering remain; interactive filters require JavaScript.
+No API contracts, payment behavior, or MCP capabilities changed.
+
+Verification: full `task check` passed before the final visual refinements.
+Final `task web:check` passed with 84 frontend tests, zero Svelte diagnostics,
+generated-client drift checks, and a successful web build. All six browser
+journeys passed (36.9 seconds), including alignment, icon-only view/hover states,
+multi-category search, keyboard dismissal, narrow-screen bounds, Arabic mirroring,
+and complete basket ordering. Mobile and desktop screenshots were inspected.
+Development data was not reset; this is UI regression evidence, not user research.
+
 ## Spectral API design checks
 
 22 October 2026. Root `.spectral.yaml` starts with the full Spectral OAS baseline
