@@ -100,7 +100,7 @@ func TestMerchantMCP(t *testing.T) {
 		} `json:"tools"`
 	}
 	must(t, json.Unmarshal(listed.Result, &tools))
-	if len(tools.Tools) != 3 {
+	if len(tools.Tools) != 5 {
 		t.Fatalf("tools=%s", listed.Result)
 	}
 	t.Run("released_sdk_client", func(t *testing.T) {
@@ -110,7 +110,7 @@ func TestMerchantMCP(t *testing.T) {
 		defer session.Close()
 		listed, err := session.ListTools(ctx, nil)
 		must(t, err)
-		if len(listed.Tools) != 3 {
+		if len(listed.Tools) != 5 {
 			t.Fatal("SDK tool discovery")
 		}
 		result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "find_my_stores", Arguments: map[string]any{}})
@@ -163,6 +163,71 @@ func TestMerchantMCP(t *testing.T) {
 	if len(menuPage.Structured.Items) != 8 {
 		t.Fatal("missing continuation")
 	}
+	t.Run("progressive_information", func(t *testing.T) {
+		demoCall := func(name string, args map[string]any) json.RawMessage {
+			return mcpRequest(t, server, demoToken, "tools/call", map[string]any{"name": name, "arguments": args}, 200).Result
+		}
+		decode := func(raw json.RawMessage) map[string]any {
+			t.Helper()
+			var result struct {
+				IsError    bool           `json:"isError"`
+				Structured map[string]any `json:"structuredContent"`
+			}
+			must(t, json.Unmarshal(raw, &result))
+			if result.IsError || result.Structured == nil {
+				t.Fatalf("read failed: %s", raw)
+			}
+			return result.Structured
+		}
+		// A focused intent needs neither three menu pages nor all dishes' extras.
+		searchWire := demoCall("inspect_menu", map[string]any{"store": demo.Handle, "query": " DÖNER IM FLADENBROT "})
+		search := decode(searchWire)
+		if search["matching_items"] != float64(1) || search["total_items"] != float64(48) || strings.Contains(string(searchWire), `"options"`) {
+			t.Fatalf("bad search projection: %s", searchWire)
+		}
+		itemWire := demoCall("inspect_menu_item", map[string]any{"store": demo.Handle, "item": "doener", "revision": 1})
+		item := decode(itemWire)["item"].(map[string]any)
+		variants := item["variants"].([]any)
+		groups := item["option_groups"].([]any)
+		if len(variants) != 2 || variants[1].(map[string]any)["price_minor"] != float64(950) || len(groups) != 2 || strings.Contains(string(itemWire), `"options"`) {
+			t.Fatalf("bad item projection: %s", itemWire)
+		}
+		if groups[0].(map[string]any)["min_selected"] != float64(1) || groups[0].(map[string]any)["option_count"] != float64(4) {
+			t.Fatal("missing required choice guidance")
+		}
+		extrasWire := demoCall("inspect_item_extras", map[string]any{"store": demo.Handle, "item": "doener", "revision": 1, "groups": []string{"extras", "sauce"}})
+		extraGroups := decode(extrasWire)["option_groups"].([]any)
+		if len(extraGroups) != 2 || extraGroups[0].(map[string]any)["id"] != "extras" {
+			t.Fatal("batch/order not preserved")
+		}
+		options := extraGroups[0].(map[string]any)["options"].([]any)
+		if options[0].(map[string]any)["price_minor"] != float64(100) || options[2].(map[string]any)["price_minor"] != float64(0) {
+			t.Fatal("lost paid/free extras")
+		}
+		for _, invalid := range []map[string]any{
+			{"store": demo.Handle, "item": "doener", "revision": 0, "groups": []string{"extras"}},
+			{"store": demo.Handle, "item": "doener", "revision": 1, "groups": []string{}},
+			{"store": demo.Handle, "item": "doener", "revision": 1, "groups": []string{"extras", "extras"}},
+			{"store": demo.Handle, "item": "doener", "revision": 1, "groups": []string{"a", "b", "c", "d"}},
+		} {
+			assertCode(demoCall("inspect_item_extras", invalid), "invalid_request")
+		}
+		assertCode(demoCall("inspect_menu_item", map[string]any{"store": demo.Handle, "item": "not-an-item"}), "not_found")
+		assertCode(demoCall("inspect_item_extras", map[string]any{"store": demo.Handle, "item": "doener", "revision": 1, "groups": []string{"extras", "not-a-group"}}), "not_found")
+		empty := decode(demoCall("inspect_menu", map[string]any{"store": demo.Handle, "query": "not-on-this-menu"}))
+		if empty["matching_items"] != float64(0) || len(empty["items"].([]any)) != 0 {
+			t.Fatal("empty search should return an empty list")
+		}
+		assertCode(demoCall("inspect_menu", map[string]any{"store": demo.Handle, "query": strings.Repeat("x", 101)}), "invalid_request")
+		r, err := persistence.GetOffering(ctx, f.app, demo.MerchantID, demo.ID, 0)
+		must(t, err)
+		if r.Revision != 1 {
+			t.Fatal("read tools mutated the menu")
+		}
+		// Byte counts include both MCP text and structured copies, not a tokenizer
+		// estimate or an assertion about model latency/quality.
+		t.Logf("known-store workflow: calls=3 search_result_bytes=%d item_result_bytes=%d batched_extras_result_bytes=%d total_result_bytes=%d full_menu_document_bytes=%d tool_list_result_bytes=%d", len(searchWire), len(itemWire), len(extrasWire), len(searchWire)+len(itemWire)+len(extrasWire), len(r.Document), len(listed.Result))
+	})
 	var firstItem string
 	items := menu(t)["items"].([]any)
 	firstItem = items[0].(map[string]any)["id"].(string)
@@ -193,6 +258,12 @@ func TestMerchantMCP(t *testing.T) {
 	if string(a) != string(b) {
 		t.Fatal("targeted change lost other menu fields")
 	}
+	// A retained revision remains a consistent read after another draft is saved.
+	oldItem := call("inspect_menu_item", map[string]any{"store": store.Handle, "item": firstItem, "revision": 1})
+	latestItem := call("inspect_menu_item", map[string]any{"store": store.Handle, "item": firstItem})
+	if !strings.Contains(string(oldItem), `"available":true`) || !strings.Contains(string(latestItem), `"available":false`) {
+		t.Fatal("item reads ignored immutable/requested revision")
+	}
 	// Nothing was published by an agent draft mutation.
 	publication, err := persistence.GetPublication(ctx, f.app, p.MerchantID, store.ID)
 	must(t, err)
@@ -204,6 +275,8 @@ func TestMerchantMCP(t *testing.T) {
 	var otherStore persistence.Store
 	must(t, json.Unmarshal(f.request(t, "POST", "/api/v1/merchants/"+other.MerchantID.String()+"/stores", otherToken, "other-store-000001", `{"display_name":"Other store"}`, 201), &otherStore))
 	assertCode(call("inspect_menu", map[string]any{"store": otherStore.Handle}), "not_found")
+	assertCode(call("inspect_menu_item", map[string]any{"store": otherStore.Handle, "item": firstItem}), "not_found")
+	assertCode(call("inspect_item_extras", map[string]any{"store": otherStore.Handle, "item": firstItem, "revision": 1, "groups": []string{"sauce"}}), "not_found")
 	// Revocation applies even to a previously successful request key.
 	_, err = f.admin.ExecContext(ctx, `UPDATE auth.grants SET revoked=true WHERE id=$1`, p.ID)
 	must(t, err)

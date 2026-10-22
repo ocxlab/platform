@@ -14,7 +14,9 @@ resource server. See [setup and boundaries](../../../../docs/MCP.md).
 | Tool | Required merchant scopes | Input | Compact result |
 | --- | --- | --- | --- |
 | `find_my_stores` | `store:read` | Optional `after` continuation | Up to 20 names, handles, draft revisions, and item counts; optional `next_after` |
-| `inspect_menu` | `offering:read` | `store` handle; optional `revision` and `offset` | Up to 20 item IDs, names, availability flags, price ranges, and variant/extra-group counts; currency, revision, total items, and optional `next_offset` |
+| `inspect_menu` | `offering:read` | `store` handle; optional literal `query`, `revision`, and `offset` | Up to 20 matching item summaries, currency, revision, whole-menu `total_items`, `matching_items`, and optional `next_offset` |
+| `inspect_menu_item` | `offering:read` | `store`, exact `item`; optional `revision` | One dish's availability, all variant IDs/names/prices, and extras-group IDs/names/limits/counts, not option lists |
+| `inspect_item_extras` | `offering:read` | `store`, exact `item`, positive `revision`, one to three distinct `groups` IDs | The selected groups with choice limits and all option IDs/names/surcharges, preserving requested group order |
 | `set_item_availability` | `offering:read`, `offering:write` | `store`, exact `item` ID, boolean `available`, positive `expected_revision`, `request_key` | Saved draft revision, item availability, replay flag, and next action; no full menu echo |
 
 Scopes are checked in discovery and invocation. Every HTTP request authenticates
@@ -23,8 +25,11 @@ they grant no authority. Merchant ownership and PostgreSQL tenant policies remai
 in force. Provider-admin and guest credentials are not merchant credentials.
 
 The schema-authoring source is the typed inputs in
-[`agenttools`](../../../../services/provider/internal/agenttools/merchant.go).
+[`agenttools`](../../../../services/provider/internal/agenttools/merchant.go)
+and its [menu detail inputs](../../../../services/provider/internal/agenttools/menu_details.go).
 The pinned SDK derives and validates JSON Schemas, exposed by `tools/list`.
+The extras input uses a narrow schema refinement to advertise a non-null array;
+field definitions and descriptions still derive from its typed input.
 REST remains defined by the modular OpenAPI sources; MCP schemas do not replace
 those contracts. Schema portability is checked by `task mcp:inspect`.
 
@@ -48,6 +53,19 @@ an explicit revision is required. Continue using the returned revision and
 `next_offset` so pages describe one immutable draft. Summaries deliberately omit
 the full configuration of extras and variants; they are not enough to configure
 a customer purchase. All prices are minor currency units.
+
+`query` is a trimmed literal case-insensitive substring of item name or ID,
+limited to 100 Unicode code points. No translation or fuzzy matching is implied.
+Keep it unchanged while paging; `total_items` counts the whole menu and
+`matching_items` counts the matches before the page limit. Empty results are an
+empty array. An exact `item` ID, not a guessed display name, selects an item read.
+
+`inspect_menu_item` returns all variants together and group summaries without
+their options. `inspect_item_extras` returns complete selected groups (at most
+three, with no duplicates), including zero-price options. It requires the item
+read's positive revision and fails as a whole if any selected group is missing.
+No partial success or silent omission is implied. This batches related details
+without echoing every other dish; see the [design and remaining coverage](../../../../docs/MCP-TOOL-DESIGN.md).
 
 ## Errors and evidence
 

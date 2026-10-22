@@ -13,7 +13,7 @@ import (
 // results, merchant identifiers, or arbitrary client-supplied tool names.
 func (o *Observer) StartMerchantTool(ctx context.Context, name string) (context.Context, func(string)) {
 	switch name {
-	case "find_my_stores", "inspect_menu", "set_item_availability":
+	case "find_my_stores", "inspect_menu", "inspect_menu_item", "inspect_item_extras", "set_item_availability":
 	default:
 		name = "_OTHER"
 	}

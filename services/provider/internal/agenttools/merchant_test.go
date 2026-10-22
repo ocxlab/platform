@@ -54,9 +54,9 @@ func TestToolDiscoveryAndSchema(t *testing.T) {
 		scopes []string
 		count  int
 	}{
-		{"none", nil, 0}, {"store", []string{"store:read"}, 1}, {"menu", []string{"offering:read"}, 1},
+		{"none", nil, 0}, {"store", []string{"store:read"}, 1}, {"menu", []string{"offering:read"}, 3},
 		{"write_without_read", []string{"offering:write"}, 0},
-		{"full", []string{"store:read", "offering:read", "offering:write"}, 3},
+		{"full", []string{"store:read", "offering:read", "offering:write"}, 5},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
@@ -82,6 +82,20 @@ func TestToolDiscoveryAndSchema(t *testing.T) {
 			for _, tool := range tools.Tools {
 				if tool.InputSchema == nil || tool.Description == "" {
 					t.Fatal("missing contract")
+				}
+				if tool.Name == "inspect_item_extras" {
+					data, err := json.Marshal(tool.InputSchema)
+					if err != nil {
+						t.Fatal(err)
+					}
+					var schema struct {
+						Properties map[string]struct {
+							Type any `json:"type"`
+						} `json:"properties"`
+					}
+					if json.Unmarshal(data, &schema) != nil || schema.Properties["groups"].Type != "array" {
+						t.Fatalf("extras must advertise a non-null array: %s", data)
+					}
 				}
 			}
 			// Discovery is not authorization: calling an undisclosed tool is denied.

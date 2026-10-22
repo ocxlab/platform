@@ -1,5 +1,36 @@
 # Development status
 
+## Progressive merchant menu information
+
+22 October 2026, Europe/Berlin (UTC+02:00). The merchant MCP now has five tools:
+the existing store lookup and draft availability change, searchable menu
+summaries, dish detail, and selected extras detail. Sizes/prices arrive together;
+one extras call can batch up to three relevant groups. Reads can go directly to
+a known item and do not force a wizard. This implements progressive disclosure
+of information, not progressive tool-definition loading. The
+[tool design](MCP-TOOL-DESIGN.md) records remaining merchant/customer intentions
+and the trade-off between context size and round trips.
+
+The prepared known-store scenario uses three calls and returns 3,429 serialized
+result bytes including text/structured copies, versus a 21,393-byte source menu;
+the discovery result is another 4,314 bytes. These are diagnostics, not a
+tokenizer measurement, comparable full HTTP exchanges, or a model quality/speed
+claim. Actual model evaluation remains future work.
+
+Full `task check` passed, including Go vet/race, real PostgreSQL integration,
+70 web tests, Svelte checks, generated-contract drift, and builds. Additional
+focused race tests, vet, and an actual HTTP/SQL MCP test passed after tightening
+the extras input's nullable-array schema. Tenant denial, revision consistency,
+free/paid choices, bounded reads, and invalid selectors/batches are covered.
+`task smoke` passed after rebuilding the final local API. Inspector 2.12.0 passed
+five-tool strict schema inspection without warnings and actual item/extras calls.
+No development data
+was reset and no model was called. Browser/load suites were not rerun.
+
+Admin remains a later slice. The [UI conventions](UI-UX.md) now record the
+dedicated full-page admin workspace and compact, accessible search/filter toolbar
+ideas, including active-filter indicators. No screen changed in this batch.
+
 ## Provider administration additions recorded
 
 22 October 2026, Europe/Berlin (UTC+02:00). The requested future tab order is

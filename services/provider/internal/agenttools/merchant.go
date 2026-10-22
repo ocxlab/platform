@@ -115,6 +115,7 @@ type storesInput struct {
 }
 type menuInput struct {
 	Store    string `json:"store" jsonschema:"Managed store handle such as store-4"`
+	Query    string `json:"query,omitempty" jsonschema:"Optional literal substring of item name or id; at most 100 characters. Keep unchanged when paging."`
 	Revision int64  `json:"revision,omitempty" jsonschema:"Retained draft revision; omit for latest. Use returned revision when continuing a page."`
 	Offset   int    `json:"offset,omitempty" jsonschema:"Returned next_offset; default zero"`
 }
@@ -208,7 +209,7 @@ func (s Merchant) server(p persistence.Principal) *mcp.Server {
 		})
 	}
 	if p.AuthorizesMerchant(p.MerchantID, "offering:read") {
-		mcp.AddTool(server, &mcp.Tool{Name: "inspect_menu", Description: "Review up to 20 private draft item summaries: ids, names, availability, price ranges, variant and extra-group counts. Does not return the full configuration or publish anything.", Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true, OpenWorldHint: &closed}}, func(ctx context.Context, _ *mcp.CallToolRequest, in menuInput) (*mcp.CallToolResult, map[string]any, error) {
+		mcp.AddTool(server, &mcp.Tool{Name: "inspect_menu", Description: "Find private draft dishes by optional literal name/id query. Returns up to 20 summaries with ids, price ranges and variant/extra counts. Use inspect_menu_item for sizes/prices; load extras only when needed. Does not publish.", Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true, OpenWorldHint: &closed}}, func(ctx context.Context, _ *mcp.CallToolRequest, in menuInput) (*mcp.CallToolResult, map[string]any, error) {
 			if !p.AuthorizesMerchant(p.MerchantID, "offering:read") {
 				return toolError(commerce.ErrForbidden)
 			}
@@ -232,6 +233,11 @@ func (s Merchant) server(p persistence.Principal) *mcp.Server {
 			}
 			if json.Unmarshal(r.Document, &doc) != nil {
 				return toolError(offering.ErrInvalid)
+			}
+			total := len(doc.Items)
+			doc.Items, err = filterMenuItems(doc.Items, in.Query)
+			if err != nil {
+				return toolError(err)
 			}
 			if in.Offset > len(doc.Items) {
 				return toolError(commerce.ErrInvalid)
@@ -264,13 +270,14 @@ func (s Merchant) server(p persistence.Principal) *mcp.Server {
 				}
 				items = append(items, map[string]any{"id": item.ID, "name": item.Name, "available": item.Available, "price_min_minor": low, "price_max_minor": high, "variant_count": len(item.Variants), "extra_group_count": len(item.Groups)})
 			}
-			out := map[string]any{"store": in.Store, "revision": r.Revision, "currency": doc.Currency, "items": items, "total_items": len(doc.Items), "state": "private_draft"}
+			out := map[string]any{"store": in.Store, "revision": r.Revision, "currency": doc.Currency, "items": items, "total_items": total, "matching_items": len(doc.Items), "state": "private_draft"}
 			if end < len(doc.Items) {
 				out["next_offset"] = end
 			}
 			return nil, out, nil
 		})
 	}
+	s.addMenuDetailTools(server, p)
 	if p.AuthorizesMerchant(p.MerchantID, "offering:read", "offering:write") {
 		mcp.AddTool(server, &mcp.Tool{Name: "set_item_availability", Description: "Save one item's availability in a private menu draft. Requires a reviewed revision and retry key; preserves all other menu fields. Does not change the published menu until the merchant publishes it.", Annotations: &mcp.ToolAnnotations{IdempotentHint: true, DestructiveHint: &closed, OpenWorldHint: &closed}}, func(ctx context.Context, _ *mcp.CallToolRequest, in availabilityInput) (*mcp.CallToolResult, map[string]any, error) {
 			if !p.AuthorizesMerchant(p.MerchantID, "offering:read", "offering:write") {

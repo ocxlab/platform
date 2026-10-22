@@ -20,6 +20,24 @@ positions. Refresh reads the server again. Tables show summary data; details are
 requested separately through authorized APIs. An empty result and a failed read
 are different states.
 
+## Planned administration workspace and filter toolbar
+
+Provider administration should be a dedicated full-page workspace within the
+existing SvelteKit app, with its own layout/navigation and separately authorized
+APIs. It does not require a new frontend deployment. Use the available width for
+management tables while retaining a usable responsive layout.
+
+For the upcoming admin UX pass, evaluate a search-submit icon inside the search
+field, an icon-only clear-filters button, and aligned search/filter/page-size
+controls on wide screens. Give icon buttons accessible names and supplementary
+tooltips; preserve Enter-to-search and keyboard focus. Wrap controls predictably
+on narrow screens and mirror their layout using logical properties for Arabic.
+Show applied filters clearly, using removable chips where they improve clarity.
+Distinguish text being edited from filters actually applied to the result list.
+A compact filter panel can disclose less frequent filters without hiding active
+ones. These are requested design directions, not a claim that one search pattern
+is mandatory or that these changes are already implemented.
+
 ## Explain actions where people need them
 
 Use a visible verb and label for less obvious actions. Reserve icon-only buttons

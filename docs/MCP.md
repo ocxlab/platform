@@ -1,7 +1,8 @@
 # Local merchant MCP
 
-Owners can use an MCP client to find their stores, review menu summaries, and
-change item availability in a private draft. The adapter shares the Offering
+Owners can use an MCP client to find their stores, search menu summaries,
+inspect a dish's sizes and selected extras, and change availability in a private
+draft. The adapter shares the Offering
 write operation with REST; it does not forward arbitrary API calls or let an
 agent publish a menu. The [tool contract](../contracts/mcp/v1/merchant/README.md)
 records inputs, permissions, retries, compact outputs, and errors.
@@ -12,7 +13,7 @@ Run `task dev`, then `task dev:stores` to find an existing store handle. Obtain 
 one-hour development MCP credential with `task dev:mcp-credential STORE=store-2`
 (substitute your handle). This prints the token explicitly for local use, not to
 ordinary API logs. It covers that store's owning merchant, including their other
-stores, and only the three current tools. It is not a UI login or REST credential.
+stores, and only the five current tools. It is not a UI login or REST credential.
 
 Connect your client to `http://127.0.0.1:18180/mcp/merchant`, select Streamable
 HTTP, and supply `Authorization: Bearer <token>`. The Compose stack enables
@@ -64,6 +65,8 @@ identifiers, and raw error text are not telemetry labels or failure logs.
 Export remains off by default. These are per-attempt signals, not unique business
 mutation totals, durable audit records, model token usage, or retained admin stats.
 
+The [intent and information-disclosure design](MCP-TOOL-DESIGN.md) describes
+the implemented read path and the broader catalog still to build.
 The next slices are broader merchant setup/review tools, the separately designed
 customer MCP, and the **MCPs** provider-admin area for management and bounded
 operational summaries. Merchant/customer account tools require their corresponding
@@ -73,26 +76,27 @@ or production-security test is claimed here.
 
 ### Tool-design checkpoint before expansion
 
-The three tools are a transport/authorization test slice, not the intended final
+The initial three tools were a transport/authorization test slice, not the final
 merchant catalog or an argument for minimizing tool count. Before expanding it,
 review merchant and customer intentions separately across commerce and account
 work. Tool boundaries should make those tasks straightforward and safe, not
 match REST paths or compress unrelated actions into a generic dispatcher.
 
-Evaluate progressive disclosure at two levels: the schemas/descriptions a client
-needs for the task, and the detail returned by each call. A useful progression
-is finding named stores, reading bounded menu summaries, requesting a selected
-item's variants/extras, then reviewing and applying a focused change. The current
-slice implements summaries and availability changes but **not** the item-detail,
-menu-creation/import, correction, publication-review, or account workflows.
+Here progressive disclosure means **information**: store overview, matching dish
+summaries, one dish's sizes/prices and extras-group summaries, then selected
+groups' options if needed. This is not a requirement for progressive loading of
+tool definitions. Five tools now cover that read path and draft availability;
+menu creation/import, other corrections, publication review, and account workflows
+remain unfinished.
 
 Measure the complete workflow cost—tool schemas, arguments, result size, and
 extra round trips—rather than treating three tools or short responses as proof
 of token efficiency. A larger set of well-scoped tools can be more efficient.
 Include the 48-item menu, variants and free/paid extras, multilingual data,
-ambiguity, conflicts, and denied permissions in that review. Determine any tool
-discovery/loading mechanism from the supported protocol/client cohort; do not
-assume that response pagination alone provides progressive tool discovery.
+ambiguity, conflicts, and denied permissions in that review. Batch related details
+when that avoids unnecessary round trips; do not optimize response size alone.
+Keep discovery deterministic and permission-filtered. Client-side schema loading
+is a separate future concern, not the meaning of information disclosure here.
 
 ## Release evidence
 
