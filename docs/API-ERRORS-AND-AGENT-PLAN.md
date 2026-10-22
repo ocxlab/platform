@@ -95,3 +95,9 @@ No AI SDK dependency, API key, or Infisical integration was added by the researc
 
 Customer ordering tools follow the cart/checkout work. Multilingual conversational
 testing remains separate; neither delays the initial model-free setup journey.
+
+Instrument the MCP and shared REST application paths with OTel alongside tool
+implementation. Add a provider-admin MCP activity tab for calls, latency, and
+safe failure details; no Grafana stack is required initially. See the bounded
+[observability plan](OBSERVABILITY-AND-MCP-OPERATIONS.md), including privacy,
+storage, failure classification, and verification requirements.

@@ -1,5 +1,16 @@
 # Development status
 
+## MCP operational visibility and OpenTelemetry
+
+22 October 2026, Europe/Berlin (UTC+02:00). The
+[observability plan](OBSERVABILITY-AND-MCP-OPERATIONS.md) adds an MCP activity tab
+to the upcoming merchant/customer MCP work. It specifies call/error/latency
+visibility, safe recent failures, bounded storage, and OTel traces/metrics without
+a mandatory Grafana deployment. Shared API/MCP authorization precedes the tools;
+existing bearer grants are not OAuth. This is a documentation-only checkpoint:
+no MCP endpoint, monitoring UI, OTel dependency, or runtime instrumentation was
+added, and no application tests were rerun.
+
 ## Intent-based MCP surfaces and authorization
 
 22 October 2026, Europe/Berlin (UTC+02:00). The
