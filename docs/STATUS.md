@@ -1,5 +1,15 @@
 # Development status
 
+## Provider administration additions recorded
+
+22 October 2026, Europe/Berlin (UTC+02:00). The requested future tab order is
+**Merchants, Stores, Orders, APIs, MCPs**. The
+[admin plan](OBSERVABILITY-AND-MCP-OPERATIONS.md#provider-administration-navigation)
+records searchable merchants, API documentation/schema links, runtime health,
+and per-endpoint operational measurements. MCPs remains management as well as
+monitoring. Documentation only: no UI/API/runtime changes or application tests
+in this checkpoint. Implement these with the planned admin work, not as empty tabs.
+
 ## Local merchant Streamable HTTP MCP foundation
 
 22 October 2026, Europe/Berlin (UTC+02:00). The local-only `/mcp/merchant`

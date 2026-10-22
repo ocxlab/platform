@@ -1,13 +1,39 @@
 # Observability and MCP management
 
 Decision checkpoint: 22 October 2026, Europe/Berlin (UTC+02:00).
-Status: HTTP instrumentation implemented; MCP tools and their admin tab remain planned.
+Status: HTTP and initial local merchant MCP tool instrumentation implemented;
+expanded MCP tools and the administration additions below remain planned.
+
+## Provider administration navigation
+
+Requested on 22 October 2026. Preserve the existing Stores and Orders areas,
+add **Merchants** as the first tab, add **APIs**, and keep **MCPs** last:
+Merchants, Stores, Orders, APIs, MCPs. This records the requested direction;
+it does not claim the new tabs or monitoring capabilities are implemented.
+
+The Merchants area should provide a searchable, paginated merchant list and
+access to their stores. Add management actions incrementally with the underlying
+capabilities, through the separately authorized administration API.
+
+The APIs area should bring together links to each available Swagger UI and its
+OpenAPI YAML/JSON artifacts, plus API-relevant operational information. Distinguish
+configured API versions and documentation availability from actual runtime health
+and readiness. Show requests per endpoint, request/error rates, latency,
+in-flight requests, authorization denials, rate limiting, and recent safe failures
+as measurements become available. Use method and route template, not raw URLs,
+and retain the time-window, coverage, retention, and privacy rules below. Missing
+measurements must not appear as zero; documentation links are not health checks.
+
+The MCPs area remains monitoring **and management**, with separate endpoint/tool
+visibility rather than merely copying HTTP request counts. Implement these
+additions in the planned admin slice; do not expand the current tool-foundation
+batch just to add empty tabs or placeholder dashboards.
 
 ## Purpose and ownership
 
 Provider administrators need to understand whether customers and merchants can
 use our MCP tools reliably, which operations fail, and where time is spent.
-Add an **MCPs** tab alongside Stores and Orders when the MCP surfaces are
+Add an **MCPs** tab in the navigation described above when the MCP surfaces are
 implemented. It will cover monitoring and management, not just call activity.
 Show each endpoint's configured state and supported tools as well as its usage.
 Add management actions as the corresponding capabilities exist, with scoped
