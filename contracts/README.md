@@ -8,6 +8,11 @@ provider-admin visibility control, public offerings, and guest Food quotes.
 
 ## Where definitions belong
 
+The experimental [merchant MCP contract](mcp/v1/merchant/README.md)
+is maintained separately from REST. It documents task-oriented tool semantics;
+the pinned SDK derives their JSON Schemas from typed inputs. It is not an
+automatic OpenAPI-to-tool export or a replacement for these REST definitions.
+
 ```text
 contracts/
   openapi/v1/

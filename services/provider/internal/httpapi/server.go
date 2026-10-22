@@ -15,6 +15,8 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/agenttools"
+	"ocp.local/platform/internal/commerce"
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
 	"ocp.local/platform/internal/orderupdates"
@@ -30,9 +32,13 @@ type Server struct {
 	developmentPayments bool
 	updates             *orderupdates.Hub
 	telemetry           *telemetry.Observer
+	localMerchantMCP    bool
 }
 
 type Option func(*Server)
+
+// WithLocalMerchantMCP enables only the localhost development adapter.
+func WithLocalMerchantMCP() Option { return func(s *Server) { s.localMerchantMCP = true } }
 
 func WithTelemetry(observer *telemetry.Observer) Option {
 	return func(s *Server) { s.telemetry = observer }
@@ -130,7 +136,19 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 			}
 		}
 	}
+	var merchantMCP http.Handler
+	if server.localMerchantMCP {
+		merchantMCP = (agenttools.Merchant{DB: db, Models: server.models, Observer: server.telemetry}).LocalHandler()
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if merchantMCP != nil && r.URL.Path == agenttools.MerchantPath {
+			if server.telemetry != nil {
+				server.telemetry.HTTP(w, r, agenttools.MerchantPath, "MerchantMCP", merchantMCP.ServeHTTP)
+			} else {
+				merchantMCP.ServeHTTP(w, r)
+			}
+			return
+		}
 		w.Header().Set("X-Request-ID", uuid.NewString())
 		w.Header().Set("Cache-Control", "no-store")
 		route, pathParams, err := router.FindRoute(r)
@@ -180,7 +198,11 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 					problem(w, 400, "invalid_request", "Merchant identifier must be a UUID.", nil)
 					return
 				}
-				if (!principal.Provider && principal.MerchantID != merchant) || !principal.Allows(scopes[route.Operation.OperationID]) {
+				authorized := principal.Allows(scopes[route.Operation.OperationID])
+				if !principal.Provider && !principal.Guest {
+					authorized = principal.AuthorizesMerchant(merchant, scopes[route.Operation.OperationID])
+				}
+				if (!principal.Provider && principal.MerchantID != merchant) || !authorized {
 					problem(w, 403, "forbidden", "Credential does not authorize this merchant and action.", nil)
 					return
 				}
@@ -378,8 +400,20 @@ func (s *Server) WriteOffering(w http.ResponseWriter, r *http.Request, merchant,
 	}
 	model := offering.Model{ID: body.Model.Id, Version: body.Model.Version}
 	document, _ := json.Marshal(body.Document)
-	canonicalDoc, err := s.models.Validate(model, document)
+	result, err := (commerce.Offerings{DB: s.db, Models: s.models}).Write(r.Context(), principal(r), merchant, store, body.BaseRevision, model, document, params.IdempotencyKey)
 	if err != nil {
+		if errors.Is(err, commerce.ErrForbidden) {
+			problem(w, 403, "forbidden", "Credential does not authorize this merchant and action.", nil)
+			return
+		}
+		if errors.Is(err, commerce.ErrInvalid) {
+			problem(w, 400, "invalid_request", "Invalid offering request.", nil)
+			return
+		}
+		if !errors.Is(err, offering.ErrInvalid) && !errors.Is(err, offering.ErrUnsupported) {
+			write(w, nil, err)
+			return
+		}
 		code := "invalid_offering"
 		if errors.Is(err, offering.ErrUnsupported) {
 			code = "unsupported_model"
@@ -387,14 +421,5 @@ func (s *Server) WriteOffering(w http.ResponseWriter, r *http.Request, merchant,
 		problem(w, 422, code, "Offering model or document is not supported.", nil)
 		return
 	}
-	input := struct {
-		Base     int64           `json:"base_revision"`
-		Model    offering.Model  `json:"model"`
-		Document json.RawMessage `json:"document"`
-	}{body.BaseRevision, model, canonicalDoc}
-	canonical, _ := json.Marshal(input)
-	result, err := persistence.Mutate(r.Context(), s.db, principal(r), "writeOffering", store.String(), params.IdempotencyKey, canonical, func(tx *sql.Tx) (any, error) {
-		return persistence.AppendOffering(r.Context(), tx, merchant, store, body.BaseRevision, model, canonicalDoc)
-	})
 	write(w, result, err)
 }

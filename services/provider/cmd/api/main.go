@@ -68,6 +68,9 @@ func main() {
 	defer db.Close()
 	var options []httpapi.Option
 	options = append(options, httpapi.WithTelemetry(signals.Observer))
+	if os.Getenv("OCP_LOCAL_MERCHANT_MCP") == "true" {
+		options = append(options, httpapi.WithLocalMerchantMCP())
+	}
 	updates := orderupdates.New()
 	go updates.Run(ctx, os.Getenv("OCP_DATABASE_URL"))
 	options = append(options, httpapi.WithOrderUpdates(updates))

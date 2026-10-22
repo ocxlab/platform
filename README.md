@@ -85,13 +85,16 @@ credentials out of source control; none are needed for the current checks.
 
 The provider has [OpenTelemetry request instrumentation](docs/OBSERVABILITY.md)
 with optional OTLP/HTTP export. It needs no additional monitoring infrastructure
-for ordinary local development. MCP tools and their MCPs administration tab
-remain the next agent-facing slices.
+for ordinary local development. The [local merchant MCP](docs/MCP.md) exposes
+three intent-based tools over Streamable HTTP with separate development grants.
+Customer tools, production OAuth, and the MCPs administration tab remain next.
 
 | Task | Purpose |
 | --- | --- |
 | `task` | List commands |
 | `task doctor` | Check host tools and Compose syntax |
+| `task dev:mcp-credential STORE=store-N` | Print a one-hour credential for an existing merchant's local MCP, not REST |
+| `task mcp:inspect` | Check merchant MCP schemas with pinned Inspector using `OCP_MCP_TOKEN` |
 | `task fmt` | Format Go sources inside Docker |
 | `task contracts:generate` | Validate/bundle modular OpenAPI and regenerate committed Go |
 | `task contracts:check` | Check generated-code drift without rewriting committed Go |

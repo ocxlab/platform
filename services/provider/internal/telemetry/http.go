@@ -17,11 +17,14 @@ import (
 )
 
 type Observer struct {
-	tracer   trace.Tracer
-	duration metric.Float64Histogram
-	requests metric.Int64Counter
-	active   metric.Int64UpDownCounter
-	logger   *slog.Logger
+	tracer       trace.Tracer
+	duration     metric.Float64Histogram
+	requests     metric.Int64Counter
+	active       metric.Int64UpDownCounter
+	logger       *slog.Logger
+	toolCalls    metric.Int64Counter
+	toolDuration metric.Float64Histogram
+	toolActive   metric.Int64UpDownCounter
 }
 
 func NewObserver(tp trace.TracerProvider, mp metric.MeterProvider, logger *slog.Logger) (*Observer, error) {
@@ -39,7 +42,19 @@ func NewObserver(tp trace.TracerProvider, mp metric.MeterProvider, logger *slog.
 	if err != nil {
 		return nil, err
 	}
-	return &Observer{tp.Tracer("ocp.local/platform/provider"), duration, requests, active, logger}, nil
+	toolCalls, err := meter.Int64Counter("ocp.mcp.tool.calls", metric.WithUnit("{call}"))
+	if err != nil {
+		return nil, err
+	}
+	toolDuration, err := meter.Float64Histogram("ocp.mcp.tool.duration", metric.WithUnit("s"))
+	if err != nil {
+		return nil, err
+	}
+	toolActive, err := meter.Int64UpDownCounter("ocp.mcp.tool.active", metric.WithUnit("{call}"))
+	if err != nil {
+		return nil, err
+	}
+	return &Observer{tracer: tp.Tracer("ocp.local/platform/provider"), duration: duration, requests: requests, active: active, logger: logger, toolCalls: toolCalls, toolDuration: toolDuration, toolActive: toolActive}, nil
 }
 
 // HTTP receives only a route template and operation name from our contract

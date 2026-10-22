@@ -1,5 +1,39 @@
 # Development status
 
+## Local merchant Streamable HTTP MCP foundation
+
+22 October 2026, Europe/Berlin (UTC+02:00). The local-only `/mcp/merchant`
+endpoint now exposes an initial three-tool test slice: find owned stores,
+inspect bounded menu summaries, and change item availability in a private draft.
+The mutation shares the REST Offering operation, preserving variant/extra data,
+revision checks, and retry behavior. Separate MCP and REST bearer resources
+share merchant ownership, scopes, expiry, revocation, and application policy.
+This is development authentication, **not OAuth** or a public deployment boundary.
+See [operation and limitations](MCP.md) and the [tool contract](../contracts/mcp/v1/merchant/README.md).
+
+The three tools are not the final merchant toolset. Before expanding it, review
+merchant/customer intentions, progressive disclosure of schemas and results,
+and full-workflow token cost. Item detail, menu creation/import, focused
+corrections, publication review, account tools, and the customer MCP remain
+work to design and implement. The **MCPs** admin area and embedded chat also
+remain pending. No model or paid API call was made.
+
+Tool-level OTel spans and bounded call/duration/in-flight metrics complement
+HTTP instrumentation, including tool rejections returned inside HTTP 200.
+Payloads, credentials, and commerce identities are not emitted as tool labels
+or failure logs. Export remains disabled by default; no collector was added.
+
+Verification covers scope-filtered discovery, cross-merchant denial, resource
+separation, expiry/revocation, immutable-base retries, conflicts, unchanged
+variant/extra fields, and 48-item pagination. MCP Inspector 2.12.0 exercised
+modern and legacy clients against the local HTTP endpoint; strict tool-schema
+checks and a bounded menu read passed. These are local tests, not independent
+operator interoperability or an AI task-quality evaluation. Development data
+was not reset. `task check` passed, including contract drift checks, Go vet/race,
+real PostgreSQL integration, 70 web tests, Svelte checks (zero errors/warnings),
+and API/web builds. `task smoke` passed after rebuilding the local API with the
+final code. Browser and load suites were not rerun.
+
 ## OpenTelemetry runtime foundation and MCPs naming
 
 22 October 2026, Europe/Berlin (UTC+02:00). The requested future admin tab is

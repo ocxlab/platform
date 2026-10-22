@@ -46,7 +46,7 @@ tasks:
   test:telemetry:
     desc: Check safe OTel signals, streaming, and local OTLP/HTTP export without Grafana
     cmds:
-      - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./internal/telemetry ./internal/httpapi ./cmd/api'
+      - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./internal/telemetry ./internal/agenttools ./internal/httpapi ./cmd/api'
 
   test:mutation:web:
     desc: Run Stryker on checkout/session TypeScript logic and write local reports
@@ -213,6 +213,22 @@ tasks:
     desc: List local stores with handles and owning merchants (no credentials)
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/provision -list'
+
+  dev:mcp-credential:
+    desc: Print a one-hour merchant MCP credential for STORE=store-N or MERCHANT=UUID (not a REST login)
+    env:
+      OCP_DEV_MERCHANT: '{{.MERCHANT | default ""}}'
+      OCP_DEV_STORE: '{{.STORE | default ""}}'
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_DEV_MERCHANT -e OCP_DEV_STORE -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/provision -merchant-mcp'
+
+  mcp:inspect:
+    desc: Check local merchant tool schemas using pinned Inspector (set OCP_MCP_TOKEN first)
+    preconditions:
+      - sh: 'test -n "$OCP_MCP_TOKEN"'
+        msg: Set OCP_MCP_TOKEN to the token returned by task dev:mcp-credential STORE=store-N
+    cmds:
+      - 'pnpm --package=@modelcontextprotocol/inspector@2.12.0 dlx mcp-inspector --cli http://127.0.0.1:{{.OCP_HTTP_PORT | default "18180"}}/mcp/merchant --transport http --protocol-era modern --method tools/list --header "Authorization: Bearer $OCP_MCP_TOKEN" --format json --quiet --strict'
 
   dev:seed:
     desc: Add the fictional 48-product restaurant once without overwriting existing data

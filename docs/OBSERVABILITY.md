@@ -3,8 +3,8 @@
 The Go provider now instruments its REST request boundary with OpenTelemetry.
 It records request counts, duration histograms, and in-flight requests, plus
 server spans and safe failure logs correlated by request, trace, and span IDs.
-This is the foundation for the planned merchant/customer MCP endpoints and
-provider-admin **MCPs** tab, not an implementation of those interfaces yet.
+The local merchant MCP now adds tool-level signals; the customer MCP and
+provider-admin **MCPs** tab remain later slices. See [local MCP](MCP.md).
 
 ## Run locally
 
@@ -42,6 +42,9 @@ implementation of every OTel environment configuration option.
 | `http.server.request.duration` | Completed request duration, seconds, with histogram buckets | Method, route template, operation, status, outcome, and registered problem code when present |
 | `http.server.active_requests` | Requests currently in progress | Method, route template, and operation |
 | `ocp.http.server.requests` | Completed request attempts, including failures and replay attempts | Method, route template, operation, status, outcome, and registered problem code when present |
+| `ocp.mcp.tool.calls` | Merchant tool invocation attempts | Fixed surface, allowlisted tool, outcome, and allowlisted error code |
+| `ocp.mcp.tool.duration` | Merchant tool invocation duration, seconds | Same bounded tool dimensions |
+| `ocp.mcp.tool.active` | Merchant tool invocations currently in progress | Fixed surface and allowlisted tool |
 
 `ocp.*` names are application-specific; they are not represented as standard MCP
 conventions. Unknown paths share `unmatched`, and unknown methods share `_OTHER`.
@@ -54,8 +57,12 @@ tracestate is collected. Trace context does not authorize a request.
 Outcomes distinguish success, rejected requests, unauthenticated requests,
 forbidden requests, rate limits, cancellation, timeout, and internal errors.
 Expected 4xx responses do not mark a server span as an internal failure. These
-HTTP measurements do not yet classify MCP tool errors inside successful HTTP
-responses; that requires instrumentation at the future tool execution boundary.
+HTTP measurements do not classify business results inside a successful HTTP
+response. Separate merchant tool signals classify MCP errors even inside HTTP
+200; expected conflicts count as rejected actions, not internal failures. Tool
+spans nest under the HTTP server span. Schema/unknown-tool rejections reaching
+the SDK method middleware are counted; malformed transport requests rejected
+before dispatch are HTTP attempts, not executed tools.
 
 Only allowlisted route/operation metadata and registered problem codes are
 recorded. No request/response bodies, raw URLs or query strings, bearer tokens,
@@ -74,8 +81,8 @@ deployment-level log retention/rate controls before public exposure.
 
 Current instrumentation covers the HTTP boundary and its existing authorization
 and handler execution as one server span. Individual database queries, application
-operations, payment calls, and MCP tools do not yet have child spans. We have not
-changed token validation or implemented OAuth by adding telemetry.
+operations, and payment calls do not yet have child spans. Merchant MCP calls
+have child spans; adding telemetry does not establish OAuth conformance.
 
 No collector, Grafana LGTM stack, telemetry database, or administration endpoint
 was added. The [management plan](OBSERVABILITY-AND-MCP-OPERATIONS.md) defines the
