@@ -1,0 +1,35 @@
+import { afterEach, expect, test } from 'vitest';
+import { tooltip } from './tooltip';
+afterEach(() => document.body.replaceChildren());
+test('enhances links with the styled tooltip and restores descriptions on dismissal and cleanup', () => {
+  const link = document.createElement('a');
+  link.href = '/merchant'; link.setAttribute('aria-label','Merchant');
+  link.addEventListener('click',event => event.preventDefault());
+  link.setAttribute('aria-describedby','existing'); document.body.append(link);
+  const action = tooltip(link,'Merchant');
+  link.dispatchEvent(new FocusEvent('focus'));
+  const tip = link.querySelector('[role=tooltip]')!;
+  expect(tip.textContent).toBe('Merchant');
+  expect(tip.className).toBe('ocp-tooltip');
+  expect(link.getAttribute('aria-describedby')).toBe(`existing ${tip.id}`);
+  expect(link.hasAttribute('title')).toBe(false);
+  window.dispatchEvent(new KeyboardEvent('keydown',{ key:'Escape' }));
+  expect(link.querySelector('[role=tooltip]')).toBeNull();
+  expect(link.getAttribute('aria-describedby')).toBe('existing');
+  link.dispatchEvent(new FocusEvent('blur')); link.dispatchEvent(new PointerEvent('pointerenter'));
+  action.update('Händler');
+  expect(link.querySelector('[role=tooltip]')?.textContent).toBe('Händler');
+  link.click(); expect(link.querySelector('[role=tooltip]')).toBeNull();
+  action.destroy(); link.dispatchEvent(new FocusEvent('focus'));
+  expect(link.querySelector('[role=tooltip]')).toBeNull();
+});
+test('supports summary triggers and removes unneeded description attributes on pointer leave', () => {
+  const summary = document.createElement('summary'); document.body.append(summary);
+  const action = tooltip(summary,'Language');
+  summary.dispatchEvent(new PointerEvent('pointerenter'));
+  expect(summary.querySelector('[role=tooltip]')).not.toBeNull();
+  summary.dispatchEvent(new PointerEvent('pointerleave'));
+  expect(summary.querySelector('[role=tooltip]')).toBeNull();
+  expect(summary.hasAttribute('aria-describedby')).toBe(false);
+  action.destroy();
+});

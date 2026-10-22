@@ -16,6 +16,12 @@ FoodMenu:
       description: Ordered menu sections. Items without a category remain visible in a separate section.
       items:
         $ref: '#/Category'
+    meal_deals:
+      type: array
+      maxItems: 50
+      description: Optional upgrades combining one eligible main with one included item per main unit. Only the surcharge is added; the included item's regular price is not charged.
+      items:
+        $ref: meal-deal.yaml#/MealDeal
     items:
       type: array
       minItems: 1
@@ -125,6 +131,12 @@ Option:
   additionalProperties: false
   required: [id, name, price_minor]
   properties:
+    variant_prices:
+      type: object
+      maxProperties: 30
+      description: Replacement extra prices keyed by this item's variant IDs. Missing sizes use price_minor; a zero override is valid.
+      additionalProperties:
+        $ref: '#/Price'
     translations:
       $ref: '#/NameTranslations'
     id:
@@ -138,6 +150,11 @@ Option:
       format: int64
       minimum: 0
       maximum: 1000000000
+Price:
+  type: integer
+  format: int64
+  minimum: 0
+  maximum: 1000000000
 LocalIdentifier:
   type: string
   minLength: 1

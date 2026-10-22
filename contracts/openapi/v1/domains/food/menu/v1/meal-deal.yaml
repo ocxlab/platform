@@ -1,0 +1,39 @@
+MealDeal:
+  type: object
+  additionalProperties: false
+  required: [id, name, main_item_ids, surcharge_minor, addon_choices]
+  properties:
+    id:
+      $ref: schema.yaml#/LocalIdentifier
+    name:
+      type: string
+      minLength: 1
+      maxLength: 160
+    translations:
+      $ref: schema.yaml#/NameTranslations
+    main_item_ids:
+      type: array
+      minItems: 1
+      maxItems: 200
+      uniqueItems: true
+      items:
+        $ref: schema.yaml#/LocalIdentifier
+    surcharge_minor:
+      $ref: schema.yaml#/Price
+    addon_choices:
+      type: array
+      minItems: 1
+      maxItems: 200
+      uniqueItems: true
+      description: Existing item/variant pairs without required modifiers. Included items have no separate customization or recursively applied deals.
+      items:
+        $ref: '#/AddonChoice'
+AddonChoice:
+  type: object
+  additionalProperties: false
+  required: [item_id, variant_id]
+  properties:
+    item_id:
+      $ref: schema.yaml#/LocalIdentifier
+    variant_id:
+      $ref: schema.yaml#/LocalIdentifier

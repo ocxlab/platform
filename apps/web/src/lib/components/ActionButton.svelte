@@ -2,6 +2,7 @@
   import type { HTMLButtonAttributes } from 'svelte/elements';
   import type { LucideIcon } from '@lucide/svelte';
   import { onMount } from 'svelte';
+  import '$lib/tooltip.css';
 
   type Props = Omit<HTMLButtonAttributes, 'children' | 'title' | 'aria-label'> & {
     label: string;
@@ -46,7 +47,7 @@
     {#if Icon}<Icon size={18} strokeWidth={2} aria-hidden="true" focusable="false" />{/if}
     {#if !iconOnly || !Icon}<span>{label}</span>{/if}
   </button>
-  {#if visible}<span bind:this={tip} id={tooltipId} role="tooltip" class="tooltip" style:left={`${tipLeft}px`} style:top={`${tipTop}px`}>{tooltip}</span>{/if}
+  {#if visible}<span bind:this={tip} id={tooltipId} role="tooltip" class="ocp-tooltip" style:left={`${tipLeft}px`} style:top={`${tipTop}px`}>{tooltip}</span>{/if}
 </span>
 
 <style>
@@ -54,5 +55,4 @@
   .action-button { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-width: 44px; min-height: 44px; }
   .icon-only { padding: .55rem; }
   .danger { background: #9f3038; border-color: #9f3038; }
-  .tooltip { position: fixed; z-index: 20; width: max-content; max-width: min(22rem, 85vw); overflow-wrap: anywhere; padding: .7rem .9rem; border: 1px solid #425a68; border-radius: .5rem; background: #1a2b35; color: white; font-size: 1rem; font-weight: 400; line-height: 1.5; box-shadow: 0 4px 16px #0003; }
 </style>

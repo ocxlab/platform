@@ -237,7 +237,7 @@ func serve(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	models := offering.NewRegistry(map[offering.Model]offering.Validator{food.Model: food.Validator(spec.Components.Schemas["FoodMenu"].Value), food.ModelV2: food.ValidatorV2(spec.Components.Schemas["FoodMenuV2"].Value, spec.Components.Schemas["FoodMenu"].Value)}, map[offering.Model]offering.Validator{food.Model: food.Project, food.ModelV2: food.Project})
+	models := offering.NewRegistry(map[offering.Model]offering.Validator{food.Model: food.Validator(spec.Components.Schemas["FoodMenu"].Value)}, map[offering.Model]offering.Validator{food.Model: food.Project})
 	bindings := map[uuid.UUID]networkcatalog.Binding{}
 	for _, p := range s.Peers {
 		bindings[p.Binding.StoreID] = p.Binding

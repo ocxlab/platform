@@ -9,5 +9,5 @@ export default defineConfig({
     '$lib': fileURLToPath(new URL('./src/lib', import.meta.url)),
     '$env/dynamic/private': fileURLToPath(new URL('./tests/mutation-env.ts', import.meta.url)),
   } },
-  test: { environment: 'node', include: ['src/lib/orders.test.ts','src/lib/money.test.ts','src/lib/server/guest.test.ts','src/lib/server/sessions.test.ts'] },
+  test: { environment: 'node', include: ['src/lib/orders.test.ts','src/lib/money.test.ts','src/lib/server/guest.test.ts','src/lib/server/sessions.test.ts','src/lib/food-menu.test.ts','src/lib/server/food-selection.test.ts'] },
 });

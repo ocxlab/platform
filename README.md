@@ -21,7 +21,7 @@ starting with Inspector checks against the same authorized APIs.
 Orders and stores also
 have readable references alongside their UUIDs. Merchants can report preparation,
 readiness, and customer pickup for accepted, paid orders. The
-[three-domain foundation](docs/THREE-DOMAIN-ACCEPTANCE.md) adds Food V2 pricing,
+[three-domain foundation](docs/THREE-DOMAIN-ACCEPTANCE.md) adds size-dependent Food extras and meal deals,
 internal Shopping/Lodging APIs and a tested native ONIX discovery slice.
 Real payment adapters, merchant delivery and public network operation remain
 later work; this is not yet a complete ordering product.

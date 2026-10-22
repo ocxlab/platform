@@ -24,6 +24,8 @@ SelectionLine:
   additionalProperties: false
   required: [item_id, variant_id, quantity, options]
   properties:
+    meal_deal:
+      $ref: '#/SelectedMealDeal'
     note:
       $ref: '#/CustomerNote'
     item_id:
@@ -100,8 +102,8 @@ QuotedLine:
   additionalProperties: false
   required: [selection, item_name, variant_name, unit_price_minor, total_minor]
   properties:
-    price_explanation:
-      $ref: '#/PriceExplanation'
+    meal_deal:
+      $ref: '#/QuotedMealDeal'
     selection:
       $ref: '#/SelectionLine'
     item_name:
@@ -128,7 +130,7 @@ QuotedLine:
           price_minor:
             type: integer
             format: int64
-            description: Actual per-unit extra price retained for menu model version 2, including any selected-size override.
+            description: Actual per-unit extra price, including any selected-size override.
             minimum: 0
             maximum: 1000000000000
     unit_price_minor:
@@ -141,24 +143,38 @@ QuotedLine:
       format: int64
       minimum: 0
       maximum: 1000000000000
-PriceExplanation:
+SelectedMealDeal:
   type: object
   additionalProperties: false
-  description: Retained server-evaluated pricing facts for menu model version 2.
-  required: [base_price_minor, effective_base_price_minor, extras_price_minor, evaluated_at]
+  required: [deal_id, addon_item_id, addon_variant_id]
+  description: One included item for each main unit. Split lines to choose different included items. No caller-supplied prices or nested deals.
   properties:
-    base_price_minor:
-      $ref: ../../menu/v2/schema.yaml#/Price
-    effective_base_price_minor:
-      $ref: ../../menu/v2/schema.yaml#/Price
-    offer_id:
+    deal_id:
+      $ref: ../../menu/v1/schema.yaml#/LocalIdentifier
+    addon_item_id:
+      $ref: ../../menu/v1/schema.yaml#/LocalIdentifier
+    addon_variant_id:
+      $ref: ../../menu/v1/schema.yaml#/LocalIdentifier
+QuotedMealDeal:
+  type: object
+  additionalProperties: false
+  required: [deal_id, name, addon_item_id, addon_variant_id, addon_item_name, addon_variant_name, addon_quantity, surcharge_minor]
+  properties:
+    deal_id:
+      $ref: ../../menu/v1/schema.yaml#/LocalIdentifier
+    name:
       type: string
-      pattern: '^[a-z][a-z0-9_-]{0,63}$'
-    extras_price_minor:
+    addon_item_id:
+      $ref: ../../menu/v1/schema.yaml#/LocalIdentifier
+    addon_variant_id:
+      $ref: ../../menu/v1/schema.yaml#/LocalIdentifier
+    addon_item_name:
+      type: string
+    addon_variant_name:
+      type: string
+    addon_quantity:
       type: integer
-      format: int64
-      minimum: 0
-      maximum: 1000000000000
-    evaluated_at:
-      type: string
-      format: date-time
+      minimum: 1
+      maximum: 99
+    surcharge_minor:
+      $ref: ../../menu/v1/schema.yaml#/Price

@@ -138,6 +138,32 @@ that it uses SSE. Our SSE and debounce choices are implementation decisions.
 Native dialog focus, Escape, and background-inert behavior follow the
 [WAI modal guidance](https://www.w3.org/WAI/WCAG22/Techniques/html/H102).
 
+## Meal customization
+
+Sizes can change extra prices, which update immediately in customization. Optional
+meal upgrades appear after extras, with a clear additional price and an included
+item selector. New selections default to the dish alone; choosing a deal selects
+its first available included item, which the customer can change. Quantity applies
+to the whole meal. Basket and order details name the included item and quantity.
+Invalidated meals remain visible for correction instead of being silently removed.
+Merchant editing reuses catalog records rather than duplicating drinks or sides;
+optional price overrides and deal membership use progressive disclosure.
+
+Eligible dish cards disclose a quiet meal-availability label and additional price
+before selection. The basket offers a contextual upgrade action on eligible plain
+dishes, reopening the same customization with quantity, extras and notes retained.
+It does not add a popup, force a decision, auto-upgrade, or block checkout. This
+placement is our design choice, informed by
+[Uber's conditional menu customization](https://help.uber.com/en/merchants-and-restaurants/article/advanced-menu-functionality-customization-options?nodeId=1416cf88-93cc-4bb7-9b99-c87db98a9671)
+and [Baymard's cart cross-sell research](https://baymard.com/research-articles/product-recommendations-cart),
+consulted 23 October 2026. The latter supports contextual relevance and clear
+labels, not a claim that this particular layout has been user-tested.
+
+Icon-only links and native summary controls use the same styled tooltip surface
+as action buttons, without browser-native `title` tooltips. Accessible names stay
+on controls; supplementary hints appear on pointer hover or keyboard focus,
+dismiss on Escape/click, and stay within the viewport, including RTL layouts.
+
 ## Other pattern references
 
 The [WAI tooltip pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/)

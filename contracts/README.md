@@ -27,8 +27,7 @@ contracts/
       common/                   Identifiers, liveness, and Problem Details
       stores/                   Store resource and creation request
       offerings/                Model reference and immutable revision envelope
-    domains/food/menu/v1/       Replaceable Food menu definition
-    domains/food/menu/v2/       Size-specific prices and scheduled offers
+    domains/food/menu/v1/       Sole Food model with size extras and meal deals
     domains/food/selection/v1/  Selection and priced quote definitions
     examples/                   Fictional JSON documents checked in tests
   tooling/go.yaml               Pinned generator configuration
@@ -125,13 +124,18 @@ behavior. The integration suite uses unique disposable databases, not the develo
 database. Go tests without `OCP_TEST_DATABASE_URL` explicitly skip that suite;
 `task test:integration` supplies it. A passing unit-only run is not DB acceptance.
 
-The API is `/api/v1`; its current draft document version is `0.1.0`. Changes in
-meaning or removal require a new major contract. Optional additions must still
+The API is `/api/v1`; its current draft document version is `0.1.0`. After public
+release, changes in meaning or removal require a new major contract. Before
+release, explicitly agreed removals use coordinated server/client rebuilds,
+not parallel legacy models. Optional additions must still
 respect declared compatibility: closed request schemas deliberately reject unknown
 fields. A new optional request field is not usable against an older server unless
 negotiated or otherwise supported. Offering model `ocp.food.menu` version `1.0.0`
 is independent of the API version. Append immutable revisions with an expected
 `base_revision`; do not reinterpret retained documents after model upgrades.
+The newer Food implementation is now the sole pre-release V1 model; it includes
+size-dependent extras and meal deals, without scheduling. See
+[Food menus](../docs/FOOD-MENU.md) for calculation and data boundaries.
 
 All failures use `application/problem+json`, with a stable `code` and safe details.
 Private mutation retries require a 16–128 character `Idempotency-Key`. Matching requests

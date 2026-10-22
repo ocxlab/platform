@@ -10,8 +10,14 @@ test('language preference persists and names keep their own direction in both la
   await page.goto('/merchant?view=test');
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('header nav a')).toHaveCount(2);
-  await expect(page.getByRole('link', { name: 'Merchant', exact: true })).toHaveAttribute('title','Merchant');
-  await expect(page.getByRole('link', { name: 'Provider admin', exact: true })).toHaveAttribute('title','Provider admin');
+  for (const name of ['Merchant', 'Provider admin']) {
+    const link = page.getByRole('link', { name, exact: true });
+    await expect(link).not.toHaveAttribute('title');
+    await link.hover();
+    await expect(page.getByRole('tooltip')).toHaveText(name);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+  }
   await expect(page.locator('.language-picker summary')).toHaveText('');
   await expect(page.locator('.language-picker summary img')).toBeVisible();
   const corner = await page.locator('.language-picker').boundingBox();

@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import { languages } from '$lib/i18n/locales';
   import { useI18n } from '$lib/i18n/context';
+  import { tooltip } from '$lib/tooltip';
   const { locale, t } = useI18n();
   const current = $derived(languages.find((language) => language.locale === locale())!);
   let picker: HTMLDetailsElement;
@@ -9,7 +10,7 @@
 <svelte:window onkeydown={(event) => { if (event.key === 'Escape' && picker?.open && picker.contains(event.target as Node)) { picker.open = false; picker.querySelector('summary')?.focus(); } }}
   onclick={(event) => { if (picker?.open && !picker.contains(event.target as Node)) picker.open = false; }} />
 <details class="language-picker" bind:this={picker}>
-  <summary aria-label={t('ui-language')} title={t('ui-language')}>
+  <summary aria-label={t('ui-language')} use:tooltip={t('ui-language')}>
     <img src={`/flags/${current.flag}.svg`} alt="" width="24" height="18" />
   </summary>
   <form method="POST" action="/language" aria-label={t('ui-language')}>

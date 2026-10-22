@@ -16,7 +16,8 @@ export function foodSelection(form: FormData): components['schemas']['FoodSelect
       // Enumerate inputs: never forward caller-supplied totals or extra fields.
       return { publication_generation: value.publication_generation, locale: value.locale, note: value.note,
         lines: value.lines.map((line: BasketLine) => ({ item_id: line.item_id, variant_id: line.variant_id,
-          quantity: line.quantity, options: line.options.map(o => ({ group_id: o.group_id, option_id: o.option_id })), ...(line.note ? { note: line.note } : {}) })) };
+          quantity: line.quantity, options: line.options.map(o => ({ group_id: o.group_id, option_id: o.option_id })),
+          ...(line.meal_deal ? { meal_deal: { deal_id: line.meal_deal.deal_id, addon_item_id: line.meal_deal.addon_item_id, addon_variant_id: line.meal_deal.addon_variant_id } } : {}), ...(line.note ? { note: line.note } : {}) })) };
     } catch { return undefined; }
   }
   const identifier = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
@@ -35,5 +36,13 @@ export function foodSelection(form: FormData): components['schemas']['FoodSelect
     if (parts.length !== 2 || !identifier.test(parts[0]) || !identifier.test(parts[1])) return undefined;
     options.push({ group_id: parts[0], option_id: parts[1] });
   }
-  return { publication_generation: generation, lines: [{ item_id: item, variant_id: variant, quantity, options }] };
+  const meal = form.get('meal_deal');
+  let selectedMeal: BasketLine['meal_deal'];
+  if (meal !== null && meal !== '') {
+    if (typeof meal !== 'string') return undefined;
+    const parts = meal.split(':');
+    if (parts.length !== 3 || !parts.every(value => identifier.test(value))) return undefined;
+    selectedMeal = { deal_id: parts[0], addon_item_id: parts[1], addon_variant_id: parts[2] };
+  }
+  return { publication_generation: generation, lines: [{ item_id: item, variant_id: variant, quantity, options, ...(selectedMeal ? { meal_deal: selectedMeal } : {}) }] };
 }

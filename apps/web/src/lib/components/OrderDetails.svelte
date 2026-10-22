@@ -35,6 +35,7 @@
   {#each order.terms.lines as line}
     <li><div><strong>{line.selection.quantity} × <bdi dir="auto">{line.item_name}</bdi></strong><span class="muted"><bdi dir="auto">{line.variant_name}</bdi></span>
     {#each line.selected_options ?? [] as option}<small><bdi dir="auto">{option.group_name}</bdi>: <bdi dir="auto">{option.option_name}</bdi></small>{/each}
+    {#if line.meal_deal}<small><bdi dir="auto">{line.meal_deal.name}</bdi> · {line.meal_deal.addon_quantity} × <bdi dir="auto">{line.meal_deal.addon_item_name} ({line.meal_deal.addon_variant_name})</bdi></small>{/if}
     {#if line.selection.note}<small>{t('basket-item-note')}: <bdi dir="auto">{line.selection.note}</bdi></small>{/if}</div><bdi>{money(line.total_minor, locale())}</bdi></li>
   {/each}
   </ul>

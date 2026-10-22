@@ -1,6 +1,6 @@
 # Three-domain implementation acceptance
 
-22 October 2026. The agreed pre-administration slice now has Food V2, internal
+Updated 23 October 2026. The agreed pre-administration slice now has one Food model, internal
 Shopping and Lodging APIs, native ONIX Food discovery, and selectively deployable
 API/worker roles. Its purpose is to test the shared foundation against three
 different kinds of commerce, not to launch three customer products at once.
@@ -9,13 +9,13 @@ different kinds of commerce, not to launch three customer products at once.
 
 | Area | Implemented behavior | Evidence entry point |
 | --- | --- | --- |
-| Food V2 | Size-specific extra prices, scheduled offers, availability windows, retained quote terms and boundary-aware expiry; existing categories, translations, defaults and images remain supported | `FOOD-PRICING-V2.md` |
+| Food | Size-specific extra prices, explicit meal deals and retained quote terms; categories, translations, defaults and images remain supported | `FOOD-MENU.md` |
 | Shopping | Catalog administration, checkout creation/read/update/cancel/complete, authoritative stock allocation and retained orders | `INTERNAL-COMMERCE.md` |
 | Lodging | Property/unit/rate catalogs, booking creation/read/update/cancel/complete, dated physical-unit allocation and retained confirmations | `INTERNAL-COMMERCE.md` |
 | Shared foundation | Scoped identity admission, typed payment subjects, atomic outstanding pay-later obligations, immutable delivery intents and bounded leased workers | `DOMAIN-BOUNDARIES.md` |
 | Network | Native publishers/crawler carry signed Food projections between two configured providers; discovery routes to each provider's authoritative quote API | `NETWORK-ACCEPTANCE.md` |
 
-The Food V2 contract is owned and MenuConform-informed; it is not an upstream
+The Food contract is owned and MenuConform-informed; it is not an upstream
 MenuConform runtime or an official UCP Food specification. Shopping and Lodging
 implement selected pinned UCP draft interactions. They are internal only, have
 no customer UI, and use explicit outstanding pay-later obligations rather than
@@ -65,14 +65,17 @@ the command runs above, not independent reviewer test runs.
   retirement and Beckn checkout are not claimed.
 - PostgreSQL remains a shared capacity/failure boundary. Moving a domain to its
   own database needs identity/payment integration and migration, not just a flag.
-- Food's Gremlins run killed 151 mutants, with 10 surviving and none uncovered.
+- At the historical 22 October checkpoint, Food's Gremlins run killed 151 mutants, with 10 surviving and none uncovered.
   Capability killed 5/5 and payment 17/17. Survivors are recorded below as test
   strength debt, not assumed equivalent. No new Stryker run was needed for this
-  backend/contract slice; no frontend logic was changed.
+  backend/contract slice; no frontend logic was changed then. The later meal and
+  tooltip slice includes frontend changes and expanded mutation testing; see `STATUS.md`.
 
-### Food mutation survivors
+### Historical Food mutation survivors before consolidation
 
-Locations describe this checkpoint, not permanent identifiers. JSON reports under
+The scheduling implementation below was subsequently removed. These locations
+describe the 22 October checkpoint, not current code or current mutation results.
+For the latest run see `STATUS.md`. JSON reports under
 ignored `reports/mutation/go` are reproducible through `task test:mutation:go`.
 
 | File | Line:column | Mutation |

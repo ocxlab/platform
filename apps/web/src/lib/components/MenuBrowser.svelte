@@ -10,7 +10,8 @@
   import X from '@lucide/svelte/icons/x';
   import ChevronUp from '@lucide/svelte/icons/chevron-up';
   import Check from '@lucide/svelte/icons/check';
-  import { menuName, menuSearchKey } from '$lib/food-menu';
+  import { menuName, menuSearchKey, mealChoices } from '$lib/food-menu';
+  import { tooltip } from '$lib/tooltip';
   const { t, locale } = useI18n();
   type Menu = components['schemas']['FoodMenu'];
   let { menu, merchant, store, selected, onchoose }: {
@@ -72,7 +73,7 @@
   <div class="menu-toolbar">
     <div class="search-row">
       <label class="menu-search"><span>{t('menu-search')}</span><span class="search-input"><Search size={18} aria-hidden="true" /><input type="search" disabled={!interactive} bind:this={searchInput} bind:value={search} placeholder={t('menu-search-placeholder')} /></span></label>
-      {#if search || activeCategories.length}<button class="reset-search" type="button" aria-label={t('menu-clear-filters')} title={t('menu-clear-filters')} onclick={() => { search = ''; selectedCategories = []; searchInput?.focus({ preventScroll: true }); }}><X size={18} aria-hidden="true" /></button>{/if}
+      {#if search || activeCategories.length}<button class="reset-search" type="button" aria-label={t('menu-clear-filters')} use:tooltip={t('menu-clear-filters')} onclick={() => { search = ''; selectedCategories = []; searchInput?.focus({ preventScroll: true }); }}><X size={18} aria-hidden="true" /></button>{/if}
     </div>
     <div class="search-feedback">
       {#if activeCategories.length}<div class="category-chips" role="group" aria-label={t('menu-active-categories')} bind:this={chipRow}>
@@ -87,7 +88,7 @@
   {#if interactive}
     <div class="floating-menu-tools">
       <details class="view-picker" bind:this={viewPicker}>
-        <summary class="view-trigger" aria-label={t('menu-current-view', { name: t(currentView.label) })} title={t('menu-current-view', { name: t(currentView.label) })}><currentView.icon size={20} aria-hidden="true" /></summary>
+        <summary class="view-trigger" aria-label={t('menu-current-view', { name: t(currentView.label) })} use:tooltip={t('menu-current-view', { name: t(currentView.label) })}><currentView.icon size={20} aria-hidden="true" /></summary>
         <div class="picker-panel view-switch" role="group" aria-label={t('menu-view')}>
           {#each controls as control}
             <button type="button" aria-pressed={view === control.id} onclick={() => { view = control.id; closePicker(viewPicker); }}><control.icon size={18} aria-hidden="true" /><span>{t(control.label)}</span>{#if view === control.id}<Check size={18} aria-hidden="true" />{/if}</button>
@@ -97,7 +98,7 @@
       <details class="category-picker" bind:this={categoryPicker}>
         <summary><ListFilter size={18} aria-hidden="true" /><span>{t('menu-categories')}</span>{#if activeCategories.length}<span class="filter-count">{activeCategories.length}</span>{/if}<ChevronUp size={16} aria-hidden="true" /></summary>
         <div class="picker-panel category-options" role="group" aria-label={t('menu-categories')}>
-          <div class="picker-heading"><strong>{t('menu-categories')}</strong><button type="button" class="close-picker" aria-label={t('menu-close-controls')} onclick={() => closePicker(categoryPicker)}><X size={18} aria-hidden="true" /></button></div>
+          <div class="picker-heading"><strong>{t('menu-categories')}</strong><button type="button" class="close-picker" aria-label={t('menu-close-controls')} use:tooltip={t('menu-close-controls')} onclick={() => closePicker(categoryPicker)}><X size={18} aria-hidden="true" /></button></div>
           <p>{t('menu-category-filter-help')}</p>
           {#each sections as section}
             <label class="category-option"><input type="checkbox" checked={activeCategories.includes(section.id)} onchange={() => toggleCategory(section.id)} /><bdi dir="auto">{section.name}</bdi><span class="count">{section.items.length}</span></label>
@@ -120,12 +121,14 @@
         <h3><bdi dir="auto">{section.name}</bdi></h3>
         <div class:card-grid={view === 'cards'} class:menu-list={view === 'list'}>
           {#each section.items as item (item.id)}
+            {@const deals = item.available ? menu.meal_deals?.filter(deal => deal.main_item_ids.includes(item.id) && mealChoices(menu,deal).length) ?? [] : []}
             <a class="menu-card" class:selected={selected === item.id} class:sold-out={!item.available} aria-disabled={!item.available ? 'true' : undefined}
               href={`?item=${encodeURIComponent(item.id)}#configure-item`} tabindex={item.available ? undefined : -1} aria-label={t('menu-choose-item', { name: item.name })}
               onclick={(event) => { if (item.available && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) return; event.preventDefault(); if (item.available) onchoose(item.id); }}>
               <div class="card-photo">{#if item.image_id}<img src={`/media/public/${merchant}/${store}/${item.image_id}`} alt={item.name} loading="lazy" width="480" height="360" />{:else}<div class="photo-placeholder" aria-hidden="true"><span class="placeholder-shape">◇</span></div>{/if}{#if !item.available}<span class="unavailable-badge">{t('basket-sold-out')}</span>{/if}</div>
               <div class="card-copy"><h4><bdi dir="auto">{item.name}</bdi></h4>
                 <span class="price">{item.variants.length > 1 ? t('menu-from', { amount: money(Math.min(...item.variants.map(variant => variant.price_minor)), locale()) }) : money(item.variants[0].price_minor, locale())}</span>
+                {#if deals.length}<span class="meal-hint">{t('meal-hint', { amount: money(Math.min(...deals.map(deal => deal.surcharge_minor)),locale()) })}</span>{/if}
                 <span class="card-action">{item.available ? t('menu-customize') : t('storefront-unavailable')}</span>
               </div>
             </a>
@@ -138,6 +141,7 @@
 </section>
 
 <style>
+  .meal-hint { display: block; color: #20586f; font-size: .85rem; font-weight: 600; margin-block: .25rem; }
   .menu-browser { padding: 0; background: transparent; border: 0; }
   .search-row, .search-input { display: flex; gap: .65rem; }
   .search-row { align-items: end; }

@@ -79,7 +79,7 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	if err = json.Unmarshal(body, &terms); err != nil {
 		return order, err
 	}
-	if current.Model != terms.Model || (current.Model != food.Model && current.Model != food.ModelV2) {
+	if current.Model != terms.Model || current.Model != food.Model {
 		return order, food.ErrSelection
 	}
 	var lines []food.QuotedLine

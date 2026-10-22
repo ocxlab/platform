@@ -2,7 +2,7 @@
   import { onMount, tick, untrack } from 'svelte';
   import { deserialize, enhance } from '$app/forms';
   import type { components } from '$lib/api/generated';
-  import { basketPrice, basketSignature, menuName, validBasketLine, type BasketLine, type FoodMenu } from '$lib/food-menu';
+  import { basketMeal, mealChoices, basketPrice, basketSignature, menuName, validBasketLine, type BasketLine, type FoodMenu } from '$lib/food-menu';
   import { useI18n } from '$lib/i18n/context';
   import { money } from '$lib/money';
   import MenuBrowser from './MenuBrowser.svelte';
@@ -27,6 +27,10 @@
   let options = $state<string[]>([]);
   let quantity = $state(1);
   let itemNote = $state('');
+  let meal = $state('');
+  let addon = $state('');
+  const eligibleDeals = $derived(menu.meal_deals?.filter(deal => deal.main_item_ids.includes(selected) && mealChoices(menu,deal).length) ?? []);
+  const selectedDeal = $derived(eligibleDeals.find(deal => deal.id === meal));
   let dialog = $state<HTMLDialogElement>();
   let basketDialog = $state<HTMLDialogElement>();
   let reopenBasket = false;
@@ -52,8 +56,9 @@
   const input = $derived(JSON.stringify({ publication_generation: generation, locale: locale(), lines, note }));
   const currentQuote = $derived(validatedQuote && validatedInput === input && basketSignature(validatedQuote.lines.map(l => l.selection), validatedQuote.note ?? '') === signature ? validatedQuote : undefined);
   const total = $derived(lines.reduce((sum, line) => sum + basketPrice(menu, line), 0));
-  const configuredLine = $derived<BasketLine>({ item_id: selected, variant_id: variant, quantity, options: options.map(value => { const [group_id, option_id] = value.split(':'); return { group_id, option_id }; }), ...(itemNote ? { note: itemNote } : {}) });
-  const choicesValid = $derived(!!item && item.option_groups.every(group => {
+  const configuredLine = $derived<BasketLine>({ item_id: selected, variant_id: variant, quantity, options: options.map(value => { const [group_id, option_id] = value.split(':'); return { group_id, option_id }; }),
+    ...(meal ? { meal_deal: { deal_id: meal, addon_item_id: addon.split(':')[0] ?? '', addon_variant_id: addon.split(':')[1] ?? '' } } : {}), ...(itemNote ? { note: itemNote } : {}) });
+  const choicesValid = $derived(!!item && (!meal || !!basketMeal(menu,configuredLine)) && item.option_groups.every(group => {
     const count = options.filter(value => value.startsWith(`${group.id}:`)).length;
     return count >= group.min_selected && count <= group.max_selected;
   }));
@@ -120,6 +125,8 @@
     variant = existing?.variant_id ?? chosen?.variants[0].id ?? '';
     options = existing?.options.map(o => `${o.group_id}:${o.option_id}`) ?? chosen?.option_groups.flatMap(group => (group.default_option_ids ?? []).map(id => `${group.id}:${id}`)) ?? [];
     quantity = existing?.quantity ?? 1; itemNote = existing?.note ?? '';
+    meal = existing?.meal_deal?.deal_id ?? '';
+    addon = existing?.meal_deal ? `${existing.meal_deal.addon_item_id}:${existing.meal_deal.addon_variant_id}` : '';
     await tick();
     dialog?.showModal();
     heading?.focus({ preventScroll: true });
@@ -157,10 +164,14 @@
     {#each lines as line, index}
       {@const dish = menu.items.find(item => item.id === line.item_id)}
       {@const size = dish?.variants.find(v => v.id === line.variant_id)}
-      <li class:line-unavailable={!dish?.available}>
+      {@const chosenMeal = basketMeal(menu,line)}
+      {@const upgradeDeals = !line.meal_deal && dish?.available ? menu.meal_deals?.filter(deal => deal.main_item_ids.includes(line.item_id) && mealChoices(menu,deal).length) ?? [] : []}
+      <li class:line-unavailable={!dish?.available || !!line.meal_deal && !chosenMeal}>
         <div class="line-title"><strong><bdi dir="auto">{dish ? menuName(dish, locale()) : line.item_id}</bdi></strong><bdi>{money(basketPrice(menu, line), locale())}</bdi></div>
         {#if !dish?.available}<strong class="line-unavailable-label">{t('basket-sold-out')}</strong>{/if}
+        {#if line.meal_deal}{#if chosenMeal}<div class="line-description"><bdi dir="auto">{menuName(chosenMeal.deal,locale())}</bdi> · {line.quantity} × <bdi dir="auto">{menuName(chosenMeal.item,locale())} ({menuName(chosenMeal.variant,locale())})</bdi></div>{:else}<strong class="line-unavailable-label">{t('meal-unavailable')}</strong>{/if}{/if}
         <div class="line-description">{#if size}<bdi dir="auto">{menuName(size, locale())}</bdi>{/if}{#each line.options as selection}{@const extra = dish?.option_groups.find(g => g.id === selection.group_id)?.options.find(o => o.id === selection.option_id)}{#if extra}<span aria-hidden="true"> · </span><bdi dir="auto">{menuName(extra, locale())}</bdi>{/if}{/each}</div>
+        {#if upgradeDeals.length}<button type="button" class="meal-suggestion" disabled={busy} onclick={() => open(line.item_id,index)}>{t('meal-basket-upgrade', { amount: money(Math.min(...upgradeDeals.map(deal => deal.surcharge_minor)),locale()) })}</button>{/if}
         <div class="line-actions">
           <div class="quantity" role="group" aria-label={t('storefront-quantity')}>
             <ActionButton type="button" icon={Minus} iconOnly label={t('basket-less')} disabled={busy || line.quantity <= 1} onclick={() => line.quantity--} />
@@ -215,10 +226,21 @@
             const key = `${group.id}:${choice.id}`;
             if (group.max_selected === 1 && event.currentTarget.checked) options = options.filter(v => !v.startsWith(`${group.id}:`));
             options = event.currentTarget.checked ? [...options.filter(v => v !== key), key] : options.filter(v => v !== key);
-          }} /><span><bdi dir="auto">{menuName(choice, locale())}</bdi><bdi>{choice.price_minor ? '+' : ''}{money(choice.price_minor, locale())}</bdi></span></label>{/each}
+          }} /><span><bdi dir="auto">{menuName(choice, locale())}</bdi><bdi>{(choice.variant_prices?.[variant] ?? choice.price_minor) ? '+' : ''}{money(choice.variant_prices?.[variant] ?? choice.price_minor, locale())}</bdi></span></label>{/each}
           </div>
         </fieldset>
       {/each}
+      {#if eligibleDeals.length || meal}
+        <fieldset><legend>{t('meal-upgrade')}</legend>
+          <label>{t('meal-selection')}<select value={meal} onchange={event => {
+            meal = event.currentTarget.value;
+            const deal = eligibleDeals.find(deal => deal.id === meal);
+            const first = deal ? mealChoices(menu,deal)[0] : undefined;
+            addon = first ? `${first.item.id}:${first.variant.id}` : '';
+          }}><option value="">{t('meal-none')}</option>{#if meal && !selectedDeal}<option value={meal}>{t('meal-unavailable')}</option>{/if}{#each eligibleDeals as deal}<option value={deal.id}>{menuName(deal,locale())} · +{money(deal.surcharge_minor,locale())}</option>{/each}</select></label>
+          {#if selectedDeal}<label>{t('meal-included')}<select bind:value={addon}>{#each mealChoices(menu,selectedDeal) as choice}<option value={`${choice.item.id}:${choice.variant.id}`}>{menuName(choice.item,locale())} · {menuName(choice.variant,locale())}</option>{/each}</select></label><p class="muted">{t('meal-per-unit')}</p>{/if}
+        </fieldset>
+      {/if}
       <label>{t('storefront-quantity')}<input type="number" min="1" max="99" required bind:value={quantity} /></label>
       <details><summary>{t('basket-item-note')}</summary><textarea aria-label={t('basket-item-note')} dir="auto" maxlength="500" bind:value={itemNote}></textarea><p class="muted">{t('basket-note-help')}</p></details>
       {#if !choicesValid}<p class="muted">{t('basket-choose-required')}</p>{/if}
@@ -228,6 +250,8 @@
 </dialog>
 
 <style>
+  .meal-suggestion { display: block; background: transparent; color: #20586f; border: 0; padding: .25rem 0; margin: .25rem 0; text-align: start; text-decoration: underline; text-underline-offset: .2em; font-size: .9rem; }
+  .meal-suggestion:hover { color: #12384b; background: #edf4f7; }
   :global(html:has(dialog[open])) { overflow: hidden; }
   .store-layout { padding-block-end: 5rem; }
   .basket { padding: 0; border: 0; background: white; display: flex; flex-direction: column; min-block-size: 0; max-block-size: calc(100dvh - 2rem); }

@@ -96,6 +96,7 @@ func run() error {
 	changed := 0
 	categorized := attachCategories(doc, fixtureMenu)
 	translated := devfixtures.TranslateDemoNames(doc)
+	meals := devfixtures.AddDemoMeals(doc)
 	for _, entry := range doc["items"].([]any) {
 		item := entry.(map[string]any)
 		id, _ := item["id"].(string)
@@ -159,7 +160,7 @@ func run() error {
 		changed++
 		fmt.Println("Prepared photo:", id)
 	}
-	if changed == 0 && !categorized && !translated {
+	if changed == 0 && !categorized && !translated && !meals {
 		fmt.Println("No missing matching demo photos or categories; existing edits preserved.")
 		return nil
 	}
@@ -185,7 +186,7 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Attached and published %d photos (categories added: %t; translations added: %t) in revision %d. Other menu content preserved.\n", changed, categorized, translated, revision.Revision)
+		fmt.Printf("Attached and published %d photos (categories added: %t; translations added: %t; meal deals added: %t) in revision %d. Other menu content preserved.\n", changed, categorized, translated, meals, revision.Revision)
 	} else {
 		fmt.Printf("Attached %d photos to private revision %d. Existing publication preserved; review and publish in the workspace.\n", changed, revision.Revision)
 	}

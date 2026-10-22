@@ -5,6 +5,7 @@
   import LanguagePicker from '$lib/components/LanguagePicker.svelte';
   import Store from '@lucide/svelte/icons/store';
   import ShieldUser from '@lucide/svelte/icons/shield-user';
+  import { tooltip } from '$lib/tooltip';
   let { children, data } = $props();
   provideLocale(() => data.locale);
   const t = (key: string) => translate(key, data.locale);
@@ -12,7 +13,7 @@
   $effect(() => { document.documentElement.dataset.hydrated = 'true'; });
 </script>
 <svelte:head><title>OCP Lab</title><meta name="description" content={t('ui-home-title')} /></svelte:head>
-<header><a href="/" class="brand" dir="ltr">OCP Lab</a><nav aria-label={t('ui-main')}><a href="/merchant" aria-label={t('ui-merchant')} title={t('ui-merchant')}><Store size={22} aria-hidden="true" /></a><a href="/admin" aria-label={t('ui-admin')} title={t('ui-admin')}><ShieldUser size={22} aria-hidden="true" /></a></nav></header>
+<header><a href="/" class="brand" dir="ltr">OCP Lab</a><nav aria-label={t('ui-main')}><a href="/merchant" aria-label={t('ui-merchant')} use:tooltip={t('ui-merchant')}><Store size={22} aria-hidden="true" /></a><a href="/admin" aria-label={t('ui-admin')} use:tooltip={t('ui-admin')}><ShieldUser size={22} aria-hidden="true" /></a></nav></header>
 <main>{@render children()}</main>
 <footer>{t('ui-footer')}</footer>
 <LanguagePicker />

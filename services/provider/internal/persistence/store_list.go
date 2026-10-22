@@ -46,7 +46,7 @@ func ListStores(ctx context.Context, db *sql.DB, merchant uuid.UUID, after *uuid
 	rows, err := tx.QueryContext(ctx, `SELECT s.id,s.merchant_id,s.display_name,s.created_at,
  s.offering_revision,
  CASE WHEN s.offering_revision=0 THEN 0
- WHEN r.model_id='ocp.food.menu' AND r.model_version IN ('1.0.0','2.0.0')
+ WHEN r.model_id='ocp.food.menu' AND r.model_version='1.0.0'
  AND jsonb_typeof(r.document->'items')='array' THEN jsonb_array_length(r.document->'items')
  ELSE NULL END,
  COALESCE(r.created_at,s.created_at),'store-'||s.display_number

@@ -57,7 +57,7 @@ func EnqueueEffect(ctx context.Context, tx *sql.Tx, e Effect) (uuid.UUID, error)
 }
 
 func validCatalogIntent(i CatalogIntent) bool {
-	if i.Generation < 1 || i.Revision == nil || *i.Revision < 1 || len(i.DisplayName) == 0 || len(i.DisplayName) > 800 || (i.Model != food.Model && i.Model != food.ModelV2) {
+	if i.Generation < 1 || i.Revision == nil || *i.Revision < 1 || len(i.DisplayName) == 0 || len(i.DisplayName) > 800 || i.Model != food.Model {
 		return false
 	}
 	switch i.Action {

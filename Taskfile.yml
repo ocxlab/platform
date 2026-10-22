@@ -102,7 +102,7 @@ tasks:
       - '{{.COMPOSE}} --profile media stop object-store'
 
   dev:seed-media:
-    desc: Attach photos and missing categories to matching demo items without overwriting edits
+    desc: Add photos, categories, translations and meal deals to matching demo items without overwriting edits
     cmds:
       - task: dev:seed
       - task: media:seed
@@ -159,7 +159,7 @@ tasks:
       - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./internal/telemetry ./internal/agenttools ./internal/httpapi ./cmd/api'
 
   test:mutation:web:
-    desc: Run Stryker on checkout/session TypeScript logic and write local reports
+    desc: Run Stryker on basket, checkout and session TypeScript rules and write local reports
     cmds:
       - task: web:generate
       - '{{.COMPOSE}} build web-mutation'

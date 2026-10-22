@@ -25,20 +25,21 @@ type SelectedOption struct {
 	OptionID string `json:"option_id"`
 }
 type SelectionLine struct {
-	Note      string           `json:"note,omitempty"`
-	ItemID    string           `json:"item_id"`
-	VariantID string           `json:"variant_id"`
-	Quantity  int              `json:"quantity"`
-	Options   []SelectedOption `json:"options"`
+	MealDeal  *SelectedMealDeal `json:"meal_deal,omitempty"`
+	Note      string            `json:"note,omitempty"`
+	ItemID    string            `json:"item_id"`
+	VariantID string            `json:"variant_id"`
+	Quantity  int               `json:"quantity"`
+	Options   []SelectedOption  `json:"options"`
 }
 type QuotedLine struct {
-	PriceExplanation *PriceExplanation `json:"price_explanation,omitempty"`
-	Selection        SelectionLine     `json:"selection"`
-	ItemName         string            `json:"item_name"`
-	VariantName      string            `json:"variant_name"`
-	UnitPrice        int64             `json:"unit_price_minor"`
-	Total            int64             `json:"total_minor"`
-	SelectedOptions  []QuotedOption    `json:"selected_options"`
+	MealDeal        *QuotedMealDeal `json:"meal_deal,omitempty"`
+	Selection       SelectionLine   `json:"selection"`
+	ItemName        string          `json:"item_name"`
+	VariantName     string          `json:"variant_name"`
+	UnitPrice       int64           `json:"unit_price_minor"`
+	Total           int64           `json:"total_minor"`
+	SelectedOptions []QuotedOption  `json:"selected_options"`
 }
 
 type QuotedOption struct {
@@ -100,12 +101,16 @@ func Price(raw json.RawMessage, lines []SelectionLine) ([]QuotedLine, int64, err
 				if group.ID == option.GroupID {
 					for _, choice := range group.Options {
 						if choice.ID == option.OptionID {
-							if choice.Price < 0 || choice.Price > MaxTotal-unit {
+							price := choice.Price
+							if override, ok := choice.VariantPrices[line.VariantID]; ok {
+								price = override
+							}
+							if price < 0 || price > MaxTotal-unit {
 								return nil, 0, ErrSelection
 							}
-							unit += choice.Price
+							unit += price
 							counts[group.ID]++
-							descriptions = append(descriptions, QuotedOption{GroupID: group.ID, OptionID: choice.ID, GroupName: group.Name, OptionName: choice.Name})
+							descriptions = append(descriptions, QuotedOption{Price: &price, GroupID: group.ID, OptionID: choice.ID, GroupName: group.Name, OptionName: choice.Name})
 							found = true
 							break
 						}
@@ -121,6 +126,16 @@ func Price(raw json.RawMessage, lines []SelectionLine) ([]QuotedLine, int64, err
 				return nil, 0, ErrSelection
 			}
 		}
+		meal, err := quoteMeal(value, line)
+		if err != nil {
+			return nil, 0, err
+		}
+		if meal != nil {
+			if meal.Surcharge > MaxTotal-unit {
+				return nil, 0, ErrSelection
+			}
+			unit += meal.Surcharge
+		}
 		if unit > MaxTotal/int64(line.Quantity) {
 			return nil, 0, ErrSelection
 		}
@@ -129,7 +144,7 @@ func Price(raw json.RawMessage, lines []SelectionLine) ([]QuotedLine, int64, err
 			return nil, 0, ErrSelection
 		}
 		total += lineTotal
-		quoted = append(quoted, QuotedLine{Selection: line, ItemName: selected.Name, VariantName: name, UnitPrice: unit, Total: lineTotal, SelectedOptions: descriptions})
+		quoted = append(quoted, QuotedLine{MealDeal: meal, Selection: line, ItemName: selected.Name, VariantName: name, UnitPrice: unit, Total: lineTotal, SelectedOptions: descriptions})
 	}
 	return quoted, total, nil
 }
@@ -146,6 +161,9 @@ func PriceLocalized(raw json.RawMessage, lines []SelectionLine, locale string) (
 			return translations[locale]
 		}
 		return base
+	}
+	for i := range value.MealDeals {
+		value.MealDeals[i].Name = name(value.MealDeals[i].Name, value.MealDeals[i].Translations)
 	}
 	for i := range value.Items {
 		item := &value.Items[i]

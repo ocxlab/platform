@@ -1,5 +1,54 @@
 # Development status
 
+## Sole Food model with optional meal upgrades
+
+23 October 2026. The newer Food implementation is now the sole
+`ocp.food.menu` / `1.0.0` model. Size-dependent extra prices remain; scheduling
+and the parallel V2 implementation were removed. Explicit meal deals reuse
+catalog drinks/sides, charge only the configured surcharge, retain agreed
+labels/prices, and recheck eligibility and availability at placement.
+
+Customers see a quiet meal hint on eligible dishes and can optionally upgrade
+in customization or from the basket without losing their existing choices.
+The dish alone remains the default. Header, language and menu controls now use
+the same styled tooltip surface as action buttons, without native `title` hints.
+See [Food menus](FOOD-MENU.md), [UX rationale](UI-UX.md) and
+[the two static technical reviews](reviews/food-meals.md).
+
+The running demo shop was enriched through `task dev:seed-media`: Döner meals
+with a drink for +€1 and Healthy Pizza with a salad for +€2. Existing edits and
+orders were preserved; repeating the seed was a no-op. No data reset or persisted
+V2 migration was needed after inspecting this workspace's development data.
+
+Completed verification:
+
+- `task web:check`: deterministic client generation, zero Svelte errors/warnings,
+  all 94 frontend tests and production image build passed.
+- `task smoke` passed against the local development service.
+- `task test:browser`: all seven Playwright journeys passed, including size-priced
+  extras plus meal upgrade, retained order terms, styled header tooltips,
+  mobile layout and Arabic direction. Mobile screenshots were inspected. The
+  first run found an obsolete native-title assertion; it was updated to verify
+  styled tooltip display/dismissal, and the full suite passed on rerun.
+- Expanded Stryker scope includes basket calculations and selection parsing:
+  533 killed, 23 survived, zero uncovered; score 95.86%. Survivors remain debt,
+  not assumed equivalent.
+- Final Gremlins run: capability 5 killed/0 lived; payment 17/0; Food 87 killed,
+  7 lived, zero uncovered, 2 timed out (92.55% reported efficacy). Timeouts are
+  not asserted to be semantic kills. The preceding Food run had 87 killed,
+  9 lived and zero uncovered without timeouts.
+
+- Final `task check` passed: source-only generation guard, deterministic
+  contracts, error catalogs, formatting, Spectral (14 tests, no lint findings),
+  Go vet/race, real PostgreSQL integration (85.878 seconds), runtime builds,
+  94 frontend tests and zero Svelte diagnostics. The deterministic contract test
+  took 193.337 seconds under the race detector. Earlier attempts exposed a
+  concurrent-edit bundle mismatch and a test-file typo; both were resolved
+  before this clean full run.
+
+Shopping/Lodging remain internal and no official UCP Food conformance is claimed.
+Provider-administration redesign has not begun.
+
 ## Three-domain foundation verified before administration
 
 22 October 2026. The agreed pre-administration implementation is complete for

@@ -13,12 +13,11 @@ import (
 var Model = offering.Model{ID: "ocp.food.menu", Version: "1.0.0"}
 
 type menu struct {
-	TimeZone         string           `json:"time_zone,omitempty"`
-	Offers           []scheduledOffer `json:"offers,omitempty"`
-	Currency         string           `json:"currency"`
-	AvailabilityMode string           `json:"availability_mode"`
-	Items            []item           `json:"items"`
-	Categories       []category       `json:"categories,omitempty"`
+	MealDeals        []mealDeal `json:"meal_deals,omitempty"`
+	Currency         string     `json:"currency"`
+	AvailabilityMode string     `json:"availability_mode"`
+	Items            []item     `json:"items"`
+	Categories       []category `json:"categories,omitempty"`
 }
 type category struct {
 	Translations map[string]string `json:"translations,omitempty"`
@@ -26,19 +25,17 @@ type category struct {
 	Name         string            `json:"name"`
 }
 type item struct {
-	AvailabilityWindows []Window          `json:"availability_windows,omitempty"`
-	Translations        map[string]string `json:"translations,omitempty"`
-	CategoryID          string            `json:"category_id,omitempty"`
-	ImageID             string            `json:"image_id,omitempty"`
-	ID                  string            `json:"id"`
-	Name                string            `json:"name"`
-	Available           bool              `json:"available"`
-	Variants            []struct {
-		AvailabilityWindows []Window          `json:"availability_windows,omitempty"`
-		Translations        map[string]string `json:"translations,omitempty"`
-		ID                  string            `json:"id"`
-		Name                string            `json:"name"`
-		Price               int64             `json:"price_minor"`
+	Translations map[string]string `json:"translations,omitempty"`
+	CategoryID   string            `json:"category_id,omitempty"`
+	ImageID      string            `json:"image_id,omitempty"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Available    bool              `json:"available"`
+	Variants     []struct {
+		Translations map[string]string `json:"translations,omitempty"`
+		ID           string            `json:"id"`
+		Name         string            `json:"name"`
+		Price        int64             `json:"price_minor"`
 	} `json:"variants"`
 	Groups []group `json:"option_groups"`
 }
@@ -106,6 +103,11 @@ func Validator(schema *openapi3.Schema) offering.Validator {
 						return nil, offering.ErrInvalid
 					}
 					choices[option.ID] = true
+					for variant := range option.VariantPrices {
+						if !variants[variant] {
+							return nil, offering.ErrInvalid
+						}
+					}
 				}
 				if len(group.Defaults) > 0 {
 					if len(group.Defaults) < group.Min || len(group.Defaults) > group.Max {
@@ -120,6 +122,9 @@ func Validator(schema *openapi3.Schema) offering.Validator {
 					}
 				}
 			}
+		}
+		if err := validateDeals(parsed); err != nil {
+			return nil, err
 		}
 		// Shape/semantic validation precedes canonical JSON. Map keys are sorted and
 		// numeric spellings normalized; bounds keep all supported integers exact.

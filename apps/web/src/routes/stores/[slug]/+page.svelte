@@ -11,6 +11,7 @@
   import Calculator from '@lucide/svelte/icons/calculator';
   import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
   import { money } from '$lib/money';
+  import { mealChoices, menuName } from '$lib/food-menu';
   let { data, form } = $props();
   let interactive = $state(false);
   onMount(() => {
@@ -61,9 +62,10 @@
     <label>{t('storefront-variant')}<select name="variant_id" dir="auto">{#each item.variants as variant}<option dir="auto" value={variant.id}>{variant.name} · {money(variant.price_minor, locale())}</option>{/each}</select></label>
     {#each item.option_groups as group}
       <fieldset><legend><bdi dir="auto">{group.name}</bdi> · {t('storefront-options', { min: group.min_selected, max: group.max_selected })}</legend>
-      {#each group.options as option}<label><input type="checkbox" name="option" value={group.id + ':' + option.id} /><bdi dir="auto">{option.name}</bdi> · {option.price_minor ? '+' : ''}<bdi>{money(option.price_minor, locale())}</bdi></label>{/each}
+      {#each group.options as option}<label><input type="checkbox" name="option" value={group.id + ':' + option.id} /><bdi dir="auto">{option.name}</bdi> · {#if option.variant_prices}{t('meal-price-by-size')}{:else}{option.price_minor ? '+' : ''}<bdi>{money(option.price_minor, locale())}</bdi>{/if}</label>{/each}
       </fieldset>
     {/each}
+    {#if data.menu.meal_deals?.some(deal => deal.main_item_ids.includes(itemId))}<label>{t('meal-selection')}<select name="meal_deal"><option value="">{t('meal-none')}</option>{#each data.menu.meal_deals.filter(deal => deal.main_item_ids.includes(itemId)) as deal}{#each mealChoices(data.menu,deal) as choice}<option value={`${deal.id}:${choice.item.id}:${choice.variant.id}`}>{menuName(deal,locale())} · {menuName(choice.item,locale())} ({menuName(choice.variant,locale())}) · +{money(deal.surcharge_minor,locale())}</option>{/each}{/each}</select></label><p class="muted">{t('meal-per-unit')}</p>{/if}
     <label>{t('storefront-quantity')}<input name="quantity" type="number" min="1" max="99" value="1" required /></label>
     <ActionButton icon={Calculator} label={t('storefront-check')} disabled={!item.available || !data.ordering.accepting_orders} />
     {/key}
@@ -72,7 +74,7 @@
 {/if}
 {#if data.quote}
 <section id="selection-quote" aria-label={t('storefront-quote')}><h2>{t('storefront-selection')}</h2>
-{#each data.quote.lines as line}<p>{line.selection.quantity} × <bdi dir="auto">{line.item_name}</bdi> (<bdi dir="auto">{line.variant_name}</bdi>) · <bdi>{money(line.total_minor, locale())}</bdi>{#each line.selected_options ?? [] as option}<br /><small><bdi dir="auto">{option.group_name}</bdi>: <bdi dir="auto">{option.option_name}</bdi></small>{/each}</p>{/each}
+{#each data.quote.lines as line}<p>{line.selection.quantity} × <bdi dir="auto">{line.item_name}</bdi> (<bdi dir="auto">{line.variant_name}</bdi>) · <bdi>{money(line.total_minor, locale())}</bdi>{#each line.selected_options ?? [] as option}<br /><small><bdi dir="auto">{option.group_name}</bdi>: <bdi dir="auto">{option.option_name}</bdi>{#if option.price_minor !== undefined} · <bdi>{money(option.price_minor,locale())}</bdi>{/if}</small>{/each}{#if line.meal_deal}<br /><small><bdi dir="auto">{line.meal_deal.name}</bdi> · {line.meal_deal.addon_quantity} × <bdi dir="auto">{line.meal_deal.addon_item_name} ({line.meal_deal.addon_variant_name})</bdi></small>{/if}</p>{/each}
 <p><strong>{t('storefront-total', { amount: money(data.quote.total_minor, locale()) })}</strong></p>
 <p>{t('storefront-pickup-help')}</p>
 <p class="muted">{t('storefront-quote-help', { time: new Date(data.quote.expires_at).toLocaleTimeString(locale(), { timeZone: 'Europe/Berlin' }) })}</p>

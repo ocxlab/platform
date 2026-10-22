@@ -7,6 +7,7 @@
   import ActionButton from './ActionButton.svelte';
   import MenuPhoto from './MenuPhoto.svelte';
   import MenuTranslations from './MenuTranslations.svelte';
+  import MealDealsEditor from './MealDealsEditor.svelte';
   import type { components } from '$lib/api/generated';
   type Menu = components['schemas']['FoodMenu'];
   let { initial, base, mediaEndpoint, uploading = $bindable(false) }: { initial: Menu; base: number; mediaEndpoint?: string; uploading?: boolean } = $props();
@@ -21,6 +22,7 @@
   function addItem() { menu.items.push({ id: identifier(), name: t('editor-default-item'), available: true, variants: [variant()], option_groups: [] }); }
   function removeItem(id: string) {
     menu.items = menu.items.filter((item) => item.id !== id);
+    menu.meal_deals = menu.meal_deals?.map(deal => ({ ...deal, main_item_ids: deal.main_item_ids.filter(main => main !== id), addon_choices: deal.addon_choices.filter(choice => choice.item_id !== id) })).filter(deal => deal.main_item_ids.length && deal.addon_choices.length);
   }
   function removeCategory(id: string) {
     menu.categories = (menu.categories ?? []).filter(category => category.id !== id);
@@ -85,6 +87,13 @@
         {#each group.options as option (option.id)}
           <div class="row"><label>{t('editor-option')}<input dir="auto" bind:value={option.name} required maxlength="80" /></label><label>{t('editor-option-price')}<input type="number" min="0" step="0.01" max="10000000" required value={option.price_minor / 100} oninput={(e) => option.price_minor = Math.round(e.currentTarget.valueAsNumber * 100)} /></label></div>
           <MenuTranslations bind:value={option.translations} name={option.name} />
+          <details class="choice-rules"><summary>{t('meal-size-prices')}</summary><p class="muted">{t('meal-size-help')}</p><div class="row">
+          {#each item.variants as size}<label><bdi dir="auto">{size.name}</bdi><input aria-label={`${t('meal-size-price')} · ${option.name} · ${size.name}`} type="number" min="0" max="10000000" step="0.01" placeholder={String(option.price_minor / 100)} value={option.variant_prices?.[size.id] === undefined ? '' : option.variant_prices[size.id] / 100} oninput={event => {
+            const prices = { ...option.variant_prices };
+            if (event.currentTarget.value === '') delete prices[size.id]; else prices[size.id] = Math.round(event.currentTarget.valueAsNumber * 100);
+            if (Object.keys(prices).length) option.variant_prices = prices; else delete option.variant_prices;
+          }} /></label>{/each}
+          </div></details>
           <label><input type="checkbox" checked={group.default_option_ids?.includes(option.id) ?? false} onchange={event => setDefault(group, option.id, event.currentTarget.checked)} />{t('menu-default-choice')}</label>
         {/each}
         <ActionButton type="button" icon={Plus} label={t('editor-add-option')} onclick={() => addOption(group)} disabled={group.options.length >= 30} />
@@ -99,6 +108,7 @@
   <p>{t('editor-empty')}</p>
 {/if}
 <ActionButton type="button" icon={Plus} label={t('editor-add-item')} onclick={addItem} disabled={menu.items.length >= 200} />
+<MealDealsEditor bind:menu />
 <style>
   .category-row { display: flex; align-items: end; flex-wrap: wrap; gap: .75rem; }
   .category-row label { flex: 1; min-inline-size: 10rem; }

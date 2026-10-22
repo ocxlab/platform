@@ -23,7 +23,7 @@ func networkModels(t *testing.T) *offering.Registry {
 	t.Helper()
 	spec, err := httpapi.GetSwagger()
 	must(t, err)
-	return offering.NewRegistry(map[offering.Model]offering.Validator{food.Model: food.Validator(spec.Components.Schemas["FoodMenu"].Value), food.ModelV2: food.ValidatorV2(spec.Components.Schemas["FoodMenuV2"].Value, spec.Components.Schemas["FoodMenu"].Value)}, map[offering.Model]offering.Validator{food.Model: food.Project, food.ModelV2: food.Project})
+	return offering.NewRegistry(map[offering.Model]offering.Validator{food.Model: food.Validator(spec.Components.Schemas["FoodMenu"].Value)}, map[offering.Model]offering.Validator{food.Model: food.Project})
 }
 
 func TestVerifiedDiscoveryGenerationAndBinding(t *testing.T) {

@@ -90,8 +90,6 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	if domains.Allows(capability.Food) {
 		validators[food.Model] = food.Validator(spec.Components.Schemas["FoodMenu"].Value)
 		projections[food.Model] = food.Project
-		validators[food.ModelV2] = food.ValidatorV2(spec.Components.Schemas["FoodMenuV2"].Value, spec.Components.Schemas["FoodMenu"].Value)
-		projections[food.ModelV2] = food.Project
 	}
 	server.models = offering.NewRegistry(validators, projections)
 	generated := HandlerWithOptions(server, StdHTTPServerOptions{ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
