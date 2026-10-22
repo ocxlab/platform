@@ -1,3 +1,4 @@
+x-commerce-boundary: shared
 get:
   operationId: AdminListStores
   tags: [Provider administration]

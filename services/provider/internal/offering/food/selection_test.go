@@ -2,6 +2,7 @@ package food
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -46,6 +47,48 @@ func TestSelectionPrice(t *testing.T) {
 				t.Fatal("invalid selection accepted")
 			}
 		})
+	}
+}
+
+func TestSelectionNoteAndMoneyBoundaries(t *testing.T) {
+	line := SelectionLine{ItemID: "meal", VariantID: "regular", Quantity: 1, Options: []SelectedOption{{"extra", "cheese"}}}
+	for _, n := range []int{499, 500, 501} {
+		line.Note = strings.Repeat("ش", n)
+		_, _, err := Price([]byte(publicMenu), []SelectionLine{line})
+		if (err == nil) != (n <= 500) {
+			t.Fatalf("note length %d: %v", n, err)
+		}
+	}
+	line.Note = ""
+	var value map[string]any
+	_ = json.Unmarshal([]byte(publicMenu), &value)
+	item := value["items"].([]any)[0].(map[string]any)
+	item["variants"].([]any)[0].(map[string]any)["price_minor"] = MaxTotal - 50
+	raw, _ := json.Marshal(value)
+	if _, total, err := Price(raw, []SelectionLine{line}); err != nil || total != MaxTotal {
+		t.Fatalf("exact money limit: %d %v", total, err)
+	}
+	if _, _, err := Price(raw, []SelectionLine{line, line}); err == nil {
+		t.Fatal("sum exceeded money limit")
+	}
+	item["variants"].([]any)[0].(map[string]any)["price_minor"] = MaxTotal - 49
+	raw, _ = json.Marshal(value)
+	if _, _, err := Price(raw, []SelectionLine{line}); err == nil {
+		t.Fatal("option exceeded money limit")
+	}
+}
+
+func TestLocalizedPriceFallbacks(t *testing.T) {
+	line := SelectionLine{ItemID: "meal", VariantID: "regular", Quantity: 1, Options: []SelectedOption{{"extra", "cheese"}}}
+	raw := []byte(strings.Replace(publicMenu, `"name":"Meal"`, `"name":"Meal","translations":{"de":"Essen","ar":""}`, 1))
+	for _, tc := range []struct{ locale, name string }{{"de", "Essen"}, {"ar", "Meal"}, {"en", "Meal"}, {"", "Meal"}, {"xx", "Meal"}} {
+		lines, total, err := PriceLocalized(raw, []SelectionLine{line}, tc.locale)
+		if err != nil || total != 750 || lines[0].ItemName != tc.name {
+			t.Fatalf("locale %q: %+v %d %v", tc.locale, lines, total, err)
+		}
+	}
+	if _, _, err := PriceLocalized([]byte(`{"items":"not-an-array"}`), []SelectionLine{line}, "de"); err == nil {
+		t.Fatal("invalid menu accepted")
 	}
 }
 func TestProjectionDoesNotCopyUnlistedFields(t *testing.T) {

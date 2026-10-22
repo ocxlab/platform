@@ -1,3 +1,4 @@
+x-commerce-boundary: model
 get:
   operationId: GetPublicStoreByHandle
   tags: [Customer commerce]

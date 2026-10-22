@@ -1,3 +1,4 @@
+x-commerce-boundary: food
 get:
   operationId: AdminListFoodOrders
   tags: [Provider administration]

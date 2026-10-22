@@ -1,5 +1,6 @@
 parameters:
   - $ref: ../components/parameters/merchant-id.yaml
+x-commerce-boundary: shared
 get:
   operationId: ListStores
   x-access: merchant

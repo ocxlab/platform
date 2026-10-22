@@ -19,7 +19,44 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
+	"ocp.local/platform/internal/capability"
 )
+
+func TestHTTPDomainLabelsAreBounded(t *testing.T) {
+	o, exporter, reader, _ := fixture(t)
+	for _, domain := range []capability.Domain{capability.Food, capability.Shopping, capability.Lodging, "merchant-secret-not-a-domain"} {
+		o.HTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/private", nil), "/route", "Read", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }, domain)
+	}
+	spans := exporter.GetSpans()
+	if len(spans) != 4 {
+		t.Fatalf("spans: %d", len(spans))
+	}
+	for i, want := range []string{"food", "shopping", "lodging", "shared"} {
+		found := false
+		for _, attr := range spans[i].Attributes {
+			if string(attr.Key) == "ocp.domain" {
+				found = true
+				if attr.Value.AsString() != want {
+					t.Fatalf("domain = %s, want %s", attr.Value.AsString(), want)
+				}
+			}
+		}
+		if !found {
+			t.Fatal("missing domain label")
+		}
+	}
+	var data metricdata.ResourceMetrics
+	if err := reader.Collect(context.Background(), &data); err != nil {
+		t.Fatal(err)
+	}
+	encoded, err := json.Marshal(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(encoded), "merchant-secret-not-a-domain") {
+		t.Fatal("unbounded domain leaked into metrics")
+	}
+}
 
 func fixture(t *testing.T) (*Observer, *tracetest.InMemoryExporter, *sdkmetric.ManualReader, *bytes.Buffer) {
 	t.Helper()

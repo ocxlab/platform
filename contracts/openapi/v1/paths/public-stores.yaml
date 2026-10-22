@@ -1,3 +1,4 @@
+x-commerce-boundary: model
 get:
   operationId: ListPublicStores
   tags: [Customer commerce]

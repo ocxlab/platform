@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 
+	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/problems"
 )
 
@@ -60,10 +61,14 @@ func NewObserver(tp trace.TracerProvider, mp metric.MeterProvider, logger *slog.
 // HTTP receives only a route template and operation name from our contract
 // router. It never derives labels from paths, headers, principals, or payloads.
 // The callback retains the same response writer semantics, including SSE.
-func (o *Observer) HTTP(w http.ResponseWriter, r *http.Request, route, operation string, next http.HandlerFunc) {
+func (o *Observer) HTTP(w http.ResponseWriter, r *http.Request, route, operation string, next http.HandlerFunc, domains ...capability.Domain) {
 	method := knownMethod(r.Method)
+	domain := "shared"
+	if len(domains) == 1 && domains[0].Valid() {
+		domain = string(domains[0])
+	}
 	attrs := []attribute.KeyValue{attribute.String("http.request.method", method),
-		attribute.String("http.route", route), attribute.String("ocp.operation", operation)}
+		attribute.String("http.route", route), attribute.String("ocp.operation", operation), attribute.String("ocp.domain", domain)}
 	// Only W3C trace context, never baggage. A parent trace is not an identity.
 	parent := propagation.MapCarrier{"traceparent": r.Header.Get("traceparent")}
 	ctx := propagation.TraceContext{}.Extract(r.Context(), parent)

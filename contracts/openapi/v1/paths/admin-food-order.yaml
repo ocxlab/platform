@@ -1,3 +1,4 @@
+x-commerce-boundary: food
 parameters:
   - $ref: ../components/parameters/merchant-id.yaml
   - $ref: ../components/parameters/store-id.yaml

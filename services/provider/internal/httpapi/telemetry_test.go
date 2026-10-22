@@ -11,8 +11,33 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"ocp.local/platform/internal/agenttools"
 	"ocp.local/platform/internal/telemetry"
 )
+
+func TestMerchantMCPUsesFoodDomainTelemetry(t *testing.T) {
+	exporter := tracetest.NewInMemoryExporter()
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+	mp := sdkmetric.NewMeterProvider()
+	t.Cleanup(func() { _ = tp.Shutdown(context.Background()); _ = mp.Shutdown(context.Background()) })
+	o, err := telemetry.NewObserver(tp, mp, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler, err := NewHandler(nil, WithTelemetry(o), WithLocalMerchantMCP())
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", agenttools.MerchantPath, nil))
+	for _, span := range exporter.GetSpans() {
+		for _, a := range span.Attributes {
+			if a.Key == attribute.Key("ocp.domain") && a.Value.AsString() == "food" {
+				return
+			}
+		}
+	}
+	t.Fatal("Food MCP request did not carry Food domain telemetry")
+}
 
 func TestContractRoutingSuppliesSafeTelemetryAndProblemCodes(t *testing.T) {
 	for _, tc := range []struct{ path, method, code string }{

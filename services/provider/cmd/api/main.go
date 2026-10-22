@@ -68,6 +68,7 @@ func main() {
 	}
 	defer db.Close()
 	var options []httpapi.Option
+	options = append(options, httpapi.WithDomains(os.Getenv("OCP_ENABLED_DOMAINS")))
 	options = append(options, httpapi.WithTelemetry(signals.Observer))
 	storage, err := media.FromEnv(os.Getenv)
 	if err != nil {

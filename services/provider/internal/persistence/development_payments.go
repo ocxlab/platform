@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/payment"
 )
 
@@ -19,8 +20,12 @@ func paymentOperation(ctx context.Context, tx *sql.Tx, order FoodOrder) (payment
 }
 
 func savePayment(ctx context.Context, tx *sql.Tx, order FoodOrder, operation payment.Operation) error {
+	terms := payment.Terms{Subject: payment.Subject{Domain: capability.Food, MerchantID: order.MerchantID, StoreID: order.StoreID, ID: order.ID}, AmountMinor: order.Terms.Total, Currency: order.Terms.Currency}
+	if err := terms.Validate(); err != nil {
+		return err
+	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO payment.development_operations(merchant_id,store_id,order_id,state,attempts,amount_minor,currency)
- VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(merchant_id,store_id,order_id) DO UPDATE SET state=EXCLUDED.state,attempts=EXCLUDED.attempts`, order.MerchantID, order.StoreID, order.ID, operation.State, operation.Attempts, order.Terms.Total, order.Terms.Currency)
+ VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(merchant_id,store_id,order_id) DO UPDATE SET state=EXCLUDED.state,attempts=EXCLUDED.attempts`, terms.Subject.MerchantID, terms.Subject.StoreID, terms.Subject.ID, operation.State, operation.Attempts, terms.AmountMinor, terms.Currency)
 	return err
 }
 

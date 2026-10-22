@@ -1,5 +1,29 @@
 # Development status
 
+## Explicit commerce domain admission
+
+22 October 2026. The first three-domain foundation batch separates installed
+domain support from process configuration. Food is still the only installed
+domain. Selecting `none` rejects catalog and purchase operations before storage,
+while retaining shared store/account operations. Unknown, duplicate, and
+uninstalled domain selections fail startup. Every OpenAPI path declares its
+admission class; the enabled registry controls Food validation and projection.
+Payment validates typed, server-derived financial terms, and HTTP telemetry
+includes a bounded domain label without merchant or order identifiers.
+
+Engineering and protocol static reviews identified and helped close gaps in
+generic catalog admission and telemetry. Full `task check` and `task smoke`
+passed. Gremlins killed all 5 capability and 14 payment mutants; Food had
+67 killed and 4 surviving mutants, with none uncovered. The survivors remain
+reported, not dismissed as equivalent. These checks do not establish
+multi-domain isolation, UCP conformance, or independent scaling.
+
+`docs/DOMAIN-BOUNDARIES.md` records the next implementation gates, particularly
+exact-model filtering before installing another domain. `docs/FOOD-PRICING-V2.md`
+records the reviewed size-dependent extra pricing and scheduled-offer design;
+that model is not enabled yet. Native ONIX integration, complete Food V2 APIs,
+and internal Shopping/Lodging journeys remain in the implementation plan.
+
 ## Generated artifacts stay out of Git
 
 22 October 2026. The generated Go API, TypeScript API types, and Go/TypeScript

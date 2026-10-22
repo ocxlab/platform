@@ -16,6 +16,7 @@ import (
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/agenttools"
+	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/commerce"
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
@@ -35,9 +36,16 @@ type Server struct {
 	telemetry           *telemetry.Observer
 	localMerchantMCP    bool
 	mediaStore          commerce.MediaStorage
+	domainSelection     string
 }
 
 type Option func(*Server)
+
+// WithDomains selects installed domain routes for this process. An explicit
+// "none" retains shared control-plane APIs; uninstalled names fail startup.
+func WithDomains(selection string) Option {
+	return func(s *Server) { s.domainSelection = selection }
+}
 
 func WithMediaStorage(storage commerce.MediaStorage) Option {
 	return func(s *Server) { s.mediaStore = storage }
@@ -69,12 +77,21 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	server := &Server{db: db, models: offering.NewRegistry(map[offering.Model]offering.Validator{
-		food.Model: food.Validator(spec.Components.Schemas["FoodMenu"].Value),
-	}, map[offering.Model]offering.Validator{food.Model: food.Project})}
+	server := &Server{db: db}
 	for _, option := range options {
 		option(server)
 	}
+	domains, err := capability.Parse(server.domainSelection, []capability.Domain{capability.Food}, []capability.Domain{capability.Food})
+	if err != nil {
+		return nil, err
+	}
+	validators := map[offering.Model]offering.Validator{}
+	projections := map[offering.Model]offering.Validator{}
+	if domains.Allows(capability.Food) {
+		validators[food.Model] = food.Validator(spec.Components.Schemas["FoodMenu"].Value)
+		projections[food.Model] = food.Project
+	}
+	server.models = offering.NewRegistry(validators, projections)
 	generated := HandlerWithOptions(server, StdHTTPServerOptions{ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 		problem(w, 400, "invalid_request", "Request does not match the API contract.", nil)
 	}})
@@ -83,7 +100,11 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	public := map[string]bool{"WatchPublicOffering": true, "GetPublicMediaImage": true, "GetPublicFoodOrdering": true, "GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true, "GetPublicStoreByHandle": true}
 	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true, "ChangeDevelopmentPayment": true, "GetGuestFoodOrderByReference": true, "WatchGuestFoodOrder": true}
 	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true, "AdminListStores": true, "AdminListFoodOrders": true}
-	for _, path := range spec.Paths.Map() {
+	for pathName, path := range spec.Paths.Map() {
+		domain, domainOK := path.Extensions["x-commerce-boundary"].(string)
+		if !domainOK || (domain != "shared" && domain != "model" && !capability.Domain(domain).Valid()) || (strings.Contains(pathName, "/food/") && domain != string(capability.Food)) {
+			return nil, errors.New("every path must declare a recognized commerce admission class")
+		}
 		for _, operation := range path.Operations() {
 			expectedAccess := "merchant"
 			if guest[operation.OperationID] {
@@ -146,13 +167,13 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 		}
 	}
 	var merchantMCP http.Handler
-	if server.localMerchantMCP {
+	if server.localMerchantMCP && domains.Allows(capability.Food) {
 		merchantMCP = (agenttools.Merchant{DB: db, Models: server.models, Observer: server.telemetry}).LocalHandler()
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if merchantMCP != nil && r.URL.Path == agenttools.MerchantPath {
 			if server.telemetry != nil {
-				server.telemetry.HTTP(w, r, agenttools.MerchantPath, "MerchantMCP", merchantMCP.ServeHTTP)
+				server.telemetry.HTTP(w, r, agenttools.MerchantPath, "MerchantMCP", merchantMCP.ServeHTTP, capability.Food)
 			} else {
 				merchantMCP.ServeHTTP(w, r)
 			}
@@ -171,6 +192,13 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 		serve := func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				problem(w, 404, "not_found", "API operation not found.", nil)
+				return
+			}
+			domain := route.PathItem.Extensions["x-commerce-boundary"].(string)
+			if (domain == "model" && len(validators) == 0) || (capability.Domain(domain).Valid() && !domains.Allows(capability.Domain(domain))) {
+				// The contract's shared 503 response also covers disabled runtime
+				// capabilities. Do not authenticate, query storage, or dispatch.
+				problem(w, 503, "unavailable", "This commerce domain is not enabled on this process.", nil)
 				return
 			}
 			if !public[route.Operation.OperationID] {
@@ -268,7 +296,12 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 		if err == nil {
 			path, operation = route.Path, route.Operation.OperationID
 		}
-		server.telemetry.HTTP(w, r, path, operation, serve)
+		var domain capability.Domain
+		if err == nil {
+			name, _ := route.PathItem.Extensions["x-commerce-boundary"].(string)
+			domain = capability.Domain(name)
+		}
+		server.telemetry.HTTP(w, r, path, operation, serve, domain)
 	}), nil
 }
 
