@@ -28,7 +28,9 @@ complete ordering product.
 
 Optional [food-photo/object storage](docs/MEDIA.md) runs with `task media:check`.
 It verifies direct presigned uploads to private local S3-compatible storage;
-photo attachment/display is the next media slice. The [MCP interaction note](docs/MCP-MEDIA-AND-INTERACTIONS.md)
+use `task dev:seed-media` to attach all 48 matching demo photos without resetting
+menu edits. Authorized direct upload, checked previews, and customer image
+display are implemented. The [MCP interaction note](docs/MCP-MEDIA-AND-INTERACTIONS.md)
 separates useful basket, image, Apps, caching, and task mechanisms.
 
 Install Docker with Compose and [Task v3](https://taskfile.dev/docs/installation).

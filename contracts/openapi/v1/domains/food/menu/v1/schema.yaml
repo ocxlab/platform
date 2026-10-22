@@ -21,6 +21,10 @@ Item:
   additionalProperties: false
   required: [id, name, available, variants, option_groups]
   properties:
+    image_id:
+      type: string
+      format: uuid
+      description: Ready media owned by this store; never a storage URL. Optional draft-contract addition.
     id:
       $ref: '#/LocalIdentifier'
     name:

@@ -2,6 +2,8 @@
   <CORSRule>
     <AllowedOrigin>http://localhost:18181</AllowedOrigin>
     <AllowedOrigin>http://127.0.0.1:18181</AllowedOrigin>
+    <AllowedOrigin>http://browser-web:3000</AllowedOrigin>
+    <AllowedOrigin>http://browser-web-dev:3000</AllowedOrigin>
     <AllowedMethod>PUT</AllowedMethod>
     <AllowedMethod>GET</AllowedMethod>
     <AllowedMethod>HEAD</AllowedMethod>

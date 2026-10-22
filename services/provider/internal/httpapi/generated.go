@@ -375,6 +375,60 @@ func (e HealthStatus) Valid() bool {
 	}
 }
 
+// Defines values for MediaAssetState.
+const (
+	MediaAssetStatePending MediaAssetState = "pending"
+	MediaAssetStateReady   MediaAssetState = "ready"
+)
+
+// Valid indicates whether the value is a known member of the MediaAssetState enum.
+func (e MediaAssetState) Valid() bool {
+	switch e {
+	case MediaAssetStatePending:
+		return true
+	case MediaAssetStateReady:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MediaUploadGrantMethod.
+const (
+	PUT MediaUploadGrantMethod = "PUT"
+)
+
+// Valid indicates whether the value is a known member of the MediaUploadGrantMethod enum.
+func (e MediaUploadGrantMethod) Valid() bool {
+	switch e {
+	case PUT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MediaUploadRequestContentType.
+const (
+	MediaUploadRequestContentTypeImagejpeg MediaUploadRequestContentType = "image/jpeg"
+	MediaUploadRequestContentTypeImagepng  MediaUploadRequestContentType = "image/png"
+	MediaUploadRequestContentTypeImagewebp MediaUploadRequestContentType = "image/webp"
+)
+
+// Valid indicates whether the value is a known member of the MediaUploadRequestContentType enum.
+func (e MediaUploadRequestContentType) Valid() bool {
+	switch e {
+	case MediaUploadRequestContentTypeImagejpeg:
+		return true
+	case MediaUploadRequestContentTypeImagepng:
+		return true
+	case MediaUploadRequestContentTypeImagewebp:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for OfferingRevisionState.
 const (
 	Draft OfferingRevisionState = "draft"
@@ -452,25 +506,25 @@ func (e SchemasAdminDirectoryYamlOrderSummaryaab78eafFulfilmentProgress) Valid()
 
 // Defines values for SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment.
 const (
-	SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentAwaitingCustomer SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "awaiting_customer"
-	SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentFailed           SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "failed"
-	SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentNotStarted       SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "not_started"
-	SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentPaid             SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "paid"
-	SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentRefunded         SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "refunded"
+	AwaitingCustomer SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "awaiting_customer"
+	Failed           SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "failed"
+	NotStarted       SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "not_started"
+	Paid             SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "paid"
+	Refunded         SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment = "refunded"
 )
 
 // Valid indicates whether the value is a known member of the SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment enum.
 func (e SchemasAdminDirectoryYamlOrderSummaryaab78eafPayment) Valid() bool {
 	switch e {
-	case SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentAwaitingCustomer:
+	case AwaitingCustomer:
 		return true
-	case SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentFailed:
+	case Failed:
 		return true
-	case SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentNotStarted:
+	case NotStarted:
 		return true
-	case SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentPaid:
+	case Paid:
 		return true
-	case SchemasAdminDirectoryYamlOrderSummaryaab78eafPaymentRefunded:
+	case Refunded:
 		return true
 	default:
 		return false
@@ -513,6 +567,27 @@ func (e SchemasAdminDirectoryYamlStoreSummary92c13051PublicationStatus) Valid() 
 	case SchemasAdminDirectoryYamlStoreSummary92c13051PublicationStatusSuspended:
 		return true
 	case SchemasAdminDirectoryYamlStoreSummary92c13051PublicationStatusUnpublished:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71.
+const (
+	SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71Imagejpeg SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71 = "image/jpeg"
+	SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71Imagepng  SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71 = "image/png"
+	SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71Imagewebp SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71 = "image/webp"
+)
+
+// Valid indicates whether the value is a known member of the SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71 enum.
+func (e SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71) Valid() bool {
+	switch e {
+	case SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71Imagejpeg:
+		return true
+	case SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71Imagepng:
+		return true
+	case SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71Imagewebp:
 		return true
 	default:
 		return false
@@ -653,8 +728,11 @@ type FoodMenuCurrency string
 // FoodMenuItem defines model for FoodMenuItem.
 type FoodMenuItem struct {
 	// Available Merchant-controlled availability; no quantity reservation.
-	Available    bool                `json:"available"`
-	Id           FoodLocalIdentifier `json:"id"`
+	Available bool                `json:"available"`
+	Id        FoodLocalIdentifier `json:"id"`
+
+	// ImageId Ready media owned by this store; never a storage URL. Optional draft-contract addition.
+	ImageId      *openapi_types.UUID `json:"image_id,omitempty"`
 	Name         string              `json:"name"`
 	OptionGroups []FoodOptionGroup   `json:"option_groups"`
 	Variants     []FoodVariant       `json:"variants"`
@@ -880,6 +958,61 @@ type ManagedStore struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// MediaAsset defines model for MediaAsset.
+type MediaAsset struct {
+	ContentType SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71 `json:"content_type"`
+	CreatedAt   time.Time                                                        `json:"created_at"`
+
+	// ExpiresAt Pending completion deadline. Ready assets do not expire at this time.
+	ExpiresAt time.Time `json:"expires_at"`
+	Height    *int      `json:"height,omitempty"`
+
+	// Id Durable opaque identifier; not a display name or hostname.
+	Id Identifier `json:"id"`
+
+	// MerchantId Durable opaque identifier; not a display name or hostname.
+	MerchantId Identifier `json:"merchant_id"`
+
+	// Sha256 Canonical base64 SHA-256 of the original file, not hexadecimal.
+	Sha256    SchemasMediaUploadYamlUploadRequestPropertiesSha256c2d29dce    `json:"sha256"`
+	SizeBytes SchemasMediaUploadYamlUploadRequestPropertiesSizeBytesb6f770e4 `json:"size_bytes"`
+	State     MediaAssetState                                                `json:"state"`
+
+	// StoreId Durable opaque identifier; not a display name or hostname.
+	StoreId Identifier `json:"store_id"`
+	Width   *int       `json:"width,omitempty"`
+}
+
+// MediaAssetState defines model for MediaAsset.State.
+type MediaAssetState string
+
+// MediaUploadGrant defines model for MediaUploadGrant.
+type MediaUploadGrant struct {
+	ExpiresInSeconds int `json:"expires_in_seconds"`
+
+	// Headers Echo these headers; browsers supply signed Content-Length automatically.
+	Headers map[string]string      `json:"headers"`
+	Method  MediaUploadGrantMethod `json:"method"`
+
+	// Url Short-lived secret bearer URL. Do not log, persist, or rewrite.
+	Url string `json:"url"`
+}
+
+// MediaUploadGrantMethod defines model for MediaUploadGrant.Method.
+type MediaUploadGrantMethod string
+
+// MediaUploadRequest defines model for MediaUploadRequest.
+type MediaUploadRequest struct {
+	ContentType MediaUploadRequestContentType `json:"content_type"`
+
+	// Sha256 Canonical base64 SHA-256 of the original file, not hexadecimal.
+	Sha256    string `json:"sha256"`
+	SizeBytes int64  `json:"size_bytes"`
+}
+
+// MediaUploadRequestContentType defines model for MediaUploadRequest.ContentType.
+type MediaUploadRequestContentType string
+
 // Model defines model for Model.
 type Model struct {
 	Id      string `json:"id"`
@@ -1050,6 +1183,15 @@ type SchemasAdminDirectoryYamlStoreSummary92c13051PublicationStatus string
 // SchemasCommonEmptyYaml077e1183 defines model for SchemasCommonEmptyYaml077e1183.
 type SchemasCommonEmptyYaml077e1183 = map[string]interface{}
 
+// SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71 defines model for SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71.
+type SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71 string
+
+// SchemasMediaUploadYamlUploadRequestPropertiesSha256c2d29dce Canonical base64 SHA-256 of the original file, not hexadecimal.
+type SchemasMediaUploadYamlUploadRequestPropertiesSha256c2d29dce = string
+
+// SchemasMediaUploadYamlUploadRequestPropertiesSizeBytesb6f770e4 defines model for SchemasMediaUploadYamlUploadRequestPropertiesSizeBytesb6f770e4.
+type SchemasMediaUploadYamlUploadRequestPropertiesSizeBytesb6f770e4 = int64
+
 // SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627 defines model for SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627.
 type SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627 = time.Time
 
@@ -1112,6 +1254,9 @@ type ComponentsParametersAdminAfterYaml1d0e5be5 = SchemasAdminDirectoryYamlCurso
 
 // ComponentsParametersAdminQueryYaml6ee53b16 defines model for ComponentsParametersAdminQueryYaml6ee53b16.
 type ComponentsParametersAdminQueryYaml6ee53b16 = string
+
+// ComponentsParametersMediaIdYamlea7ce297 Durable opaque identifier; not a display name or hostname.
+type ComponentsParametersMediaIdYamlea7ce297 = Identifier
 
 // ComponentsParametersOrderIdYaml294fa0a5 Durable opaque identifier; not a display name or hostname.
 type ComponentsParametersOrderIdYaml294fa0a5 = Identifier
@@ -1240,6 +1385,18 @@ type ProgressFoodFulfilmentParams struct {
 	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
 }
 
+// StartMediaUploadParams defines parameters for StartMediaUpload.
+type StartMediaUploadParams struct {
+	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// CompleteMediaUploadParams defines parameters for CompleteMediaUpload.
+type CompleteMediaUploadParams struct {
+	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
 // WriteOfferingParams defines parameters for WriteOffering.
 type WriteOfferingParams struct {
 	// IdempotencyKey One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention.
@@ -1287,6 +1444,9 @@ type DecideFoodOrderJSONRequestBody = FoodOrderDecision
 
 // ProgressFoodFulfilmentJSONRequestBody defines body for ProgressFoodFulfilment for application/json ContentType.
 type ProgressFoodFulfilmentJSONRequestBody = FoodFulfilmentRequest
+
+// StartMediaUploadJSONRequestBody defines body for StartMediaUpload for application/json ContentType.
+type StartMediaUploadJSONRequestBody = MediaUploadRequest
 
 // WriteOfferingJSONRequestBody defines body for WriteOffering for application/json ContentType.
 type WriteOfferingJSONRequestBody = WriteOfferingRequest
@@ -1460,6 +1620,23 @@ type ClientInterface interface {
 
 	ProgressFoodFulfilment(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ProgressFoodFulfilmentParams, body ProgressFoodFulfilmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// StartMediaUploadWithBody request with any body
+	StartMediaUploadWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	StartMediaUpload(ctx context.Context, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, body StartMediaUploadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetMediaAsset request
+	GetMediaAsset(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CompleteMediaUpload request
+	CompleteMediaUpload(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, params *CompleteMediaUploadParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetMerchantMediaImage request
+	GetMerchantMediaImage(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateMediaUploadGrant request
+	CreateMediaUploadGrant(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetOffering request
 	GetOffering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1491,6 +1668,9 @@ type ClientInterface interface {
 	CreateGuestSessionWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	CreateGuestSession(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPublicMediaImage request
+	GetPublicMediaImage(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPublicOffering request
 	GetPublicOffering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1889,6 +2069,78 @@ func (c *Client) ProgressFoodFulfilment(ctx context.Context, merchantId Merchant
 	return c.Client.Do(req)
 }
 
+func (c *Client) StartMediaUploadWithBody(ctx context.Context, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartMediaUploadRequestWithBody(c.Server, merchantId, storeId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StartMediaUpload(ctx context.Context, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, body StartMediaUploadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartMediaUploadRequest(c.Server, merchantId, storeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetMediaAsset(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMediaAssetRequest(c.Server, merchantId, storeId, mediaId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CompleteMediaUpload(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, params *CompleteMediaUploadParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCompleteMediaUploadRequest(c.Server, merchantId, storeId, mediaId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetMerchantMediaImage(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMerchantMediaImageRequest(c.Server, merchantId, storeId, mediaId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateMediaUploadGrant(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateMediaUploadGrantRequest(c.Server, merchantId, storeId, mediaId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetOffering(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetOfferingRequest(c.Server, merchantId, storeId)
 	if err != nil {
@@ -2023,6 +2275,18 @@ func (c *Client) CreateGuestSessionWithBody(ctx context.Context, merchantId Merc
 
 func (c *Client) CreateGuestSession(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateGuestSessionRequest(c.Server, merchantId, storeId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPublicMediaImage(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPublicMediaImageRequest(c.Server, merchantId, storeId, mediaId)
 	if err != nil {
 		return nil, err
 	}
@@ -3505,6 +3769,278 @@ func NewProgressFoodFulfilmentRequestWithBody(server string, merchantId Merchant
 	return req, nil
 }
 
+// NewStartMediaUploadRequest calls the generic StartMediaUpload builder with application/json body
+func NewStartMediaUploadRequest(server string, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, body StartMediaUploadJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewStartMediaUploadRequestWithBody(server, merchantId, storeId, params, "application/json", bodyReader)
+}
+
+// NewStartMediaUploadRequestWithBody generates requests for StartMediaUpload with any type of body
+func NewStartMediaUploadRequestWithBody(server string, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/media", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Idempotency-Key", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetMediaAssetRequest generates requests for GetMediaAsset
+func NewGetMediaAssetRequest(server string, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/media/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCompleteMediaUploadRequest generates requests for CompleteMediaUpload
+func NewCompleteMediaUploadRequest(server string, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, params *CompleteMediaUploadParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/media/%s/completion", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Idempotency-Key", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetMerchantMediaImageRequest generates requests for GetMerchantMediaImage
+func NewGetMerchantMediaImageRequest(server string, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/media/%s/image", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateMediaUploadGrantRequest generates requests for CreateMediaUploadGrant
+func NewCreateMediaUploadGrantRequest(server string, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/merchants/%s/stores/%s/media/%s/upload-grant", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetOfferingRequest generates requests for GetOffering
 func NewGetOfferingRequest(server string, merchantId MerchantID, storeId StoreID) (*http.Request, error) {
 	var err error
@@ -3918,6 +4454,54 @@ func NewCreateGuestSessionRequestWithBody(server string, merchantId MerchantID, 
 	return req, nil
 }
 
+// NewGetPublicMediaImageRequest generates requests for GetPublicMediaImage
+func NewGetPublicMediaImageRequest(server string, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/public/merchants/%s/stores/%s/media/%s/image", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetPublicOfferingRequest generates requests for GetPublicOffering
 func NewGetPublicOfferingRequest(server string, merchantId MerchantID, storeId StoreID) (*http.Request, error) {
 	var err error
@@ -4231,6 +4815,23 @@ type ClientWithResponsesInterface interface {
 
 	ProgressFoodFulfilmentWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params *ProgressFoodFulfilmentParams, body ProgressFoodFulfilmentJSONRequestBody, reqEditors ...RequestEditorFn) (*ProgressFoodFulfilmentResponse, error)
 
+	// StartMediaUploadWithBodyWithResponse request with any body
+	StartMediaUploadWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartMediaUploadResponse, error)
+
+	StartMediaUploadWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, body StartMediaUploadJSONRequestBody, reqEditors ...RequestEditorFn) (*StartMediaUploadResponse, error)
+
+	// GetMediaAssetWithResponse request
+	GetMediaAssetWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*GetMediaAssetResponse, error)
+
+	// CompleteMediaUploadWithResponse request
+	CompleteMediaUploadWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, params *CompleteMediaUploadParams, reqEditors ...RequestEditorFn) (*CompleteMediaUploadResponse, error)
+
+	// GetMerchantMediaImageWithResponse request
+	GetMerchantMediaImageWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*GetMerchantMediaImageResponse, error)
+
+	// CreateMediaUploadGrantWithResponse request
+	CreateMediaUploadGrantWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*CreateMediaUploadGrantResponse, error)
+
 	// GetOfferingWithResponse request
 	GetOfferingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetOfferingResponse, error)
 
@@ -4262,6 +4863,9 @@ type ClientWithResponsesInterface interface {
 	CreateGuestSessionWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGuestSessionResponse, error)
 
 	CreateGuestSessionWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, body CreateGuestSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateGuestSessionResponse, error)
+
+	// GetPublicMediaImageWithResponse request
+	GetPublicMediaImageWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*GetPublicMediaImageResponse, error)
 
 	// GetPublicOfferingWithResponse request
 	GetPublicOfferingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetPublicOfferingResponse, error)
@@ -4946,6 +5550,170 @@ func (r ProgressFoodFulfilmentResponse) StatusCode() int {
 	return 0
 }
 
+type StartMediaUploadResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *MediaAsset
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r StartMediaUploadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r StartMediaUploadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetMediaAssetResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *MediaAsset
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetMediaAssetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetMediaAssetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CompleteMediaUploadResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *MediaAsset
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CompleteMediaUploadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CompleteMediaUploadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetMerchantMediaImageResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetMerchantMediaImageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetMerchantMediaImageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateMediaUploadGrantResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *MediaUploadGrant
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateMediaUploadGrantResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateMediaUploadGrantResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetOfferingResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
@@ -5186,6 +5954,38 @@ func (r CreateGuestSessionResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreateGuestSessionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPublicMediaImageResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	ApplicationproblemJSON400     *ProblemResponse
+	ApplicationproblemJSON401     *ProblemResponse
+	ApplicationproblemJSON403     *ProblemResponse
+	ApplicationproblemJSON404     *ProblemResponse
+	ApplicationproblemJSON409     *ProblemResponse
+	ApplicationproblemJSON413     *ProblemResponse
+	ApplicationproblemJSON415     *ProblemResponse
+	ApplicationproblemJSON422     *ProblemResponse
+	ApplicationproblemJSON429     *ProblemResponse
+	ApplicationproblemJSON503     *ProblemResponse
+	ApplicationproblemJSONDefault *ProblemResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPublicMediaImageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPublicMediaImageResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -5572,6 +6372,59 @@ func (c *ClientWithResponses) ProgressFoodFulfilmentWithResponse(ctx context.Con
 	return ParseProgressFoodFulfilmentResponse(rsp)
 }
 
+// StartMediaUploadWithBodyWithResponse request with arbitrary body returning *StartMediaUploadResponse
+func (c *ClientWithResponses) StartMediaUploadWithBodyWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartMediaUploadResponse, error) {
+	rsp, err := c.StartMediaUploadWithBody(ctx, merchantId, storeId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartMediaUploadResponse(rsp)
+}
+
+func (c *ClientWithResponses) StartMediaUploadWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, params *StartMediaUploadParams, body StartMediaUploadJSONRequestBody, reqEditors ...RequestEditorFn) (*StartMediaUploadResponse, error) {
+	rsp, err := c.StartMediaUpload(ctx, merchantId, storeId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartMediaUploadResponse(rsp)
+}
+
+// GetMediaAssetWithResponse request returning *GetMediaAssetResponse
+func (c *ClientWithResponses) GetMediaAssetWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*GetMediaAssetResponse, error) {
+	rsp, err := c.GetMediaAsset(ctx, merchantId, storeId, mediaId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetMediaAssetResponse(rsp)
+}
+
+// CompleteMediaUploadWithResponse request returning *CompleteMediaUploadResponse
+func (c *ClientWithResponses) CompleteMediaUploadWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, params *CompleteMediaUploadParams, reqEditors ...RequestEditorFn) (*CompleteMediaUploadResponse, error) {
+	rsp, err := c.CompleteMediaUpload(ctx, merchantId, storeId, mediaId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCompleteMediaUploadResponse(rsp)
+}
+
+// GetMerchantMediaImageWithResponse request returning *GetMerchantMediaImageResponse
+func (c *ClientWithResponses) GetMerchantMediaImageWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*GetMerchantMediaImageResponse, error) {
+	rsp, err := c.GetMerchantMediaImage(ctx, merchantId, storeId, mediaId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetMerchantMediaImageResponse(rsp)
+}
+
+// CreateMediaUploadGrantWithResponse request returning *CreateMediaUploadGrantResponse
+func (c *ClientWithResponses) CreateMediaUploadGrantWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*CreateMediaUploadGrantResponse, error) {
+	rsp, err := c.CreateMediaUploadGrant(ctx, merchantId, storeId, mediaId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateMediaUploadGrantResponse(rsp)
+}
+
 // GetOfferingWithResponse request returning *GetOfferingResponse
 func (c *ClientWithResponses) GetOfferingWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, reqEditors ...RequestEditorFn) (*GetOfferingResponse, error) {
 	rsp, err := c.GetOffering(ctx, merchantId, storeId, reqEditors...)
@@ -5674,6 +6527,15 @@ func (c *ClientWithResponses) CreateGuestSessionWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseCreateGuestSessionResponse(rsp)
+}
+
+// GetPublicMediaImageWithResponse request returning *GetPublicMediaImageResponse
+func (c *ClientWithResponses) GetPublicMediaImageWithResponse(ctx context.Context, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, reqEditors ...RequestEditorFn) (*GetPublicMediaImageResponse, error) {
+	rsp, err := c.GetPublicMediaImage(ctx, merchantId, storeId, mediaId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPublicMediaImageResponse(rsp)
 }
 
 // GetPublicOfferingWithResponse request returning *GetPublicOfferingResponse
@@ -7458,6 +8320,514 @@ func ParseProgressFoodFulfilmentResponse(rsp *http.Response) (*ProgressFoodFulfi
 	return response, nil
 }
 
+// ParseStartMediaUploadResponse parses an HTTP response from a StartMediaUploadWithResponse call
+func ParseStartMediaUploadResponse(rsp *http.Response) (*StartMediaUploadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &StartMediaUploadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest MediaAsset
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetMediaAssetResponse parses an HTTP response from a GetMediaAssetWithResponse call
+func ParseGetMediaAssetResponse(rsp *http.Response) (*GetMediaAssetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetMediaAssetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MediaAsset
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCompleteMediaUploadResponse parses an HTTP response from a CompleteMediaUploadWithResponse call
+func ParseCompleteMediaUploadResponse(rsp *http.Response) (*CompleteMediaUploadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CompleteMediaUploadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest MediaAsset
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetMerchantMediaImageResponse parses an HTTP response from a GetMerchantMediaImageWithResponse call
+func ParseGetMerchantMediaImageResponse(rsp *http.Response) (*GetMerchantMediaImageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetMerchantMediaImageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateMediaUploadGrantResponse parses an HTTP response from a CreateMediaUploadGrantWithResponse call
+func ParseCreateMediaUploadGrantResponse(rsp *http.Response) (*CreateMediaUploadGrantResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateMediaUploadGrantResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MediaUploadGrant
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetOfferingResponse parses an HTTP response from a GetOfferingWithResponse call
 func ParseGetOfferingResponse(rsp *http.Response) (*GetOfferingResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -8156,6 +9526,102 @@ func ParseCreateGuestSessionResponse(rsp *http.Response) (*CreateGuestSessionRes
 	return response, nil
 }
 
+// ParseGetPublicMediaImageResponse parses an HTTP response from a GetPublicMediaImageWithResponse call
+func ParseGetPublicMediaImageResponse(rsp *http.Response) (*GetPublicMediaImageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPublicMediaImageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ProblemResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetPublicOfferingResponse parses an HTTP response from a GetPublicOfferingWithResponse call
 func ParseGetPublicOfferingResponse(rsp *http.Response) (*GetPublicOfferingResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -8422,6 +9888,21 @@ type ServerInterface interface {
 	// Report preparation and pickup progress
 	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment)
 	ProgressFoodFulfilment(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params ProgressFoodFulfilmentParams)
+	// Allocate an owned image upload record
+	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/media)
+	StartMediaUpload(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params StartMediaUploadParams)
+	// Read owned image metadata without a storage capability
+	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id})
+	GetMediaAsset(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297)
+	// Verify a direct upload and retain a safe image derivative
+	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/completion)
+	CompleteMediaUpload(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, params CompleteMediaUploadParams)
+	// Redirect to a ready owned draft image
+	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image)
+	GetMerchantMediaImage(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297)
+	// Issue a fresh short-lived direct-upload capability
+	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/upload-grant)
+	CreateMediaUploadGrant(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297)
 	// Read the current draft revision
 	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/offering)
 	GetOffering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
@@ -8446,6 +9927,9 @@ type ServerInterface interface {
 	// Start guest checkout without registering
 	// (POST /api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions)
 	CreateGuestSession(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
+	// Redirect to an image referenced by a visible published menu
+	// (GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image)
+	GetPublicMediaImage(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297)
 	// Browse current public offering
 	// (GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering)
 	GetPublicOffering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
@@ -9765,6 +11249,298 @@ func (siw *ServerInterfaceWrapper) ProgressFoodFulfilment(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// StartMediaUpload operation middleware
+func (siw *ServerInterfaceWrapper) StartMediaUpload(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params StartMediaUploadParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StartMediaUpload(w, r, merchantId, storeId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMediaAsset operation middleware
+func (siw *ServerInterfaceWrapper) GetMediaAsset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "media_id" -------------
+	var mediaId ComponentsParametersMediaIdYamlea7ce297
+
+	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMediaAsset(w, r, merchantId, storeId, mediaId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CompleteMediaUpload operation middleware
+func (siw *ServerInterfaceWrapper) CompleteMediaUpload(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "media_id" -------------
+	var mediaId ComponentsParametersMediaIdYamlea7ce297
+
+	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CompleteMediaUploadParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CompleteMediaUpload(w, r, merchantId, storeId, mediaId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMerchantMediaImage operation middleware
+func (siw *ServerInterfaceWrapper) GetMerchantMediaImage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "media_id" -------------
+	var mediaId ComponentsParametersMediaIdYamlea7ce297
+
+	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMerchantMediaImage(w, r, merchantId, storeId, mediaId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateMediaUploadGrant operation middleware
+func (siw *ServerInterfaceWrapper) CreateMediaUploadGrant(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "media_id" -------------
+	var mediaId ComponentsParametersMediaIdYamlea7ce297
+
+	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateMediaUploadGrant(w, r, merchantId, storeId, mediaId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetOffering operation middleware
 func (siw *ServerInterfaceWrapper) GetOffering(w http.ResponseWriter, r *http.Request) {
 
@@ -10132,6 +11908,49 @@ func (siw *ServerInterfaceWrapper) CreateGuestSession(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// GetPublicMediaImage operation middleware
+func (siw *ServerInterfaceWrapper) GetPublicMediaImage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "merchant_id" -------------
+	var merchantId MerchantID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "store_id" -------------
+	var storeId StoreID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "media_id" -------------
+	var mediaId ComponentsParametersMediaIdYamlea7ce297
+
+	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPublicMediaImage(w, r, merchantId, storeId, mediaId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetPublicOffering operation middleware
 func (siw *ServerInterfaceWrapper) GetPublicOffering(w http.ResponseWriter, r *http.Request) {
 
@@ -10391,6 +12210,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.GetMerchantFoodOrder)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions", wrapper.DecideFoodOrder)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment", wrapper.ProgressFoodFulfilment)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media", wrapper.StartMediaUpload)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}", wrapper.GetMediaAsset)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/completion", wrapper.CompleteMediaUpload)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image", wrapper.GetMerchantMediaImage)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/upload-grant", wrapper.CreateMediaUploadGrant)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.GetOffering)
 	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.WriteOffering)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision}", wrapper.GetOfferingRevision)
@@ -10399,6 +12223,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering", wrapper.GetPublicFoodOrdering)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes", wrapper.CreateFoodQuote)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions", wrapper.CreateGuestSession)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image", wrapper.GetPublicMediaImage)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.GetPublicOffering)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/stores", wrapper.ListPublicStores)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/stores/{store_handle}", wrapper.GetPublicStoreByHandle)
@@ -10410,196 +12235,223 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

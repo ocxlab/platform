@@ -1,0 +1,5 @@
+name: media_id
+in: path
+required: true
+schema:
+  $ref: ../../schemas/common/identifier.yaml

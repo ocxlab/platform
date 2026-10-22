@@ -5,9 +5,15 @@
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import ActionButton from './ActionButton.svelte';
+  import MenuPhoto from './MenuPhoto.svelte';
   import type { components } from '$lib/api/generated';
   type Menu = components['schemas']['FoodMenu'];
-  let { initial, base }: { initial: Menu; base: number } = $props();
+  let { initial, base, mediaEndpoint, uploading = $bindable(false) }: { initial: Menu; base: number; mediaEndpoint?: string; uploading?: boolean } = $props();
+  const activeUploads = new Set<string>();
+  function uploadStatus(id: string, busy: boolean) {
+    if (busy) activeUploads.add(id); else activeUploads.delete(id);
+    uploading = activeUploads.size > 0;
+  }
   let menu = $state<Menu>(untrack(() => structuredClone(initial)));
   const identifier = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('');
   const variant = () => ({ id: identifier(), name: t('editor-default-variant'), price_minor: 0 });
@@ -29,6 +35,7 @@
   <fieldset><legend>{t('editor-item')}</legend>
     <label>{t('editor-name')}<input dir="auto" bind:value={item.name} required maxlength="160" /></label>
     <label><input type="checkbox" bind:checked={item.available} />{t('editor-available')}</label>
+    {#if mediaEndpoint}<MenuPhoto bind:imageId={item.image_id} endpoint={mediaEndpoint} name={item.name} onbusy={(busy) => uploadStatus(item.id, busy)} />{/if}
     <h3>{t('editor-variants-heading')}</h3>
     <p class="muted">{t('editor-variants-help')}</p>
     {#each item.variants as choice (choice.id)}
@@ -50,7 +57,7 @@
       </fieldset>
     {/each}
     <ActionButton type="button" icon={Plus} label={t('editor-add-group')} onclick={() => item.option_groups.push({ id: identifier(), name: t('editor-default-group'), min_selected: 0, max_selected: 1, options: [{ id: identifier(), name: t('editor-default-extra'), price_minor: 0 }] })} disabled={item.option_groups.length >= 20} />
-    <ActionButton type="button" icon={Trash2} iconOnly danger label={t('editor-remove', { name: item.name })} onclick={() => removeItem(item.id)} />
+    <ActionButton type="button" icon={Trash2} iconOnly danger label={t('editor-remove', { name: item.name })} disabled={uploading} onclick={() => removeItem(item.id)} />
   </fieldset>
 {/each}
 {#if menu.items.length === 0}

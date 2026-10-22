@@ -1,5 +1,6 @@
 <script lang="ts">
   import { customerStorePath } from '$lib/merchant-paths';
+  import { page } from '$app/state';
   import { useI18n } from '$lib/i18n/context';
   const { t } = useI18n();
   import Notice from '$lib/components/Notice.svelte';
@@ -10,6 +11,7 @@
   import EyeOff from '@lucide/svelte/icons/eye-off';
   import Save from '@lucide/svelte/icons/save';
   let { data, form } = $props();
+  let uploading = $state(false);
 </script>
 <MerchantStoreNav store={data.store} active="menu" />
 <p>{t('merchant-edit-intro')}</p>
@@ -24,6 +26,6 @@
 </section>
 <section><h2>{t('merchant-edit-menu')}</h2><p>{t('merchant-price-help')}</p>
 <form method="POST" action="?/save"><input type="hidden" name="key" value={data.request_key + '-draft'} />
-  {#key data.draft?.revision}<MenuEditor initial={data.menu} base={data.draft?.revision ?? 0} />{/key}
-  <ActionButton icon={Save} label={t('merchant-save')} />
+  {#key data.draft?.revision}<MenuEditor initial={data.menu} base={data.draft?.revision ?? 0} mediaEndpoint={`${page.url.pathname.replace(/\/$/, '')}/media`} bind:uploading />{/key}
+  <ActionButton icon={Save} label={t('merchant-save')} disabled={uploading} />
 </form></section>

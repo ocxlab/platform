@@ -21,6 +21,18 @@ tags:
 security:
   - BearerAuth: []
 paths:
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/media:
+    $ref: paths/media-uploads.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}:
+    $ref: paths/media-asset.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/upload-grant:
+    $ref: paths/media-upload-grant.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/completion:
+    $ref: paths/media-completion.yaml
+  /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image:
+    $ref: paths/media-preview.yaml
+  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image:
+    $ref: paths/public-media.yaml
   /api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering:
     $ref: paths/food-ordering.yaml
   /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering:
@@ -103,6 +115,12 @@ components:
     ProviderBearerAuth:
       $ref: components/security/provider-bearer.yaml
   schemas:
+    MediaUploadRequest:
+      $ref: schemas/media/upload.yaml#/UploadRequest
+    MediaAsset:
+      $ref: schemas/media/upload.yaml#/Asset
+    MediaUploadGrant:
+      $ref: schemas/media/upload.yaml#/UploadGrant
     FoodOrdering:
       $ref: domains/food/ordering/v1/schema.yaml#/FoodOrdering
     ChangeFoodOrderingRequest:

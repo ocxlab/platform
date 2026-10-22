@@ -1,0 +1,48 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - $ref: ../components/parameters/media-id.yaml
+post:
+  operationId: CreateMediaUploadGrant
+  x-access: merchant
+  x-required-scope: offering:write
+  tags: [Merchant commerce]
+  summary: Issue a fresh short-lived direct-upload capability
+  description: >-
+    No business mutation or Idempotency-Key. Each authorized call can issue a new
+    URL for the same pending upload. The URL is reusable until expiry, bounded by
+    five minutes and the upload deadline. It does not grant publication authority.
+    Empty body; Content-Length must be supplied by the HTTP client automatically
+    when using a browser. Treat URL query parameters as secrets.
+  responses:
+    '200':
+      description: Authorized result.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/media/upload.yaml#/UploadGrant
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

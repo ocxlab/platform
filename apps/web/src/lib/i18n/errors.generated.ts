@@ -78,6 +78,18 @@ export const errorCodes = {
     "title": "Invalid selection",
     "message_key": "error-food-invalid-selection"
   },
+  "invalid_media": {
+    "module": "media",
+    "status": 422,
+    "title": "Invalid image",
+    "message_key": "error-media-invalid-media"
+  },
+  "media_capacity": {
+    "module": "media",
+    "status": 429,
+    "title": "Image allocation limit",
+    "message_key": "error-media-media-capacity"
+  },
   "invalid_offering": {
     "module": "offering",
     "status": 422,

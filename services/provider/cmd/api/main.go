@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"ocp.local/platform/internal/httpapi"
+	"ocp.local/platform/internal/media"
 	"ocp.local/platform/internal/orderupdates"
 	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/runtimehttp"
@@ -68,6 +69,14 @@ func main() {
 	defer db.Close()
 	var options []httpapi.Option
 	options = append(options, httpapi.WithTelemetry(signals.Observer))
+	storage, err := media.FromEnv(os.Getenv)
+	if err != nil {
+		slog.Error("invalid media configuration")
+		os.Exit(1)
+	}
+	if storage != nil {
+		options = append(options, httpapi.WithMediaStorage(storage))
+	}
 	if os.Getenv("OCP_LOCAL_MERCHANT_MCP") == "true" {
 		options = append(options, httpapi.WithLocalMerchantMCP())
 	}

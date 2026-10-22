@@ -1,4 +1,4 @@
-// This asset-preparation utility uses only the Go standard library. It is not
+// This asset-preparation utility runs in the provider's pinned Go environment. It is not
 // part of the provider runtime or a general merchant-upload processing service.
 package main
 
@@ -7,6 +7,8 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/image/draw"
+	"image"
 	"image/jpeg"
 	"image/png"
 	"os"
@@ -27,7 +29,24 @@ func prepare() error {
 		return err
 	}
 	var records []map[string]any
-	for _, id := range []string{"doener", "pizza-margherita", "falafel"} {
+	fixture, err := os.ReadFile(filepath.Join(root, "services/provider/internal/devfixtures/restaurant.json"))
+	if err != nil {
+		return err
+	}
+	var products []struct {
+		ID string `json:"id"`
+	}
+	if err = json.Unmarshal(fixture, &products); err != nil {
+		return err
+	}
+	// Fail before touching retained files if this generation batch is incomplete.
+	for _, product := range products {
+		if _, err := os.Stat(filepath.Join(root, "working/demo-media", product.ID+".png")); err != nil {
+			return err
+		}
+	}
+	for _, product := range products {
+		id := product.ID
 		raw, err := os.ReadFile(filepath.Join(root, "working", "demo-media", id+".png"))
 		if err != nil {
 			return err
@@ -36,8 +55,20 @@ func prepare() error {
 		if err != nil {
 			return err
 		}
+		w, h := img.Bounds().Dx(), img.Bounds().Dy()
+		if w > 768 || h > 768 {
+			if w >= h {
+				h = max(1, h*768/w)
+				w = 768
+			} else {
+				w = max(1, w*768/h)
+				h = 768
+			}
+		}
+		thumb := image.NewRGBA(image.Rect(0, 0, w, h))
+		draw.CatmullRom.Scale(thumb, thumb.Bounds(), img, img.Bounds(), draw.Src, nil)
 		var encoded bytes.Buffer
-		if err := jpeg.Encode(&encoded, img, &jpeg.Options{Quality: 82}); err != nil {
+		if err := jpeg.Encode(&encoded, thumb, &jpeg.Options{Quality: 82}); err != nil {
 			return err
 		}
 		data := encoded.Bytes()
@@ -51,7 +82,7 @@ func prepare() error {
 		}
 		records = append(records, map[string]any{
 			"item_id": id, "file": name, "content_type": "image/jpeg",
-			"bytes": len(data), "width": img.Bounds().Dx(), "height": img.Bounds().Dy(),
+			"bytes": len(data), "width": w, "height": h,
 			"sha256": hash, "source_png_sha256": fmt.Sprintf("%x", sha256.Sum256(raw)),
 			"object_key": "demo/food/" + hash + ".jpg", "synthetic_demo": true,
 		})

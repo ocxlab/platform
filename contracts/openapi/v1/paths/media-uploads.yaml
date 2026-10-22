@@ -1,0 +1,54 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+post:
+  operationId: StartMediaUpload
+  x-access: merchant
+  x-required-scope: offering:write
+  tags: [Merchant commerce]
+  summary: Allocate an owned image upload record
+  description: >-
+    Idempotent durable allocation; no file bytes or signed URL in this response.
+    Request a short-lived upload grant separately, then PUT the exact bytes
+    directly to storage and complete verification. Local policy bounds a store
+    to 500 retained assets and 200 MiB of original allocations; no silent cleanup.
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/media/upload.yaml#/UploadRequest
+  responses:
+    '201':
+      description: Authorized result.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/media/upload.yaml#/Asset
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

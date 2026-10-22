@@ -30,6 +30,7 @@ type OptionGroup struct {
 	Options []Variant `json:"options"`
 }
 type Item struct {
+	ImageID   string        `json:"image_id,omitempty"`
 	ID        string        `json:"id"`
 	Name      string        `json:"name"`
 	Available bool          `json:"available"`

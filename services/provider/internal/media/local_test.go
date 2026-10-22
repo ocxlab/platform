@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"image"
 	"io"
 	"net"
 	"net/http"
@@ -25,6 +26,16 @@ func TestLocalPresigned(t *testing.T) {
 		t.Skip("run task media:check for local SILO tests")
 	}
 	signer, err := NewSigner("http://localhost:18900", "us-east-1", "ocp-demo-media", credentials.NewStaticCredentialsProvider("ocp_local_media", "ocp_local_media_only_123", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := map[string]string{
+		"OCP_MEDIA_ENABLED": "true", "OCP_MEDIA_INTERNAL_ENDPOINT": "http://object-store:9000",
+		"OCP_MEDIA_PUBLIC_ENDPOINT": "http://localhost:18900", "OCP_MEDIA_REGION": "us-east-1",
+		"OCP_MEDIA_BUCKET": "ocp-demo-media", "OCP_MEDIA_ACCESS_KEY": "ocp_local_media",
+		"OCP_MEDIA_SECRET_KEY": "ocp_local_media_only_123",
+	}
+	storage, err := FromEnv(func(key string) string { return settings[key] })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,6 +93,23 @@ func TestLocalPresigned(t *testing.T) {
 			status, received, headers := do(read, nil, "")
 			if status != 200 || !bytes.Equal(data, received) || headers.Get("Content-Type") != "image/jpeg" {
 				t.Fatal("presigned GET content mismatch")
+			}
+			final := "verified/" + key
+			w, h, err := storage.Process(context.Background(), key, final, "image/jpeg", base64.StdEncoding.EncodeToString(hash[:]), int64(len(data)))
+			if err != nil || w < 1 || h < 1 || w > 960 || h > 960 {
+				t.Fatalf("stored derivative failed: %dx%d, %v", w, h, err)
+			}
+			derivative, err := storage.Download(context.Background(), final, time.Minute)
+			if err != nil {
+				t.Fatal(err)
+			}
+			status, encoded, headers := do(derivative, nil, "")
+			decoded, format, err := image.DecodeConfig(bytes.NewReader(encoded))
+			if status != 200 || err != nil || format != "jpeg" || decoded.Width != w || decoded.Height != h || headers.Get("Content-Type") != "image/jpeg" {
+				t.Fatal("stored JPEG derivative did not match checked dimensions")
+			}
+			if _, _, err := storage.Process(context.Background(), key, final, "image/jpeg", base64.StdEncoding.EncodeToString(make([]byte, 32)), int64(len(data))); err != ErrInvalid {
+				t.Fatal("processing accepted a mismatching declared checksum")
 			}
 			if status, _, _ := do(upload, data, "text/html"); status != 403 {
 				t.Fatalf("changed signed type accepted: %d", status)

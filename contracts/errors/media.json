@@ -1,0 +1,12 @@
+{
+  "invalid_media": {
+    "status": 422,
+    "title": "Invalid image",
+    "message_key": "error-media-invalid-media"
+  },
+  "media_capacity": {
+    "status": 429,
+    "title": "Image allocation limit",
+    "message_key": "error-media-media-capacity"
+  }
+}

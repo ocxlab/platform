@@ -33,9 +33,14 @@ type Server struct {
 	updates             *orderupdates.Hub
 	telemetry           *telemetry.Observer
 	localMerchantMCP    bool
+	mediaStore          commerce.MediaStorage
 }
 
 type Option func(*Server)
+
+func WithMediaStorage(storage commerce.MediaStorage) Option {
+	return func(s *Server) { s.mediaStore = storage }
+}
 
 // WithLocalMerchantMCP enables only the localhost development adapter.
 func WithLocalMerchantMCP() Option { return func(s *Server) { s.localMerchantMCP = true } }
@@ -71,7 +76,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	}})
 	scopes := map[string]string{}
 	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:cancel": true, "order:manage": true, "order:inspect": true}
-	public := map[string]bool{"GetPublicFoodOrdering": true, "GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true, "GetPublicStoreByHandle": true}
+	public := map[string]bool{"GetPublicMediaImage": true, "GetPublicFoodOrdering": true, "GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true, "GetPublicStoreByHandle": true}
 	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true, "ChangeDevelopmentPayment": true, "GetGuestFoodOrderByReference": true, "WatchGuestFoodOrder": true}
 	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true, "AdminListStores": true, "AdminListFoodOrders": true}
 	for _, path := range spec.Paths.Map() {
@@ -236,7 +241,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 				}
 				r.Body = io.NopCloser(bytes.NewReader(data))
 			}
-			if r.Method == http.MethodPost || r.Method == http.MethodPut {
+			if (r.Method == http.MethodPost || r.Method == http.MethodPut) && route.Operation.RequestBody != nil {
 				media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 				if err != nil || media != "application/json" {
 					problem(w, 415, "unsupported_media_type", "Request body must use application/json.", nil)
@@ -344,6 +349,8 @@ func write(w http.ResponseWriter, value any, err error) {
 			problem(w, 409, "publication_conflict", "Publication generation has changed. Refresh the public offering or private publication state.", &publicationConflict.Current)
 		case errors.Is(err, food.ErrSelection):
 			problem(w, 422, "invalid_selection", "Select available items and supported variants/options within the published limits.", nil)
+		case errors.Is(err, persistence.ErrMediaReference):
+			problem(w, 422, "invalid_offering", "Menu photos must be ready images owned by this store.", nil)
 		case errors.Is(err, persistence.ErrQuoteCapacity):
 			w.Header().Set("Retry-After", "60")
 			problem(w, 429, "quote_capacity", "This store has reached its temporary quote capacity. Please try again later.", nil)

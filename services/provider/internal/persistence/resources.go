@@ -148,6 +148,9 @@ func AppendOffering(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, 
 	if head != base {
 		return Revision{}, &RevisionConflict{Current: head}
 	}
+	if err := validateMediaReferences(ctx, tx, merchant, store, model, document); err != nil {
+		return Revision{}, err
+	}
 	revision := Revision{MerchantID: merchant, StoreID: store, Revision: head + 1, Model: model, Document: document, State: "draft"}
 	err = tx.QueryRowContext(ctx, `INSERT INTO commerce.offering_revisions(merchant_id,store_id,revision,model_id,model_version,document)
  VALUES ($1,$2,$3,$4,$5,$6) RETURNING created_at`, merchant, store, revision.Revision, model.ID, model.Version, string(document)).Scan(&revision.CreatedAt)

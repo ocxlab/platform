@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/commerce"
 	"ocp.local/platform/internal/offering/food"
 	"ocp.local/platform/internal/persistence"
 )
@@ -25,10 +26,7 @@ func (s *Server) ChangePublication(w http.ResponseWriter, r *http.Request, merch
 		problem(w, 400, "invalid_request", "A publication command is required.", nil)
 		return
 	}
-	canonical, _ := json.Marshal(body)
-	result, err := persistence.Mutate(r.Context(), s.db, principal(r), "changePublication", store.String(), params.IdempotencyKey, canonical, func(tx *sql.Tx) (any, error) {
-		return persistence.ChangePublication(r.Context(), tx, principal(r), store, body.ExpectedGeneration, body.Revision, nil, "", uuid.MustParse(w.Header().Get("X-Request-ID")), s.models.Project)
-	})
+	result, err := (commerce.Publications{DB: s.db, Models: s.models}).Change(r.Context(), principal(r), merchant, store, body.ExpectedGeneration, body.Revision, params.IdempotencyKey, uuid.MustParse(w.Header().Get("X-Request-ID")))
 	write(w, result, err)
 }
 func (s *Server) AdminSuspendPublication(w http.ResponseWriter, r *http.Request, merchant, store uuid.UUID, params AdminSuspendPublicationParams) {

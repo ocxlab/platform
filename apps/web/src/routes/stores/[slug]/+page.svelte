@@ -22,6 +22,7 @@
 </script>
 <h1><bdi dir="auto">{data.offering.display_name}</bdi></h1>
 <p>{t('storefront-intro')}</p>
+{#if data.offering.store_id === '99598cf5-eded-4394-a053-751a1cb20db2'}<p class="muted">{t('media-demo')}</p>{/if}
 {#if !data.ordering.accepting_orders}<Notice text={t('ordering-paused-customer')} />{/if}
 {#if form?.error}<Notice text={form.error} error />{/if}
 <section><h2>{t('storefront-choose')}</h2>
@@ -29,6 +30,7 @@
   <input type="hidden" name="publication_generation" value={data.offering.publication_generation} />
   <label>{t('storefront-item')}<select name="item_id" dir="auto" bind:value={itemId}>{#each data.menu.items as entry}<option dir="auto" value={entry.id} disabled={!entry.available}>{entry.name}{!entry.available ? ' ' + t('storefront-unavailable') : ''}</option>{/each}</select></label>
   {#if item}
+    {#if item.image_id}<img class="dish-photo" src={`/media/public/${data.offering.merchant_id}/${data.offering.store_id}/${item.image_id}`} alt={item.name} width="480" height="360" />{/if}
     {#key `${offeringKey}/${itemId}`}
     <label>{t('storefront-variant')}<select name="variant_id" dir="auto">{#each item.variants as variant}<option dir="auto" value={variant.id}>{variant.name} · {money(variant.price_minor, locale())}</option>{/each}</select></label>
     {#each item.option_groups as group}
@@ -49,6 +51,9 @@
 <p class="muted">{t('storefront-quote-help', { time: new Date(data.quote.expires_at).toLocaleTimeString(locale(), { timeZone: 'Europe/Berlin' }) })}</p>
 </section>
 {/if}
+<style>
+  .dish-photo { display: block; inline-size: min(100%, 30rem); block-size: auto; aspect-ratio: 4/3; object-fit: cover; border-radius: .75rem; margin-block: 1rem; }
+</style>
 {#if data.intent}
 <form method="POST" action="?/place">
   <input type="hidden" name="quote" value={data.intent.quote} />

@@ -66,6 +66,13 @@ services:
     environment:
       OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@test-db:5432/ocp_test?sslmode=disable
       OCP_DEVELOPMENT_PAYMENTS: 'true'
+      OCP_MEDIA_ENABLED: 'true'
+      OCP_MEDIA_INTERNAL_ENDPOINT: http://object-store:9000
+      OCP_MEDIA_PUBLIC_ENDPOINT: http://object-store:9000
+      OCP_MEDIA_REGION: us-east-1
+      OCP_MEDIA_BUCKET: ocp-demo-media
+      OCP_MEDIA_ACCESS_KEY: ocp_local_media
+      OCP_MEDIA_SECRET_KEY: ocp_local_media_only_123
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
@@ -122,6 +129,7 @@ services:
       OCP_BROWSER_URL: http://browser-web:3000
     volumes:
       - ./apps/web/test-results:/workspace/apps/web/test-results
+      - ./assets/demo/food:/demo-food:ro
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
 
@@ -135,6 +143,13 @@ services:
       OCP_DEVELOPMENT_PAYMENTS: 'true'
       OCP_OTEL_EXPORTER: ${OCP_OTEL_EXPORTER:-none}
       OCP_LOCAL_MERCHANT_MCP: 'true'
+      OCP_MEDIA_ENABLED: 'true'
+      OCP_MEDIA_INTERNAL_ENDPOINT: http://object-store:9000
+      OCP_MEDIA_PUBLIC_ENDPOINT: http://localhost:18900
+      OCP_MEDIA_REGION: us-east-1
+      OCP_MEDIA_BUCKET: ocp-demo-media
+      OCP_MEDIA_ACCESS_KEY: ocp_local_media
+      OCP_MEDIA_SECRET_KEY: ocp_local_media_only_123
       OCP_OTEL_TRACE_SAMPLE_RATIO: ${OCP_OTEL_TRACE_SAMPLE_RATIO:-0.1}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4318}
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}

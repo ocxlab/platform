@@ -31,6 +31,13 @@ tasks:
     cmds:
       - '{{.COMPOSE}} --profile media stop object-store'
 
+  dev:seed-media:
+    desc: Attach all prepared photos to matching fictional demo items without overwriting edits
+    cmds:
+      - task: dev:seed
+      - task: media:seed
+      - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/seed-demo-media'
+
   default:
     desc: List available local commands
     cmds:
@@ -153,6 +160,7 @@ tasks:
     desc: Exercise merchant, guest and provider-admin journeys with disposable PostgreSQL
     cmds:
       - defer: '{{.COMPOSE}} stop browser-api browser-web test-db'
+      - task: media:seed
       - '{{.COMPOSE}} build tools browser-api browser-web browser'
       - '{{.COMPOSE}} up --force-recreate --detach --wait test-db'
       - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable tools go run ./cmd/migrate'
@@ -163,6 +171,7 @@ tasks:
     desc: Run browser regressions against Vite development compilation with disposable PostgreSQL
     cmds:
       - task: web:install
+      - task: media:seed
       - '{{.COMPOSE}} build tools browser-api browser'
       - defer: '{{.COMPOSE}} stop browser-api browser-web-dev test-db'
       - '{{.COMPOSE}} up --force-recreate --detach --wait test-db'

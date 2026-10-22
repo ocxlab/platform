@@ -1,0 +1,62 @@
+{
+  "generated_on": "2026-10-22",
+  "mode": "built-in image_gen",
+  "purpose": "Synthetic development fixtures; not actual merchant photographs",
+  "prompts": [
+    {
+      "item_id": "yufka",
+      "prompt": "Use case: product-mockup. Square photorealistic food catalog photo for fictional German takeaway demo. Subject: Yufka, a Turkish dürüm wrap with grilled shaved meat and salad, cut diagonally so filling is visible. Modest authentic portion on a plain white plate, warm neutral wood tabletop, soft window light, camera at 45 degrees, entire dish centered with crop-safe margins. No side dishes, drinks, people, logos, text or watermark. Consistent natural editorial food photography; synthetic test asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-68f8fa45-0bb8-49b8-9544-bc349ed1220b.png"
+    },
+    {
+      "item_id": "doener-box",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Dönerbox: shaved grilled kebab meat over golden fries with a little white sauce, served in a plain open cardboard takeaway box. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-d310fedc-1e32-4b50-a7bd-0edc768f9416.png"
+    },
+    {
+      "item_id": "chicken-doener",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Hähnchen-Döner: toasted triangular Turkish bread pocket filled with golden grilled shaved chicken, lettuce, tomato, red cabbage and white sauce. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-723cbe5a-4b80-4519-b5e1-2b1502556fda.png"
+    },
+    {
+      "item_id": "doener-cheese",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Döner mit Weichkäse: toasted Turkish bread pocket filled with grilled shaved kebab meat, lettuce, tomato and clearly visible white feta-style cheese cubes. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-c71b5cd2-7084-4959-bd21-aed06b05b39f.png"
+    },
+    {
+      "item_id": "yufka-cheese",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Yufka mit Weichkäse: a Turkish dürüm wrap filled with grilled shaved meat, salad and white feta-style cheese cubes, cut diagonally to reveal filling. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-73799914-9c23-4448-9ac7-75dccccf643f.png"
+    },
+    {
+      "item_id": "falafel-yufka",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Falafel-Yufka: Turkish flatbread wrap with golden chickpea falafel and fresh salad, cut diagonally to reveal filling; no meat. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-1253aac1-a82d-410e-beaf-4e51700278b7.png"
+    },
+    {
+      "item_id": "halloumi",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Halloumi im Fladenbrot: toasted triangular Turkish bread pocket with thick golden grilled halloumi slices and fresh lettuce, tomato, red cabbage; no meat. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-717e1aa0-2028-443e-93b6-60e639298365.png"
+    },
+    {
+      "item_id": "veggie-yufka",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Gemüse-Yufka: Turkish flatbread wrap with grilled peppers, zucchini and fresh salad, cut diagonally; no meat. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-362a98d1-7bc5-4f79-a55a-f7bcd09ce067.png"
+    },
+    {
+      "item_id": "veggie-bread",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Salat im Fladenbrot: toasted triangular Turkish bread pocket generously filled with lettuce, tomato, cucumber, red cabbage and a little white sauce; no meat. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-17b00814-ae31-44d9-8411-dec72fa67280.png"
+    },
+    {
+      "item_id": "falafel-box",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Falafelbox: golden chickpea falafel over fries and a little salad, in a plain open cardboard takeaway box; no meat. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-2e428d03-5fa9-4929-971a-29d5ffa7ee49.png"
+    },
+    {
+      "item_id": "doener-plate",
+      "prompt": "Use case: product-mockup. Asset type: square photorealistic menu photograph for a fictional German takeaway demo. Subject: Dönerteller: grilled shaved kebab meat with golden fries and a little fresh lettuce, tomato, cucumber salad. Authentic modest restaurant portion, natural textures. Dish centered on a plain white plate (except drinks, bowls or takeaway boxes), warm neutral wood tabletop, soft window light, camera at 45 degrees, entire subject visible with generous crop-safe margins. No extra side dishes or drinks beyond the described subject. No people, logos, text or watermark. Consistent natural editorial food photography. Synthetic development asset, not a real merchant photograph.",
+      "source_path": "C:\\Users\\MikaelBeyene\\.codex\\generated_images\\01a134b5-712a-7032-99a9-f6e8bde233ec\\exec-8b506035-f235-4523-9351-4e03add1a222.png"
+    }
+  ]
+}

@@ -482,6 +482,124 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Allocate an owned image upload record
+         * @description Idempotent durable allocation; no file bytes or signed URL in this response. Request a short-lived upload grant separately, then PUT the exact bytes directly to storage and complete verification. Local policy bounds a store to 500 retained assets and 200 MiB of original allocations; no silent cleanup.
+         */
+        post: operations["StartMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        /** Read owned image metadata without a storage capability */
+        get: operations["GetMediaAsset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/completion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify a direct upload and retain a safe image derivative
+         * @description Empty body. Verifies declared size, type, checksum, decoded dimensions and pixel budget, then stores a metadata-free JPEG fitting within 960 pixels. A successful raw PUT alone does not authorize attachment. Derivative writes are retry-safe; readiness and original replay response commit together. A valid completion must start within the one-day pending deadline.
+         */
+        post: operations["CompleteMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        /** Redirect to a ready owned draft image */
+        get: operations["GetMerchantMediaImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/upload-grant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue a fresh short-lived direct-upload capability
+         * @description No business mutation or Idempotency-Key. Each authorized call can issue a new URL for the same pending upload. The URL is reusable until expiry, bounded by five minutes and the upload deadline. It does not grant publication authority. Empty body; Content-Length must be supplied by the HTTP client automatically when using a browser. Treat URL query parameters as secrets.
+         */
+        post: operations["CreateMediaUploadGrant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/merchants/{merchant_id}/stores/{store_id}/offering": {
         parameters: {
             query?: never;
@@ -635,6 +753,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Redirect to an image referenced by a visible published menu
+         * @description No draft access. Withdrawal, suspension, or removal prevents new grants. Already issued URLs remain usable for at most five minutes.
+         */
+        get: operations["GetPublicMediaImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering": {
         parameters: {
             query?: never;
@@ -782,6 +925,11 @@ export interface components {
             /** @description Merchant-controlled availability; no quantity reservation. */
             available: boolean;
             id: components["schemas"]["FoodLocalIdentifier"];
+            /**
+             * Format: uuid
+             * @description Ready media owned by this store; never a storage URL. Optional draft-contract addition.
+             */
+            image_id?: string;
             name: string;
             option_groups: components["schemas"]["FoodOptionGroup"][];
             variants: components["schemas"]["FoodVariant"][];
@@ -950,6 +1098,47 @@ export interface components {
              */
             updated_at: string;
         };
+        MediaAsset: {
+            content_type: components["schemas"]["SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71"];
+            /** Format: date-time */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Pending completion deadline. Ready assets do not expire at this time.
+             */
+            expires_at: string;
+            height?: number;
+            id: components["schemas"]["Identifier"];
+            merchant_id: components["schemas"]["Identifier"];
+            sha256: components["schemas"]["SchemasMediaUploadYamlUploadRequestPropertiesSha256c2d29dce"];
+            size_bytes: components["schemas"]["SchemasMediaUploadYamlUploadRequestPropertiesSizeBytesb6f770e4"];
+            /** @enum {string} */
+            state: "pending" | "ready";
+            store_id: components["schemas"]["Identifier"];
+            width?: number;
+        };
+        MediaUploadGrant: {
+            expires_in_seconds: number;
+            /** @description Echo these headers; browsers supply signed Content-Length automatically. */
+            headers: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            method: "PUT";
+            /**
+             * Format: uri
+             * @description Short-lived secret bearer URL. Do not log, persist, or rewrite.
+             */
+            url: string;
+        };
+        MediaUploadRequest: {
+            /** @enum {string} */
+            content_type: "image/jpeg" | "image/png" | "image/webp";
+            /** @description Canonical base64 SHA-256 of the original file, not hexadecimal. */
+            sha256: string;
+            /** Format: int64 */
+            size_bytes: number;
+        };
         Model: {
             id: string;
             version: string;
@@ -1074,6 +1263,12 @@ export interface components {
             updated_at: string;
         };
         SchemasCommonEmptyYaml077e1183: Record<string, never>;
+        /** @enum {string} */
+        SchemasMediaUploadYamlUploadRequestPropertiesContentType4697ef71: "image/jpeg" | "image/png" | "image/webp";
+        /** @description Canonical base64 SHA-256 of the original file, not hexadecimal. */
+        SchemasMediaUploadYamlUploadRequestPropertiesSha256c2d29dce: string;
+        /** Format: int64 */
+        SchemasMediaUploadYamlUploadRequestPropertiesSizeBytesb6f770e4: number;
         /** Format: date-time */
         SchemasStoresStoreYamlStorePropertiesCreatedAt10b1e627: string;
         SchemasStoresStoreYamlStorePropertiesDisplayNamebb51a2d0: string;
@@ -1186,6 +1381,7 @@ export interface components {
         ComponentsParametersAdminAfterYaml1d0e5be5: components["schemas"]["SchemasAdminDirectoryYamlCursore845fa77"];
         /** @description Case-insensitive literal substring. Stores match store name, merchant name or handle; orders match store name or readable order reference. */
         ComponentsParametersAdminQueryYaml6ee53b16: string;
+        ComponentsParametersMediaIdYamlea7ce297: components["schemas"]["Identifier"];
         ComponentsParametersOrderIdYaml294fa0a5: components["schemas"]["Identifier"];
         /** @description Maximum resources per page. Defaults to 50, with an upper bound of 100. */
         ComponentsParametersPageLimitYaml06bb837c: number;
@@ -1961,6 +2157,199 @@ export interface operations {
             default: components["responses"]["ProblemResponse"];
         };
     };
+    StartMediaUpload: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Authorized result. */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAsset"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    GetMediaAsset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorized result. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAsset"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    CompleteMediaUpload: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description One key per intended mutation, scoped by merchant, grant, operation and resource. Repeat the same key after a lost response. Matching validated requests return the original successful status/body; changed requests return 409. The fingerprint uses canonical decoded JSON, not raw property order. Successful keys are retained with merchant data without automatic expiry in this foundation; do not reuse them for a later intention. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorized result. */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAsset"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    GetMerchantMediaImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Short-lived signed GET location; API does not proxy image bytes. */
+            307: {
+                headers: {
+                    Location?: string;
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    CreateMediaUploadGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorized result. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadGrant"];
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
     GetOffering: {
         parameters: {
             query?: never;
@@ -2250,6 +2639,42 @@ export interface operations {
             415: components["responses"]["ProblemResponse"];
             422: components["responses"]["ProblemResponse"];
             429: components["responses"]["ComponentsResponsesGuestCapacityYaml2ca50909"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    GetPublicMediaImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Short-lived signed GET location; API does not proxy image bytes. */
+            307: {
+                headers: {
+                    Location?: string;
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ProblemResponse"];
+            401: components["responses"]["ProblemResponse"];
+            403: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
+            409: components["responses"]["ProblemResponse"];
+            413: components["responses"]["ProblemResponse"];
+            415: components["responses"]["ProblemResponse"];
+            422: components["responses"]["ProblemResponse"];
+            429: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };

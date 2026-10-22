@@ -5,26 +5,26 @@ The application owns who may attach an image to an offering; S3-compatible
 storage owns the bytes. This keeps media traffic off the commerce server and
 lets the same storage path serve the web application and future MCP clients.
 
-## Implemented foundation
+## Authorized upload and attachment
 
-`task media:check` starts the optional `media` Compose profile and seeds three
-synthetic food photographs through **presigned PUT URLs**. Each file is read back
-through a presigned GET URL and compared byte for byte. Storage remains private.
-The command repeats the batch to check repeatable seeding. It does not edit,
-republish, or reset any development menu.
+The OpenAPI-defined media operations allocate store-owned records, issue
+short-lived upload grants, verify completion, and resolve checked images.
+Merchant operations use the same offering read/write permissions as menu work;
+neither a UUID nor a successful storage PUT authorizes an attachment.
 
 The Go `internal/media` package uses the official AWS SDK v2 S3 presigner, not a
 custom signature implementation. It binds an upload to a key, SHA-256 checksum,
 content type, exact content length, and expiry. Accepted types are JPEG, PNG,
 and WebP; the current limit is 10 MiB and the maximum URL lifetime is 15 minutes.
-The fixture uses five minutes. Signing itself makes no storage request.
-This is a storage primitive, **not yet an authorized upload API**.
+Application upload and image-read grants use five minutes. Signing itself makes
+no storage request. Persistent menu revisions contain `image_id`, not a grant.
 
 Run locally:
 
 ```text
 task media:seed
 task media:check
+task dev:seed-media
 ```
 
 S3 is available at `http://localhost:18900`; the local console is at
@@ -39,23 +39,46 @@ in Compose. The [project repository](https://github.com/pgsty/silo) identifies i
 as a MinIO fork and links its AGPL-3.0 license. It is a local development service,
 not our selected production hosting product or a blanket licensing conclusion.
 
-## Upload flow to implement next
+## Upload flow
 
-1. A merchant requests an upload through an authorized, OpenAPI-defined operation.
+1. A merchant requests an upload through `StartMediaUpload`.
    The server checks tenant/store ownership, quota, declared length, and type,
    allocates a unique object key, and retains an upload record.
-2. The server returns a short-lived presigned PUT URL and required headers.
+2. `CreateMediaUploadGrant` returns a short-lived presigned PUT URL and headers.
    The browser uploads directly to storage. It echoes the signed media/checksum
    headers; the browser supplies Content-Length itself, rather than JavaScript
    attempting to set that forbidden header.
-3. A completion operation verifies the expected object, length, checksum, and
+3. `CompleteMediaUpload` verifies the expected object, length, checksum, and
    decoded image type before accepting an attachment. A successful HTTP upload
    is not, by itself, permission to publish. Image validation/derivative creation
    can read from storage without routing the original upload through our API.
-4. The offering references a durable owned media ID, **not an expiring URL**.
-   Published resized derivatives can use a separate public/CDN delivery path;
-   drafts and originals stay private. Avoid leaking draft images by granting
-   public access to the entire bucket.
+4. Saving an offering checks that each media ID is ready and belongs to that
+   exact store, inside the revision transaction. The public image endpoint
+   redirects only when the current visible publication references that ID.
+   Private previews require merchant authorization. The whole bucket stays
+   private; only checked derivatives receive image-read grants.
+
+Allocation and completion use durable idempotency keys. Replay records never
+contain signed URLs; grants are issued separately so retries can obtain fresh
+credentials. External storage work does not hold a database transaction open.
+The deterministic derivative key permits completion retry after a database
+failure. UI saving is disabled during an upload so a photo cannot be silently
+omitted from a saved draft.
+
+The API receives declarations and completion requests, **not upload bytes**.
+It does subsequently read the object from storage to check it. JPEG, PNG, and
+WebP are decoded only after dimension checks (at most 8192 per side and 16
+million pixels); at most two images are processed concurrently per process.
+Images are resized to at most 960 pixels per side and re-encoded as JPEG, with
+transparency flattened on white and source metadata omitted. This is not
+malware scanning, an ingredient/allergen check, or an EXIF orientation feature.
+
+Current bounded development quotas are 500 allocated assets and 200 MiB of
+declared original bytes per store, serialized during allocation. Derivatives
+consume additional storage. Pending allocations expire after one day, but
+abandoned-object reclamation, reference-aware deletion/retention, and production
+rate-limit policy still need implementation. Do not treat these limits as a
+complete production abuse solution.
 
 This keeps the UI, REST, and intent-based MCP on the same authorized media model.
 Remote MCP clients may follow the direct-upload instructions; an MCP App can do
@@ -63,9 +86,11 @@ so when its host's resource/connect policy permits. Neither needs storage keys.
 
 Presigned URLs are reusable bearer capabilities until expiry, not one-use tokens.
 Do not log their query strings or include them in analytics. Use unique upload
-keys, bounded quotas, cleanup of abandoned uploads, and verification before
-publication. A checksum protects byte integrity, not image safety or ownership.
+keys, bounded quotas, verification before publication, and a future cleanup
+policy. A checksum protects byte integrity, not image safety or ownership.
 Keep signatures out of durable menu revisions and long-lived MCP summaries.
+Previously issued image-read URLs can remain usable until their five-minute
+expiry after withdrawal; publication checks do not revoke an issued capability.
 
 OpenOM's `openom/src/storage.rs`, `S3Store`, `presign_put`, and `public_bucket`
 were inspected read-only. The useful pattern is a separate client-reachable
@@ -74,25 +99,45 @@ not rewrite a signed URL's hostname. No OpenOM implementation code was copied.
 
 ## Demo assets and evidence
 
-[The assets](../assets/demo/food/) contain Döner, Margherita pizza, and falafel
-photos generated using the built-in image-generation tool on 22 October 2026.
-They illustrate only the corresponding fictional dishes, not every pizza or
-vegetarian item. They are not actual restaurant photos or ingredient/allergen
-guarantees. The future interface must identify the store as a fictional demo.
+[The assets](../assets/demo/food/) contain synthetic photographs generated using
+the built-in image-generation tool on 22 October 2026 for the fictional demo
+menu. Each is associated with its own intended product, rather than one generic
+image reused across different dishes. They are not actual restaurant photos or
+ingredient/allergen guarantees. The demo storefront identifies them as synthetic.
 
-`prompts.json` retains the exact prompt set. `manifest.json` records intended
+The three prompt JSON files retain the exact prompt batches. `manifest.json` records intended
 fixture item IDs, dimensions, JPEG sizes, source PNG hashes, delivered SHA-256
 hashes, and content-addressed demo keys. No third-party stock photo was copied.
-The three 1254-square JPEGs total 840,012 bytes. Original generated PNGs remain
-outside tracked assets; `task media:prepare` can re-encode copies placed in
-ignored `working/demo-media/`. Ordinary seeding needs only committed JPEGs.
+All 48 optimized JPEGs together occupy 6,263,301 bytes (about 6 MB).
+Original generated PNGs remain outside tracked assets; `task media:prepare`
+encodes copies placed in ignored `working/demo-media/` as JPEGs at most 768
+pixels per side. Ordinary seeding needs only committed JPEGs.
+
+`task dev:seed-media` uses shared authorized application operations to attach
+prepared photos to unchanged matching demo products. It preserves existing
+photos, prices, extras, availability, and custom products, checks the draft
+revision, and publishes only if the old latest draft was already published.
+Otherwise the image-enriched revision remains a draft. It never resets a store.
+Repeating the command does not append another revision when nothing changed.
+Prepared ready assets can be reused after an interrupted seed.
+
+The food model's optional `image_id` is a coordinated draft addition to the
+current schema. An older implementation with a closed schema is not thereby
+compatible. New domain models must explicitly define their media references;
+this field is not a universal commerce requirement.
 
 Executed local checks include direct presigned upload/read, wrong-body checksum
 rejection, changed signed type/key denial, expired URL denial, anonymous object
 and bucket-list denial, and an allowed-origin CORS preflight. The test preserves
 the browser-facing `localhost:18900` Host while routing TCP through Docker DNS.
-This is not a real browser upload, a completed media API, or an R2/S3 cloud test.
-No media schema field or storefront photo display has been added yet.
+Additional SILO tests read and process real objects, verify the stored JPEG and
+dimensions, and reject a mismatching declared checksum. Real PostgreSQL tests
+exercise allocation/completion replay, permissions, tenant/store separation,
+pending/foreign attachment denial, and publication visibility, with a fake
+storage processor to isolate those behaviors. Frontend tests verify that file
+bytes go only to the granted destination and failed PUTs do not complete.
+These checks are not an R2/S3 cloud test. See STATUS.md for the latest executed
+browser and fixture-seeding results.
 
 ## Cost direction
 
@@ -114,3 +159,7 @@ Presign actions; [R2 presigned URLs](https://developers.cloudflare.com/r2/api/s3
 direct uploads and signature constraints. S3 SDK v1.114.4 and credentials
 v1.20.9 are pinned in the provider module. Do not infer full R2 compatibility
 from this bounded SILO test.
+Image processing uses the pinned `golang.org/x/image` v0.47.0
+[draw](https://pkg.go.dev/golang.org/x/image/draw) and
+[WebP decoder](https://pkg.go.dev/golang.org/x/image/webp); this module's BSD-3-Clause
+license applies to that implementation code, not to unrelated source material.

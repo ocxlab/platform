@@ -1,5 +1,48 @@
 # Development status
 
+## Authorized menu photos and complete demo assets
+
+22 October 2026, Europe/Berlin. All 48 fictional restaurant products have
+matching generated photos, optimized to at most 768 pixels per side. The
+committed JPEG set totals 6,263,301 bytes. Exact prompts and manifest hashes
+are retained; original PNGs remain ignored. Image generation ran in a separate
+agent while the API, database, upload UI, and tests were implemented.
+
+Media now has OpenAPI-defined allocation, metadata, short-lived upload grants,
+completion, private preview, and publication-checked public image resolution.
+Uploads go directly from the browser to private S3-compatible storage. The
+server checks stored bytes and dimensions and produces a metadata-free JPEG
+derivative. Menu revisions retain store-owned ready media IDs, never signed
+URLs. Tenant isolation, scoped permissions, quotas, and durable replay apply.
+Merchant photo controls and customer dish display are available in English,
+German, and Arabic. This is not the planned menu tiles/cart UX redesign.
+
+`task dev:seed-media` attached and published 48 photos in demo revision 2,
+preserving the other menu data. A repeat reported no missing photos and made
+no additional revision. Existing custom stores were not reset or illustrated
+with unrelated demo photos. The updated local API is running; native Vite
+continues to hot-reload the frontend.
+
+Executed checks: full `task check` (73 frontend tests, no Svelte diagnostics,
+race/vet/PostgreSQL/contract drift and runtime builds); repeated `task media:check`
+including actual stored-object processing; focused fixture completeness,
+provenance/hash/dimensions and image-validation race tests; `task smoke`.
+`task test:browser` passed all six journeys. The photo test covered direct PUT, checked preview, draft save, unpublished
+image denial, publication, and customer display. Initial browser attempts
+exposed missing Web Crypto in Chromium headless-shell on Docker HTTP origins;
+the harness now uses full headless Chromium with an explicit test-origin-only
+secure-context flag. This is not a relaxation of production HTTPS requirements.
+The photo test also withdraws its own test publication during cleanup, preserving
+the empty-directory precondition of the separate publication journey.
+No R2/cloud storage test ran. See [MEDIA.md](MEDIA.md) for limits, including
+cleanup/retention still to implement and bounded signed-URL expiry.
+
+Stages 1–2 of [the media/MCP plan](MEDIA-AND-MCP-PLAN.md) are complete. The
+seven existing merchant MCP tools are unchanged; additional setup/publication
+intentions, customer MCP, and model-driven chat are still pending. Admin
+redesign has not started; notify the founder before it so their screenshots
+can inform the APIs/MCPs management areas.
+
 ## Presigned media foundation and MCP feature assessment
 
 22 October 2026, Europe/Berlin (UTC+02:00). Optional private local object storage

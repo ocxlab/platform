@@ -1,0 +1,42 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - $ref: ../components/parameters/media-id.yaml
+get:
+  operationId: GetMerchantMediaImage
+  x-access: merchant
+  x-required-scope: offering:read
+  tags: [Merchant commerce]
+  summary: Redirect to a ready owned draft image
+  responses:
+    '307':
+      description: Short-lived signed GET location; API does not proxy image bytes.
+      headers:
+        Location:
+          schema:
+            type: string
+            format: uri
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+    default:
+      $ref: ../components/responses/problem.yaml
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '413':
+      $ref: ../components/responses/problem.yaml
+    '415':
+      $ref: ../components/responses/problem.yaml
+    '422':
+      $ref: ../components/responses/problem.yaml
+    '429':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml

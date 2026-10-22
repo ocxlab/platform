@@ -1,0 +1,75 @@
+UploadRequest:
+  type: object
+  additionalProperties: false
+  required: [content_type, size_bytes, sha256]
+  properties:
+    content_type:
+      type: string
+      enum: [image/jpeg, image/png, image/webp]
+    size_bytes:
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 10485760
+    sha256:
+      type: string
+      minLength: 44
+      maxLength: 44
+      pattern: '^[A-Za-z0-9+/]{43}=$'
+      description: Canonical base64 SHA-256 of the original file, not hexadecimal.
+Asset:
+  type: object
+  additionalProperties: false
+  required: [id, merchant_id, store_id, content_type, size_bytes, sha256, state, created_at, expires_at]
+  properties:
+    id:
+      $ref: ../common/identifier.yaml
+    merchant_id:
+      $ref: ../common/identifier.yaml
+    store_id:
+      $ref: ../common/identifier.yaml
+    content_type:
+      $ref: '#/UploadRequest/properties/content_type'
+    size_bytes:
+      $ref: '#/UploadRequest/properties/size_bytes'
+    sha256:
+      $ref: '#/UploadRequest/properties/sha256'
+    state:
+      type: string
+      enum: [pending, ready]
+    width:
+      type: integer
+      minimum: 1
+      maximum: 960
+    height:
+      type: integer
+      minimum: 1
+      maximum: 960
+    created_at:
+      type: string
+      format: date-time
+    expires_at:
+      type: string
+      format: date-time
+      description: Pending completion deadline. Ready assets do not expire at this time.
+UploadGrant:
+  type: object
+  additionalProperties: false
+  required: [url, method, headers, expires_in_seconds]
+  properties:
+    url:
+      type: string
+      format: uri
+      description: Short-lived secret bearer URL. Do not log, persist, or rewrite.
+    method:
+      type: string
+      enum: [PUT]
+    headers:
+      type: object
+      additionalProperties:
+        type: string
+      description: Echo these headers; browsers supply signed Content-Length automatically.
+    expires_in_seconds:
+      type: integer
+      minimum: 1
+      maximum: 300
