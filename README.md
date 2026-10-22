@@ -83,6 +83,11 @@ credentials out of source control; none are needed for the current checks.
 
 ## Commands
 
+The provider has [OpenTelemetry request instrumentation](docs/OBSERVABILITY.md)
+with optional OTLP/HTTP export. It needs no additional monitoring infrastructure
+for ordinary local development. MCP tools and their MCPs administration tab
+remain the next agent-facing slices.
+
 | Task | Purpose |
 | --- | --- |
 | `task` | List commands |

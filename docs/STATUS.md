@@ -1,9 +1,33 @@
 # Development status
 
+## OpenTelemetry runtime foundation and MCPs naming
+
+22 October 2026, Europe/Berlin (UTC+02:00). The requested future admin tab is
+named **MCPs**, covering management as well as monitoring. It is not yet a UI tab:
+neither MCP endpoint has been implemented. The Go provider now has OTel 1.47.0
+HTTP server spans, request/duration/in-flight metrics, and safe correlated failure
+logs. Optional OTLP/HTTP export uses bounded, non-blocking trace buffering and
+short export timeouts. Export is disabled by default; no monitoring backend is
+required or installed. See [operation and scope](OBSERVABILITY.md).
+
+Route templates and registered codes keep labels bounded; raw paths, request and
+response bodies, credentials, baggage, tracestate, and commerce identities are
+not collected. This batch does not change authentication or implement OAuth,
+tool-level spans, database/payment child spans, retained statistics, or an admin
+monitoring API. Shared authorization and intent-based MCP tools remain next.
+
+Passed: focused race-enabled telemetry/HTTP/API tests, `task check` (including
+contract drift, Go vet/race, SQL integration, 70 web tests, Svelte checks, and
+runtime builds), a further `task test:integration` with real merchant/customer
+SSE streams passing through telemetry, Compose validation, and `task smoke`.
+Tests exercised a local OTLP/HTTP receiver and a failing receiver, not Grafana
+or a production backend. No browser suite or load test was rerun; no development
+data was reset. The rebuilt local API is running with export disabled.
+
 ## MCP operational visibility and OpenTelemetry
 
 22 October 2026, Europe/Berlin (UTC+02:00). The
-[observability plan](OBSERVABILITY-AND-MCP-OPERATIONS.md) adds an MCP activity tab
+[observability plan](OBSERVABILITY-AND-MCP-OPERATIONS.md) adds an MCPs tab
 to the upcoming merchant/customer MCP work. It specifies call/error/latency
 visibility, safe recent failures, bounded storage, and OTel traces/metrics without
 a mandatory Grafana deployment. Shared API/MCP authorization precedes the tools;

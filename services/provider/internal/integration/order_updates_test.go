@@ -17,6 +17,7 @@ import (
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/orderupdates"
 	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/telemetry"
 )
 
 func TestOrderStreamsUseCommittedScopedHintsAndOrdinaryReads(t *testing.T) {
@@ -44,7 +45,12 @@ func TestOrderStreamsUseCommittedScopedHintsAndOrdinaryReads(t *testing.T) {
 	if !ready {
 		t.Fatal("listener did not become ready")
 	}
-	handler, err := httpapi.NewHandler(f.app, httpapi.WithOrderUpdates(hub))
+	// Exercise real SSE flushing/deadlines through the production telemetry wrapper,
+	// without requiring a collector or exporting any private fixture data.
+	signals, err := telemetry.New(ctx, telemetry.Config{Exporter: "none", SampleRatio: 0}, nil)
+	must(t, err)
+	defer func() { must(t, signals.Shutdown(context.Background())) }()
+	handler, err := httpapi.NewHandler(f.app, httpapi.WithOrderUpdates(hub), httpapi.WithTelemetry(signals.Observer))
 	must(t, err)
 	original := f.server
 	f.server = httptest.NewServer(handler)

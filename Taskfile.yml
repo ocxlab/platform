@@ -43,6 +43,11 @@ tasks:
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./...'
 
+  test:telemetry:
+    desc: Check safe OTel signals, streaming, and local OTLP/HTTP export without Grafana
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./internal/telemetry ./internal/httpapi ./cmd/api'
+
   test:mutation:web:
     desc: Run Stryker on checkout/session TypeScript logic and write local reports
     cmds:

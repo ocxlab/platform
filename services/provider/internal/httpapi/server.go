@@ -20,6 +20,7 @@ import (
 	"ocp.local/platform/internal/orderupdates"
 	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/problems"
+	"ocp.local/platform/internal/telemetry"
 )
 
 type principalKey struct{}
@@ -28,9 +29,14 @@ type Server struct {
 	models              *offering.Registry
 	developmentPayments bool
 	updates             *orderupdates.Hub
+	telemetry           *telemetry.Observer
 }
 
 type Option func(*Server)
+
+func WithTelemetry(observer *telemetry.Observer) Option {
+	return func(s *Server) { s.telemetry = observer }
+}
 
 func WithOrderUpdates(hub *orderupdates.Hub) Option { return func(s *Server) { s.updates = hub } }
 
@@ -128,99 +134,110 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 		w.Header().Set("X-Request-ID", uuid.NewString())
 		w.Header().Set("Cache-Control", "no-store")
 		route, pathParams, err := router.FindRoute(r)
-		if err != nil {
-			problem(w, 404, "not_found", "API operation not found.", nil)
-			return
-		}
 		timeout := 10 * time.Second
-		if route.Operation.OperationID == "WatchGuestFoodOrder" || route.Operation.OperationID == "WatchMerchantFoodOrders" {
+		if err == nil && (route.Operation.OperationID == "WatchGuestFoodOrder" || route.Operation.OperationID == "WatchMerchantFoodOrders") {
 			timeout = 2 * time.Minute
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 		r = r.WithContext(ctx)
-		if !public[route.Operation.OperationID] {
-			header := r.Header.Get("Authorization")
-			if !strings.HasPrefix(header, "Bearer ") {
-				problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
-				return
-			}
-			authenticate := persistence.Authenticate
-			if guest[route.Operation.OperationID] {
-				authenticate = persistence.AuthenticateGuest
-			}
-			if provider[route.Operation.OperationID] {
-				authenticate = persistence.AuthenticateProvider
-			}
-			authContext, authCancel := context.WithTimeout(r.Context(), 5*time.Second)
-			principal, err := authenticate(authContext, db, strings.TrimPrefix(header, "Bearer "))
-			authCancel()
-			if errors.Is(err, persistence.ErrUnauthenticated) {
-				problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
-				return
-			}
+		serve := func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
-				problem(w, 503, "unavailable", "Credential service is temporarily unavailable.", nil)
+				problem(w, 404, "not_found", "API operation not found.", nil)
 				return
 			}
-			merchant := uuid.Nil
-			if value, ok := pathParams["merchant_id"]; ok {
-				merchant, err = uuid.Parse(value)
-			} else if !provider[route.Operation.OperationID] {
-				err = errors.New("merchant scope required")
-			}
-			if err != nil {
-				problem(w, 400, "invalid_request", "Merchant identifier must be a UUID.", nil)
-				return
-			}
-			if (!principal.Provider && principal.MerchantID != merchant) || !principal.Allows(scopes[route.Operation.OperationID]) {
-				problem(w, 403, "forbidden", "Credential does not authorize this merchant and action.", nil)
-				return
-			}
-			if principal.Guest {
-				store, err := uuid.Parse(pathParams["store_id"])
+			if !public[route.Operation.OperationID] {
+				header := r.Header.Get("Authorization")
+				if !strings.HasPrefix(header, "Bearer ") {
+					problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
+					return
+				}
+				authenticate := persistence.Authenticate
+				if guest[route.Operation.OperationID] {
+					authenticate = persistence.AuthenticateGuest
+				}
+				if provider[route.Operation.OperationID] {
+					authenticate = persistence.AuthenticateProvider
+				}
+				authContext, authCancel := context.WithTimeout(r.Context(), 5*time.Second)
+				principal, err := authenticate(authContext, db, strings.TrimPrefix(header, "Bearer "))
+				authCancel()
+				if errors.Is(err, persistence.ErrUnauthenticated) {
+					problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
+					return
+				}
 				if err != nil {
-					problem(w, 400, "invalid_request", "Store identifier must be a UUID.", nil)
+					problem(w, 503, "unavailable", "Credential service is temporarily unavailable.", nil)
 					return
 				}
-				if principal.StoreID != store {
-					problem(w, 403, "forbidden", "Guest credential does not authorize this store.", nil)
+				merchant := uuid.Nil
+				if value, ok := pathParams["merchant_id"]; ok {
+					merchant, err = uuid.Parse(value)
+				} else if !provider[route.Operation.OperationID] {
+					err = errors.New("merchant scope required")
+				}
+				if err != nil {
+					problem(w, 400, "invalid_request", "Merchant identifier must be a UUID.", nil)
+					return
+				}
+				if (!principal.Provider && principal.MerchantID != merchant) || !principal.Allows(scopes[route.Operation.OperationID]) {
+					problem(w, 403, "forbidden", "Credential does not authorize this merchant and action.", nil)
+					return
+				}
+				if principal.Guest {
+					store, err := uuid.Parse(pathParams["store_id"])
+					if err != nil {
+						problem(w, 400, "invalid_request", "Store identifier must be a UUID.", nil)
+						return
+					}
+					if principal.StoreID != store {
+						problem(w, 403, "forbidden", "Guest credential does not authorize this store.", nil)
+						return
+					}
+				}
+				if principal.Provider {
+					principal.MerchantID = merchant
+				}
+				r = r.WithContext(context.WithValue(r.Context(), principalKey{}, principal))
+			}
+			if r.Body != nil {
+				r.Body = http.MaxBytesReader(w, r.Body, 262144)
+				data, err := io.ReadAll(r.Body)
+				if err != nil {
+					var tooLarge *http.MaxBytesError
+					if errors.As(err, &tooLarge) {
+						problem(w, 413, "body_too_large", "Request body exceeds 262144 bytes.", nil)
+					} else {
+						problem(w, 400, "invalid_request", "Cannot read request body.", nil)
+					}
+					return
+				}
+				r.Body = io.NopCloser(bytes.NewReader(data))
+			}
+			if r.Method == http.MethodPost || r.Method == http.MethodPut {
+				media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+				if err != nil || media != "application/json" {
+					problem(w, 415, "unsupported_media_type", "Request body must use application/json.", nil)
 					return
 				}
 			}
-			if principal.Provider {
-				principal.MerchantID = merchant
-			}
-			r = r.WithContext(context.WithValue(r.Context(), principalKey{}, principal))
-		}
-		if r.Body != nil {
-			r.Body = http.MaxBytesReader(w, r.Body, 262144)
-			data, err := io.ReadAll(r.Body)
-			if err != nil {
-				var tooLarge *http.MaxBytesError
-				if errors.As(err, &tooLarge) {
-					problem(w, 413, "body_too_large", "Request body exceeds 262144 bytes.", nil)
-				} else {
-					problem(w, 400, "invalid_request", "Cannot read request body.", nil)
-				}
+			input := &openapi3filter.RequestValidationInput{Request: r, PathParams: pathParams, Route: route,
+				Options: &openapi3filter.Options{AuthenticationFunc: openapi3filter.NoopAuthenticationFunc}}
+			if err := openapi3filter.ValidateRequest(r.Context(), input); err != nil {
+				problem(w, 400, "invalid_request", "Request does not match the API contract or size limit.", nil)
 				return
 			}
-			r.Body = io.NopCloser(bytes.NewReader(data))
+			generated.ServeHTTP(w, r)
 		}
-		if r.Method == http.MethodPost || r.Method == http.MethodPut {
-			media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
-			if err != nil || media != "application/json" {
-				problem(w, 415, "unsupported_media_type", "Request body must use application/json.", nil)
-				return
-			}
-		}
-		input := &openapi3filter.RequestValidationInput{Request: r, PathParams: pathParams, Route: route,
-			Options: &openapi3filter.Options{AuthenticationFunc: openapi3filter.NoopAuthenticationFunc}}
-		if err := openapi3filter.ValidateRequest(r.Context(), input); err != nil {
-			problem(w, 400, "invalid_request", "Request does not match the API contract or size limit.", nil)
+		if server.telemetry == nil {
+			serve(w, r)
 			return
 		}
-		generated.ServeHTTP(w, r)
+		path, operation := "unmatched", "unmatched"
+		if err == nil {
+			path, operation = route.Path, route.Operation.OperationID
+		}
+		server.telemetry.HTTP(w, r, path, operation, serve)
 	}), nil
 }
 
@@ -245,6 +262,9 @@ func problem(w http.ResponseWriter, status int, code, detail string, current *in
 		status = 503
 		code = "unavailable"
 		detail = "The service could not complete this request."
+	}
+	if recorder, ok := w.(interface{ SetProblemCode(string) }); ok {
+		recorder.SetProblemCode(code)
 	}
 	// RFC 9457 section 4.2.1: about:blank uses the HTTP status phrase as title.
 	// The additive code extension carries our more specific failure category.

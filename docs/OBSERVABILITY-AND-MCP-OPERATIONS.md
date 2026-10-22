@@ -1,15 +1,19 @@
-# Observability and MCP activity
+# Observability and MCP management
 
 Decision checkpoint: 22 October 2026, Europe/Berlin (UTC+02:00).
-Status: implementation plan, not delivered instrumentation or a working dashboard.
+Status: HTTP instrumentation implemented; MCP tools and their admin tab remain planned.
 
 ## Purpose and ownership
 
 Provider administrators need to understand whether customers and merchants can
 use our MCP tools reliably, which operations fail, and where time is spent.
-Add an **MCP activity** tab alongside Stores and Orders when the MCP surfaces
-are implemented. “Activity” describes the two endpoints more accurately than
-“fleet”: we are operating interfaces, not managing a fleet of autonomous agents.
+Add an **MCPs** tab alongside Stores and Orders when the MCP surfaces are
+implemented. It will cover monitoring and management, not just call activity.
+Show each endpoint's configured state and supported tools as well as its usage.
+Add management actions as the corresponding capabilities exist, with scoped
+authorization and an audit record for consequential changes. Do not invent
+nonfunctional enable/disable controls or grant administration through ordinary
+merchant/customer tools.
 
 The merchant and customer endpoints retain their four logical intent groups
 from [the authorization plan](MCP-SURFACES-AND-AUTHORIZATION.md). Monitoring
@@ -81,13 +85,16 @@ Opt-in merchant analytics remains a separate permission and product decision.
 
 ## Implementation order and checks
 
+The first runtime batch instruments HTTP independently of the MCP/auth rollout;
+see [current operation and verification](OBSERVABILITY.md). The remaining sequence is:
+
 1. Establish the shared API/MCP authentication and authorization foundation.
    Existing opaque bearer grants are not OAuth. Reuse ownership/scope policy;
    support resource-appropriate tokens rather than unrestricted token passthrough.
-2. Add backend OTel instrumentation alongside the first intent-based MCP tools.
+2. Extend backend OTel instrumentation to the first intent-based MCP tools.
    Cover success, tool errors, denied access, retries, and cancellation in tests
    using an in-memory exporter. Verify that sensitive values are absent.
-3. Add the admin API and MCP activity tab with bounded storage. Exercise exporter
+3. Add the admin API and MCPs tab with bounded storage. Exercise exporter
    failure, telemetry backpressure, pagination, retention, and both MCP endpoints.
 4. Add chat/model instrumentation when chat exists; connect an OTLP-compatible
    monitoring backend later without changing the business interfaces.

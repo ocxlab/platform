@@ -16,6 +16,7 @@ import (
 	"ocp.local/platform/internal/orderupdates"
 	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/runtimehttp"
+	"ocp.local/platform/internal/telemetry"
 )
 
 func main() {
@@ -36,6 +37,24 @@ func main() {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	config, err := telemetry.ConfigFromEnv(os.Getenv)
+	if err != nil {
+		slog.Error("invalid telemetry configuration")
+		os.Exit(1)
+	}
+	telemetry.InstallErrorHandler(slog.Default())
+	signals, err := telemetry.New(ctx, config, slog.Default())
+	if err != nil {
+		slog.Error("telemetry startup failed")
+		os.Exit(1)
+	}
+	defer func() {
+		shutdown, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		if signals.Shutdown(shutdown) != nil {
+			slog.Warn("telemetry shutdown incomplete")
+		}
+	}()
 	startup, cancel := context.WithTimeout(ctx, 10*time.Second)
 	db, err := persistence.Open(startup, os.Getenv("OCP_DATABASE_URL"))
 	if err == nil {
@@ -48,6 +67,7 @@ func main() {
 	}
 	defer db.Close()
 	var options []httpapi.Option
+	options = append(options, httpapi.WithTelemetry(signals.Observer))
 	updates := orderupdates.New()
 	go updates.Run(ctx, os.Getenv("OCP_DATABASE_URL"))
 	options = append(options, httpapi.WithOrderUpdates(updates))

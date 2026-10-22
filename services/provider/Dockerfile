@@ -13,6 +13,7 @@ RUN CGO_ENABLED=0 go build -trimpath -o /out/ocp-api ./cmd/api
 
 FROM scratch AS api
 COPY --from=build /out/ocp-api /ocp-api
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 USER 65532:65532
 EXPOSE 8080
 ENTRYPOINT ["/ocp-api"]
