@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,5 +21,8 @@ for (const [file, content] of Object.entries(outputs)) {
   const path = resolve(root, file);
   if (process.argv.includes('--check')) {
     if (readFileSync(path, 'utf8').replaceAll('\r\n','\n') !== content) throw new Error('Generated error catalog drift: ' + file);
-  } else writeFileSync(path, content);
+  } else {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, content);
+  }
 }

@@ -17,7 +17,9 @@ Internal Go sentinel errors remain private and are mapped at the HTTP boundary.
 
 Run `task errors:generate` after edits. It validates duplicate codes, ownership,
 status ranges, and message-key naming, then produces the embedded Go catalog and
-TypeScript registry. `task errors:check` runs under `task check` to detect drift.
+TypeScript registry. Both outputs are ignored, not checked in. Build/test Tasks
+generate them from these tracked definitions before use. `task errors:check`
+runs under `task check` to verify reproducible output.
 The HTTP boundary verifies code/status consistency and falls back to a safe
 unavailable error for an invalid mapping; tests also check literal call sites.
 

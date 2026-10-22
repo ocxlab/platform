@@ -14,3 +14,7 @@ working
 **/playwright-report
 **/.stryker-tmp
 **/reports
+services/provider/internal/httpapi/generated.go
+services/provider/internal/problems/catalog.generated.json
+apps/web/src/lib/api/generated.d.ts
+apps/web/src/lib/i18n/errors.generated.ts

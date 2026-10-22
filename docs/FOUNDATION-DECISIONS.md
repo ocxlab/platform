@@ -84,8 +84,11 @@ artifact tests establish the specific cohort actually used.
 
 ## Reviews and handoff
 
-Engineering review constraints are accepted: generated Go is committed and checked
-by non-mutating regeneration comparison; all transitive Go modules are pinned in
+Updated 22 October 2026 by founder direction: generated code and error catalogs
+are not committed. Source contracts, generator configuration, locked tools, and
+handwritten implementations are tracked; Tasks and Docker generate outputs before
+compilation. This supersedes the earlier review recommendation to commit Go output.
+All transitive Go modules are pinned in
 `go.mod`/`go.sum`. The runtime role is neither owner, superuser, nor BYPASSRLS.
 Authentication uses a narrowly scoped, schema-qualified SECURITY DEFINER lookup
 with fixed search path and no PUBLIC execution or runtime credential-table reads.

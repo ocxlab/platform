@@ -103,8 +103,9 @@ Customer tools, production OAuth, and the MCPs administration tab remain next.
 | `task dev:mcp-credential STORE=store-N` | Print a one-hour credential for an existing merchant's local MCP, not REST |
 | `task mcp:inspect` | Check merchant MCP schemas with pinned Inspector using `OCP_MCP_TOKEN` |
 | `task fmt` | Format Go sources inside Docker |
-| `task contracts:generate` | Validate/bundle modular OpenAPI and regenerate committed Go |
-| `task contracts:check` | Check generated-code drift without rewriting committed Go |
+| `task generate` | Generate ignored API code and error catalogs from tracked source definitions |
+| `task contracts:generate` | Validate/bundle modular OpenAPI and generate ignored Go interfaces/routing/types |
+| `task contracts:check` | Verify deterministic Go generation |
 | `task web:generate` | Regenerate TypeScript API types from the shared OpenAPI bundle |
 | `task check` | Check contracts, formatting, vet, race/SQL tests, web types/components, and runtime builds |
 | `task test:browser` | Run Chromium merchant/guest/admin journeys with disposable PostgreSQL |

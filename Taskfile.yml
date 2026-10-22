@@ -4,6 +4,23 @@ vars:
   COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml
 
 tasks:
+  generate:
+    desc: Generate all ignored Go/TypeScript artifacts from source contracts
+    cmds:
+      - task: generate:go
+      - task: web:generate
+
+  generate:go:
+    desc: Prepare generated Go API and embedded error catalog before compilation
+    deps: [contracts:generate, errors:generate]
+
+  generated:check:
+    desc: Reject generated outputs accidentally added to Git tracking
+    cmds:
+      - >-
+        {{.COMPOSE}} run --rm --no-deps tools sh -ec
+        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/provider/internal/httpapi/generated.go services/provider/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
+
   media:start:
     desc: Start optional local S3-compatible storage without changing application data
     cmds:
@@ -52,16 +69,19 @@ tasks:
 
   tools:build:
     desc: Build the containerized Go toolchain
+    run: once
     cmds:
       - '{{.COMPOSE}} build tools'
 
   fmt:
     desc: Format Go sources inside Docker
+    deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go fmt ./...'
 
   fmt:check:
     desc: Fail when Go sources need formatting without editing them
+    deps: [generate:go]
     cmds:
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
@@ -69,33 +89,38 @@ tasks:
 
   test:
     desc: Run Go unit tests inside Docker
+    deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go test -count=1 ./...'
 
   test:race:
     desc: Run tests with the Go race detector inside Docker
+    deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./...'
 
   test:telemetry:
     desc: Check safe OTel signals, streaming, and local OTLP/HTTP export without Grafana
+    deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./internal/telemetry ./internal/agenttools ./internal/httpapi ./cmd/api'
 
   test:mutation:web:
     desc: Run Stryker on checkout/session TypeScript logic and write local reports
     cmds:
-      - task: web:install
+      - task: web:generate
       - '{{.COMPOSE}} build web-mutation'
       - '{{.COMPOSE}} run --rm --no-deps web-mutation pnpm run test:mutation'
 
   test:mutation:go:
     desc: Run pinned Gremlins on Food and development-payment rules in an isolated source copy
+    deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/mutation-go.sh'
 
   vet:
     desc: Run Go static checks inside Docker
+    deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go vet ./...'
 
@@ -118,17 +143,20 @@ tasks:
       - '{{.COMPOSE}} run --rm --no-deps web-tools pnpm add --store-dir /root/.local/share/pnpm/store --save-exact --ignore-scripts {{.PACKAGE}}'
 
   web:generate:
-    desc: Generate committed TypeScript API types from the same OpenAPI bundle as Go
+    desc: Generate ignored TypeScript API types and error catalogs from owned contracts
+    sources:
+      - contracts/build/provider.openapi.json
+      - apps/web/package.json
+      - apps/web/pnpm-lock.yaml
+    generates: [apps/web/src/lib/api/generated.d.ts]
+    deps: [contracts:bundle, errors:generate, web:install]
     cmds:
-      - task: contracts:bundle
-      - task: web:install
       - '{{.COMPOSE}} run --rm --no-deps web-tools pnpm run contracts:generate'
 
   web:check:
-    desc: Verify generated API drift, type/component checks, tests, and web runtime build
+    desc: Generate API types, check components, run tests, and build the web runtime
     cmds:
-      - task: contracts:bundle
-      - task: web:install
+      - task: web:generate
       - '{{.COMPOSE}} run --rm --no-deps web-tools sh -ec "pnpm run contracts:check && pnpm run check && pnpm test"'
       - '{{.COMPOSE}} build web'
 
@@ -142,6 +170,7 @@ tasks:
   web:local:
     desc: Run local Svelte hot reload against the already running local API
     dir: apps/web
+    deps: [web:generate]
     env:
       OCP_API_URL: http://127.0.0.1:18180
       OCP_LOCAL_INSECURE_COOKIES: 'true'
@@ -159,6 +188,7 @@ tasks:
   test:browser:
     desc: Exercise merchant, guest and provider-admin journeys with disposable PostgreSQL
     cmds:
+      - task: generate:go
       - defer: '{{.COMPOSE}} stop browser-api browser-web test-db'
       - task: media:seed
       - '{{.COMPOSE}} build tools browser-api browser-web browser'
@@ -170,7 +200,8 @@ tasks:
   test:browser:dev:
     desc: Run browser regressions against Vite development compilation with disposable PostgreSQL
     cmds:
-      - task: web:install
+      - task: generate
+      - task: generated:check
       - task: media:seed
       - '{{.COMPOSE}} build tools browser-api browser'
       - defer: '{{.COMPOSE}} stop browser-api browser-web-dev test-db'
@@ -184,6 +215,8 @@ tasks:
     cmds:
       - task: tools:build
       - '{{.COMPOSE}} build web-tools'
+      - task: generate
+      - task: generated:check
       - task: errors:check
       - task: fmt:check
       - task: contracts:check
@@ -204,6 +237,13 @@ tasks:
 
   contracts:bundle:
     desc: Validate modular local OpenAPI sources and build a self-contained bundle
+    deps: [tools:build]
+    sources:
+      - contracts/openapi/v1/**/*
+      - services/provider/cmd/contracts/*.go
+      - services/provider/go.mod
+      - services/provider/go.sum
+    generates: [contracts/build/provider.openapi.json]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/contracts'
 
@@ -222,30 +262,43 @@ tasks:
 
   errors:generate:
     desc: Generate Go and TypeScript error catalogs from module-owned contract files
+    sources: [contracts/errors/*.json, scripts/generate-errors.mjs]
+    generates:
+      - services/provider/internal/problems/catalog.generated.json
+      - apps/web/src/lib/i18n/errors.generated.ts
     cmds:
+      - '{{.COMPOSE}} build web-tools'
       - '{{.COMPOSE}} run --rm --no-deps web-tools node ../../scripts/generate-errors.mjs'
 
   errors:check:
     desc: Verify that generated error catalogs match their module-owned sources
+    deps: [errors:generate]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps web-tools node ../../scripts/generate-errors.mjs --check'
 
   contracts:generate:
-    desc: Regenerate committed Go models, client, routing, and embedded contract
+    desc: Generate ignored Go models, client, routing, and embedded contract
+    deps: [contracts:bundle]
+    sources:
+      - contracts/build/provider.openapi.json
+      - contracts/tooling/go.yaml
+      - services/provider/go.mod
+      - services/provider/go.sum
+    generates: [services/provider/internal/httpapi/generated.go]
     cmds:
-      - task: contracts:bundle
       - '{{.COMPOSE}} run --rm --no-deps tools go tool oapi-codegen --config ../../contracts/tooling/go.yaml ../../contracts/build/provider.openapi.json'
 
   contracts:check:
-    desc: Validate contracts and detect generated-code drift without rewriting committed code
+    desc: Validate contracts and verify deterministic Go generation
     cmds:
-      - task: contracts:bundle
+      - task: contracts:generate
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
         'sed "s@^output:.*@output: /tmp/generated.go@" ../../contracts/tooling/go.yaml > /tmp/codegen.yaml; go tool oapi-codegen --config /tmp/codegen.yaml ../../contracts/build/provider.openapi.json; cmp internal/httpapi/generated.go /tmp/generated.go'
 
   db:prepare:
     desc: Start the development database, provision its restricted role, and apply migrations explicitly
+    deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} up --detach --wait db'
       - '{{.COMPOSE}} exec -T db psql -v ON_ERROR_STOP=1 -U ocp_dev -d ocp_dev -f /dev/stdin < deploy/local/init/roles.sql'
@@ -298,6 +351,7 @@ tasks:
 
   test:integration:
     desc: Run real PostgreSQL foundation tests in isolated disposable databases
+    deps: [generate:go]
     cmds:
       - defer: '{{.COMPOSE}} stop test-db'
       - '{{.COMPOSE}} up --force-recreate --detach --wait test-db'

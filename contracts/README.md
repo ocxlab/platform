@@ -86,8 +86,7 @@ tenant-matching middleware, and client parameter objects together. Actual URL
 segments, query names, stored JSON, and persisted replay bodies are unchanged.
 
 ```text
-task contracts:generate
-task web:generate
+task generate
 task fmt
 task check
 ```
@@ -95,11 +94,20 @@ task check
 Generation validates source references, bundles them, reloads the serialized bundle
 as a fresh consumer, and validates it again. Generated models, client, server
 interfaces/routing, and embedded contract live in
-`services/provider/internal/httpapi/generated.go`. Commit that file with the source
-change; never hand-edit it. `task contracts:check` regenerates to a temporary file
-and compares it without rewriting committed Go. TypeScript types live in
-`apps/web/src/lib/api/generated.d.ts`; `task web:check` checks their drift and
-consumers. Both generators use the same rebuildable, ignored bundle.
+`services/provider/internal/httpapi/generated.go`. This file is ignored, never
+committed or hand-edited. TypeScript types in `apps/web/src/lib/api/generated.d.ts`
+and the derived Go/TypeScript error catalogs follow the same policy. Commit their
+source definitions, generator configuration, and exact tool versions instead.
+Go's generator version is fixed in `services/provider/go.mod`; the TypeScript
+generator is fixed in `apps/web/package.json` and its lockfile.
+
+`task generate` prepares all outputs. Build/test/development Tasks generate their
+prerequisites, and both Docker runtime builds regenerate inside the image without
+receiving generated files from the build context. `task contracts:check` and
+`task web:check` compare regeneration for reproducibility and check consumers,
+not Git drift. Both API generators use the same rebuildable, ignored bundle.
+Handwritten request-handling and application logic live in separate files and
+implement the generated interfaces; no custom code belongs in generator outputs.
 
 `task check` also verifies fictional examples, Food definition rules, runtime
 responses, generated-client round trips, authorization, retries, and real PostgreSQL

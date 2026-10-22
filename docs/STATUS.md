@@ -1,5 +1,22 @@
 # Development status
 
+## Generated artifacts stay out of Git
+
+22 October 2026. The generated Go API, TypeScript API types, and Go/TypeScript
+error catalogs are now ignored build artifacts, not tracked source. This
+supersedes older entries describing committed generated code. OpenAPI sources,
+error definitions, generator configuration, locked tool versions, and handwritten
+handlers remain tracked. No custom implementation belongs in generated files.
+
+`task generate` recreates the outputs; Go/web checks and Docker builds generate
+their prerequisites. `task check` rejects these outputs if accidentally added to
+the Git index. All four outputs were deleted locally and successfully regenerated.
+Full `task check` passed, including Spectral, deterministic generation, Go race
+tests, isolated PostgreSQL integration, 84 frontend tests, zero Svelte diagnostics,
+and both runtime image builds with generated files excluded from their context.
+`task smoke` passed after restarting the API; development data was not reset.
+No browser regression suite was run for this build-policy change.
+
 ## Menu search focus styling
 
 22 October 2026. Focus highlights the complete menu search field in brand blue,

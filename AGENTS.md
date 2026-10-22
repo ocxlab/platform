@@ -61,8 +61,12 @@ keyboard interaction, and supported LTR/RTL languages alongside the happy path.
 Edit modular source under `contracts/openapi/v1/`, not the ignored bundle or
 generated Go. Keep reusable resource definitions, parameters, headers, and errors
 in their owning files and expose stable root component names. After changes, run
-`task contracts:generate`, `task web:generate`, and `task check`; commit source and
-generated Go/TypeScript artifacts together. All operations declare `x-access`;
+`task generate` and `task check`. Commit contracts, generator configuration,
+locked tool versions, and handwritten implementations, never generated code.
+Generated Go/TypeScript and error catalogs are ignored build artifacts. Keep all
+custom code in separate handwritten files; generation must never overwrite it.
+Task and Docker builds generate their own prerequisites from a clean checkout.
+All operations declare `x-access`;
 protected operations also declare a recognized `x-required-scope` and matching
 security scheme. Keep merchant and provider-admin credential audiences separate.
 Read `contracts/README.md` before extending the contract or offering-model registry.
