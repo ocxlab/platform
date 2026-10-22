@@ -18,6 +18,7 @@
 <LanguagePicker />
 <style>
   :global(*) { box-sizing: border-box; }
+  :global(html) { scrollbar-gutter: stable; }
   :global(body) { margin: 0; background: #f5f7f8; color: #1a2b35; font-family: system-ui, sans-serif; line-height: 1.55; }
   header, main, footer { max-width: 1080px; margin: auto; padding: 1.4rem; }
   header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; border-bottom: 1px solid #ccd8de; gap:1rem; }

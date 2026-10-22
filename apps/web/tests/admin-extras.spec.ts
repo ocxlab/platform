@@ -1,3 +1,4 @@
+import { reviewBasket } from './support/basket';
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
@@ -67,8 +68,9 @@ test('admin browses paged records and customers select paid and free pizza extra
   await guest.getByLabel('Extra cheese').check();
   await guest.getByLabel('Garlic').check();
   await expect(guest.locator('label').filter({ has: guest.getByRole('checkbox', { name: /Garlic/ }) })).toContainText('€0.00');
-  await guest.getByRole('button', { name: 'Check selection price' }).click();
-  await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('11.00');
+  await guest.getByRole('button', { name: 'Add to basket', exact: true }).click();
+  await reviewBasket(guest);
+  await expect(guest.getByRole('complementary', { name: 'Your basket' })).toContainText('11.00');
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
   await expect(guest.getByRole('region', { name: 'Order details' })).toContainText('Extra cheese');
   await expect(guest.getByRole('region', { name: 'Order details' })).toContainText('Garlic');

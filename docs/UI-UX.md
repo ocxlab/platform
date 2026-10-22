@@ -76,19 +76,49 @@ to their section. Display the lowest size price as “From” when variants exis
 the server still calculates the actual selection including extras. Sold-out
 dishes remain visible and cannot be chosen.
 
-Choosing a dish reveals its customization form and moves keyboard focus to its
-heading. Sizes, extras, and quantity are disclosed at that point, not repeated
-on every card. The price check and explicit placement remain separate. This is
-still the existing single-dish selection flow, not a new multi-dish cart.
-Real item links and category anchors work without JavaScript; view switching
-and live menu search require JavaScript and are disabled until it is ready.
-Merchant category changes follow the same draft/save/publish process as dishes.
+Choosing a dish opens a native modal and moves keyboard focus to its heading,
+preserving the browsing position. Sizes, extras, quantity, and an optional dish
+note appear there. Required single choices use compact native-radio choice cards;
+optional choices use checkboxes. Only merchant-declared defaults are preselected,
+not guessed preferences. Adding an item does not open the basket or move focus.
+
+The floating basket control sits alongside the equally sized language control,
+within the application's content width. Its modal fixes the heading and checkout
+area while only the item region scrolls. That named region is keyboard-focusable;
+the scrollbar is hidden, not the ability to scroll. Compact rows keep quantities,
+note disclosure, edit, and remove together. Notes are available per dish and for
+the whole order; they do not promise allergen safety or modify price rules.
+
+Basket edits automatically request an authoritative total and availability check
+after a short input debounce. Requests are serialized; stale results cannot enable
+placement. A visible updating state replaces a mandatory review/price-check button.
+Only a failed check offers a retry button. Placement remains an explicit action,
+with backend availability enforcement and retained quoted terms. SSE hints refresh
+published menus and ordering availability without periodic polling or resetting
+the customer's selections. Hidden tabs disconnect and reconnect with a fresh read.
+
+Tab-local session storage retains selections and notes across reloads, not prices
+or credentials. Do not silently discard a basket because a menu was republished:
+unavailable selections block checkout until corrected. The JavaScript basket is
+bounded to 20 selections, each with quantity up to 99. Without JavaScript, real
+item/category links and the existing single-dish native quote/place forms remain.
+Merchant categories, translations, and defaults use draft/save/publish operations.
+DE/EN/AR names are optional for categories, dishes, variants, and options; missing
+translations fall back to the merchant's default name. Isolate user-entered text.
 
 This pattern is informed by [Uber Eats' menu structure guidance](https://merchants.ubereats.com/ar/en/resources/learning-center/menu-and-photos/)
 (categories, items, and modifier groups) and [Deliveroo's category management](https://help.deliveroo.com/en/articles/6060280-how-to-add-edit-and-remove-menu-categories-in-menu-manger)
 (add, rename, reorder, and publish categories), examined 22 October 2026. Neither
 source establishes cards as a universal best layout: our default and view choices
 are a design decision to evaluate with the illustrated 48-item demo and merchants.
+
+[Uber's ordering journey](https://developer.uber.com/docs/eats/guides/order-integration),
+examined 22 October 2026, describes browsing, customization, cart building, and
+calculated pricing before explicit customer confirmation. This informs our
+customer-facing journey; it does not establish Uber's frontend transport or prove
+that it uses SSE. Our SSE and debounce choices are implementation decisions.
+Native dialog focus, Escape, and background-inert behavior follow the
+[WAI modal guidance](https://www.w3.org/WAI/WCAG22/Techniques/html/H102).
 
 ## Other pattern references
 

@@ -31,6 +31,14 @@ also requires editable, publishable category data and preserving enrichment of
 the existing demo. MCP intentions follow that slice; notify the founder before
 the later admin redesign so they can supply reference screenshots.
 
+The founder subsequently requested a real multi-item basket before MCP work:
+modal customization, quantities/edit/remove, dish and whole-order notes,
+DE/EN/AR menu names, compact floating basket, and automatic availability/total
+checks including published-menu SSE. These belong to the same Food application
+operations that future customer tools will call. A request for "Spectral for
+checking the UI" still needs clarification: Stoplight Spectral checks API
+descriptions rather than rendered UI. Do not install a guessed visual tool.
+
 Stages 1 and 2 are implemented: all 48 prepared images are attached to the
 fictional restaurant through owned media records, verified derivatives, and a
 preserving revision update. Generation ran in parallel with application work.

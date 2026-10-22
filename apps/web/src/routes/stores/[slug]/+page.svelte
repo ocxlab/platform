@@ -1,7 +1,10 @@
 <script lang="ts">
   import { useI18n } from '$lib/i18n/context';
   const { t, locale } = useI18n();
-  import { tick, untrack } from 'svelte';
+  import { tick, untrack, onMount } from 'svelte';
+  import { invalidateAll } from '$app/navigation';
+  import { liveUpdates } from '$lib/live-updates';
+  import FoodBasket from '$lib/components/FoodBasket.svelte';
   import MenuBrowser from '$lib/components/MenuBrowser.svelte';
   import Notice from '$lib/components/Notice.svelte';
   import ActionButton from '$lib/components/ActionButton.svelte';
@@ -9,6 +12,14 @@
   import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
   import { money } from '$lib/money';
   let { data, form } = $props();
+  let interactive = $state(false);
+  onMount(() => {
+    interactive = true;
+    const updates = liveUpdates(`${window.location.pathname}/updates`, invalidateAll, () => {});
+    const visible = () => updates.visible(document.visibilityState === 'visible');
+    visible(); document.addEventListener('visibilitychange', visible);
+    return () => { updates.close(); document.removeEventListener('visibilitychange', visible); };
+  });
   let itemId = $state(untrack(() => data.selectedItem));
   let configurationHeading = $state<HTMLHeadingElement>();
   async function chooseItem(id: string) {
@@ -32,7 +43,10 @@
 <p>{t('storefront-intro')}</p>
 {#if data.offering.store_id === '99598cf5-eded-4394-a053-751a1cb20db2'}<p class="muted">{t('media-demo')}</p>{/if}
 {#if !data.ordering.accepting_orders}<Notice text={t('ordering-paused-customer')} />{/if}
-{#if form?.error}<Notice text={form.error} error />{/if}
+{#if form?.error && !interactive}<Notice text={form.error} error />{/if}
+{#if interactive}
+{#key `${data.offering.merchant_id}/${data.offering.store_id}`}<FoodBasket menu={data.menu} merchant={data.offering.merchant_id} store={data.offering.store_id} generation={data.offering.publication_generation} quote={data.quote} intent={data.intent} accepting={data.ordering.accepting_orders} error={form?.error} />{/key}
+{:else}
 <MenuBrowser menu={data.menu} merchant={data.offering.merchant_id} store={data.offering.store_id} selected={itemId} onchoose={chooseItem} />
 {#if item}
 <section id="configure-item" class="configuration"><h2 tabindex="-1" bind:this={configurationHeading}>{t('menu-configure', { name: item.name })}</h2>
@@ -75,4 +89,5 @@
   <input type="hidden" name="key" value={data.intent.key} />
   <ActionButton icon={ShoppingBag} label={data.quote ? t('storefront-place') : t('storefront-recover')} />
 </form>
+{/if}
 {/if}

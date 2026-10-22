@@ -1,3 +1,4 @@
+import { reviewBasket } from './support/basket';
 import { test, expect } from '@playwright/test';
 const fixture = JSON.parse(process.env.OCP_BROWSER_FIXTURE ?? '{}') as { merchant_id: string; merchant_token: string; provider_token: string };
 test('merchant publishes, guest selects, provider suspends and restores', async ({ page, browser, request }) => {
@@ -99,7 +100,7 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await noScript.getByRole('link', { name: /Choose.*Döner/ }).click();
   await noScript.getByLabel('Garlic').check();
   await noScript.getByLabel('Quantity', { exact: true }).fill('2');
-  await noScript.getByRole('button', { name: 'Check selection price' }).click();
+  await noScript.getByRole('button', { name: 'Review order' }).click();
   await expect(noScript.getByRole('region', { name: 'Selection quote' })).toContainText('15.00');
   await noScriptContext.close();
   await guest.goto('/');
@@ -113,15 +114,17 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.getByRole('region', { name: 'Published stores' }).getByRole('link', { name: 'Neighbourhood Kitchen', exact: true }).click();
   await expect(guest).toHaveURL(new RegExp(storefront + '$'));
   await guest.getByRole('link', { name: /Choose.*Döner/ }).click();
-  await guest.getByRole('button', { name: 'Check selection price' }).click();
-  await expect(guest.getByRole('alert')).toContainText('Select available items');
+  await expect(guest.getByRole('button', { name: 'Add to basket', exact: true })).toBeDisabled();
   await guest.getByLabel('Garlic').check();
   await guest.getByLabel('Quantity', { exact: true }).fill('2');
-  await guest.getByRole('button', { name: 'Check selection price' }).click();
-  await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('15.00');
-  await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('not an order');
+  await guest.getByRole('button', { name: 'Add to basket', exact: true }).click();
+  await reviewBasket(guest);
+  await expect(guest.getByRole('complementary', { name: 'Your basket' })).toContainText('15.00');
+  await expect(guest.getByRole('button', { name: 'Review order', exact: true })).toHaveCount(0);
   await guest.reload();
-  await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('Garlic');
+  await reviewBasket(guest);
+  await expect(guest.getByRole('complementary', { name: 'Your basket' })).toContainText('Garlic');
+  const placement = await guest.locator('form[action="?/place"]').evaluate(form => Object.fromEntries(new FormData(form as HTMLFormElement))) as Record<string, string>;
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
   await expect(guest.getByRole('heading', { name: 'Pickup order placed' })).toBeVisible();
   const receipt = guest.url();
@@ -148,8 +151,11 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.locator('.language-picker button[value=en]').click();
   await expect(guest.getByRole('region', { name:'Order details' })).toContainText('15.00');
   await guest.goto(storefront);
-  await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
-  await expect(guest).toHaveURL(receipt);
+  // Replay the successful placement explicitly, without offering a second-order
+  // button for the now-empty basket. The cookie retains the scoped intent.
+  const replay = await guest.request.post(`${storefront}?/place`, { headers: { Origin: new URL(guest.url()).origin, Accept: 'application/json', 'x-sveltekit-action': 'true' }, form: placement, maxRedirects: 0 });
+  expect(await replay.json()).toMatchObject({ type: 'redirect', status: 303, location: new URL(receipt).pathname });
+  await guest.goto(receipt);
   const guestCookies = await guestContext.cookies();
   const credentialCookie = guestCookies.find((cookie) => cookie.name.startsWith('ocp_guest_'));
   expect(credentialCookie?.httpOnly).toBe(true);
@@ -204,8 +210,9 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await guest.goto(storefront);
   await guest.getByRole('link', { name: /Choose.*Döner/ }).click();
   await guest.getByLabel('Garlic').check();
-  await guest.getByRole('button', { name: 'Check selection price' }).click();
-  await expect(guest.getByRole('region', { name: 'Selection quote' })).toContainText('7.50');
+  await guest.getByRole('button', { name: 'Add to basket', exact: true }).click();
+  await reviewBasket(guest);
+  await expect(guest.getByRole('complementary', { name: 'Your basket' })).toContainText('7.50');
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
   await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/O-[0-9]+$`));
   await expect(guest.getByRole('heading', { name: 'Pickup order placed' })).toBeVisible();
@@ -305,7 +312,8 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(admin.getByRole('status')).toContainText('Visibility restored');
   await guest.goto(storefront); await expect(guest.getByRole('heading', { name: 'Neighbourhood Kitchen' })).toBeVisible();
   await guest.getByRole('link', { name: /Choose.*Falafel/ }).click();
-  await guest.getByRole('button', { name: 'Check selection price' }).click();
+  await guest.getByRole('button', { name: 'Add to basket', exact: true }).click();
+  await reviewBasket(guest);
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
   await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/O-[0-9]+$`));
   await expect(guest.getByRole('heading', { name: 'Pickup order placed' })).toBeVisible();
@@ -323,7 +331,8 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(page.getByText('Live updates connected', { exact: true })).toBeVisible();
   await guest.goto(storefront);
   await guest.getByRole('link', { name: /Choose.*Falafel/ }).click();
-  await guest.getByRole('button', { name: 'Check selection price' }).click();
+  await guest.getByRole('button', { name: 'Add to basket', exact: true }).click();
+  await reviewBasket(guest);
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
   await expect(guest).toHaveURL(new RegExp(`${storefront}/orders/O-[0-9]+$`));
   await expect(guest.getByRole('heading', { name: 'Pickup order placed' })).toBeVisible();

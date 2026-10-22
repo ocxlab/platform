@@ -5,6 +5,17 @@ import MenuEditor from './MenuEditor.svelte';
 
 afterEach(cleanup);
 
+test('edits supported dish translations without changing identity or the default name', async () => {
+  const { container } = render(MenuEditor, { initial: { ...menu(), items: menu().items.slice(0, 1) }, base: 1 });
+  await fireEvent.input(screen.getAllByLabelText('English')[0], { target: { value: 'Döner sandwich' } });
+  await fireEvent.input(screen.getAllByLabelText('العربية')[0], { target: { value: 'دونر' } });
+  const saved = () => JSON.parse(container.querySelector<HTMLInputElement>('input[name="document"]')!.value);
+  expect(saved().items[0]).toMatchObject({ id: 'item-0', name: 'Döner', translations: { en: 'Döner sandwich', ar: 'دونر' } });
+  expect(screen.getAllByLabelText('العربية')[0]).toHaveAttribute('dir', 'rtl');
+  await fireEvent.input(screen.getAllByLabelText('English')[0], { target: { value: '' } });
+  expect(saved().items[0].translations.en).toBeUndefined();
+});
+
 test('creates, assigns, renames, reorders, and removes categories without removing dishes', async () => {
   const { container } = render(MenuEditor, { initial: menu(), base: 1 });
   const saved = () => JSON.parse(container.querySelector<HTMLInputElement>('input[name="document"]')!.value) as components['schemas']['FoodMenu'];

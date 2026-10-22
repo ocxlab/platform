@@ -27,6 +27,8 @@ Item:
   additionalProperties: false
   required: [id, name, available, variants, option_groups]
   properties:
+    translations:
+      $ref: '#/NameTranslations'
     category_id:
       $ref: '#/LocalIdentifier'
     image_id:
@@ -58,6 +60,8 @@ Category:
   additionalProperties: false
   required: [id, name]
   properties:
+    translations:
+      $ref: '#/NameTranslations'
     id:
       $ref: '#/LocalIdentifier'
     name:
@@ -69,6 +73,8 @@ Variant:
   additionalProperties: false
   required: [id, name, price_minor]
   properties:
+    translations:
+      $ref: '#/NameTranslations'
     id:
       $ref: '#/LocalIdentifier'
     name:
@@ -85,6 +91,15 @@ OptionGroup:
   additionalProperties: false
   required: [id, name, min_selected, max_selected, options]
   properties:
+    default_option_ids:
+      type: array
+      maxItems: 30
+      uniqueItems: true
+      description: Merchant-selected initial choices. When present and nonempty, must satisfy this group's limits and refer to its options. Customers may change them.
+      items:
+        $ref: '#/LocalIdentifier'
+    translations:
+      $ref: '#/NameTranslations'
     id:
       $ref: '#/LocalIdentifier'
     name:
@@ -110,6 +125,8 @@ Option:
   additionalProperties: false
   required: [id, name, price_minor]
   properties:
+    translations:
+      $ref: '#/NameTranslations'
     id:
       $ref: '#/LocalIdentifier'
     name:
@@ -126,3 +143,19 @@ LocalIdentifier:
   minLength: 1
   maxLength: 64
   pattern: '^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$'
+NameTranslations:
+  type: object
+  additionalProperties: false
+  description: Optional display names in supported app languages. Omitted languages fall back to name. Stable identifiers and prices are language independent.
+  properties:
+    de:
+      $ref: '#/TranslatedName'
+    en:
+      $ref: '#/TranslatedName'
+    ar:
+      $ref: '#/TranslatedName'
+TranslatedName:
+  type: string
+  minLength: 1
+  maxLength: 160
+  pattern: '\S'

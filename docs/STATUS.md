@@ -1,5 +1,55 @@
 # Development status
 
+## Multi-item ordering with automatic basket checks
+
+22 October 2026, Europe/Berlin. Customers can now customize dishes in native
+modals and build a real multi-item basket: quantities, edit/remove, dish notes,
+and a separate whole-order note. A compact floating basket opens a modal with
+fixed header/checkout and a keyboard-scrollable item region. Rows share one
+quantity/note/edit/remove action line; descriptions wrap without smaller type.
+The redundant bordered checkout panel is removed. Menu search and view controls
+align, and sold-out dishes have a strong grayscale image and explicit badge.
+
+Basket changes automatically validate totals and availability; no manual price
+check or review action is required in the JavaScript flow. Short input debouncing,
+serialized requests, stale-response rejection, and quote-expiry refresh protect
+checkout without periodic polling. Explicit placement still uses scoped guest
+authority, an idempotency key, and backend availability checks. Published menus
+and ordering pause/resume changes now send public SSE hints. Live refresh retains
+customer choices and open dialogs; unavailable selections block ordering.
+The stream is separate from private order notifications and contains no order data.
+
+Optional DE/EN/AR menu-name translations and merchant-declared default options
+are editable/publishable data, not client guesses. Quote labels use the selected
+language with fallback, keeping identifiers and amounts unchanged. Dish and order
+notes survive placement into customer and merchant order details. Tab-local
+session storage retains selections/notes across reloads, not prices or credentials.
+Without JavaScript, the existing single-dish native form remains available.
+
+The 48-item demo was enriched to revision 4 with translations and a declared
+garlic-sauce default, preserving existing edits and photographs. Custom stores
+were not reset. [Open the demo](http://localhost:18181/stores/marktplatz-kueche-demo-store-2).
+The application remains pre-launch: production SSE proxy/admission policies,
+internet abuse controls, and automatic-check quote-volume limits need release
+assessment. Existing quote and guest capacities are not an abuse-protection claim.
+
+Verification: full `task check` passed, including contract/generated-code drift,
+Go vet/race tests, backend/web builds, 82 frontend tests and zero Svelte diagnostics.
+Real PostgreSQL
+integration tests passed, including committed/rolled-back availability hints,
+private-channel separation, foreign-store isolation, and withdrawal. Six browser
+journeys passed (42.6 seconds), exercising multi-item placement with both note
+types, reload/edit/remove, no-JavaScript fallback, publication-driven availability,
+pause/resume without reload, RTL, modal focus/scroll restoration, and fixed checkout
+geometry on a narrow viewport. The mobile basket screenshot was inspected.
+`task smoke` passed. Repeat demo enrichment was a no-op; a local read confirmed
+48 items with photographs and translations at revision 4 and the sauce default.
+No real payment or cloud service was exercised in this batch.
+
+Merchant/customer MCP expansion remains next; provider-admin redesign has not
+started. Notify the founder before that redesign for their screenshots. The
+requested "Spectral for UI" tool needs clarification before selecting tooling.
+
 ## Categorized visual customer menu
 
 22 October 2026, Europe/Berlin. The customer storefront now opens with image

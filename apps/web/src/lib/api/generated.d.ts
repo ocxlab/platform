@@ -802,6 +802,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering-updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Watch public menu and ordering availability changes
+         * @description Subscribe before reading the current offering and ordering state. Initial connection and committed publication/ordering changes emit event invalidate with JSON data {"resource":"public_offering"}. Re-read both public resources. Hints may coalesce; no event IDs or replay are promised. No private draft or order events are sent. Withdrawn, suspended and absent publications cannot open a stream. An existing stream signals withdrawal so its client can re-read and stop ordering. Heartbeat comments maintain transport; streams close after two minutes and clients reconnect for a fresh initial hint. Capacity failures return 503.
+         */
+        get: operations["WatchPublicOffering"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/stores": {
         parameters: {
             query?: never;
@@ -900,7 +924,15 @@ export interface components {
         DomainsFoodMenuV1SchemaYamlCategory4435e648: {
             id: components["schemas"]["FoodLocalIdentifier"];
             name: string;
+            translations?: components["schemas"]["DomainsFoodMenuV1SchemaYamlNameTranslationseb9ea423"];
         };
+        /** @description Optional display names in supported app languages. Omitted languages fall back to name. Stable identifiers and prices are language independent. */
+        DomainsFoodMenuV1SchemaYamlNameTranslationseb9ea423: {
+            ar?: components["schemas"]["DomainsFoodMenuV1SchemaYamlTranslatedName93fc36bf"];
+            de?: components["schemas"]["DomainsFoodMenuV1SchemaYamlTranslatedName93fc36bf"];
+            en?: components["schemas"]["DomainsFoodMenuV1SchemaYamlTranslatedName93fc36bf"];
+        };
+        DomainsFoodMenuV1SchemaYamlTranslatedName93fc36bf: string;
         /** Format: int64 */
         DomainsFoodOrderV1OperationsYamlCancelFoodOrderRequestPropertiesExpectedRevision625389f0: number;
         /** @enum {string} */
@@ -908,6 +940,8 @@ export interface components {
         DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesAcceptingOrders8015f5a8: boolean;
         /** Format: int64 */
         DomainsFoodOrderingV1SchemaYamlFoodOrderingPropertiesRevision1d131dc9: number;
+        /** @description Optional plain-text customer request, not a guaranteed change to ingredients, allergens, price, or agreed options. */
+        DomainsFoodSelectionV1SchemaYamlCustomerNotefb95322a: string;
         FoodFulfilmentRequest: {
             /** @enum {string} */
             action: "start_preparation" | "mark_ready" | "record_collection";
@@ -939,6 +973,7 @@ export interface components {
             image_id?: string;
             name: string;
             option_groups: components["schemas"]["FoodOptionGroup"][];
+            translations?: components["schemas"]["DomainsFoodMenuV1SchemaYamlNameTranslationseb9ea423"];
             variants: components["schemas"]["FoodVariant"][];
         };
         FoodOption: {
@@ -946,13 +981,17 @@ export interface components {
             name: string;
             /** Format: int64 */
             price_minor: number;
+            translations?: components["schemas"]["DomainsFoodMenuV1SchemaYamlNameTranslationseb9ea423"];
         };
         FoodOptionGroup: {
+            /** @description Merchant-selected initial choices. When present and nonempty, must satisfy this group's limits and refer to its options. Customers may change them. */
+            default_option_ids?: components["schemas"]["FoodLocalIdentifier"][];
             id: components["schemas"]["FoodLocalIdentifier"];
             max_selected: number;
             min_selected: number;
             name: string;
             options: components["schemas"]["FoodOption"][];
+            translations?: components["schemas"]["DomainsFoodMenuV1SchemaYamlNameTranslationseb9ea423"];
         };
         FoodOrder: {
             /** @enum {string} */
@@ -1023,6 +1062,7 @@ export interface components {
             lines: components["schemas"]["FoodQuotedLine"][];
             merchant_id: components["schemas"]["Identifier"];
             model: components["schemas"]["Model"];
+            note?: components["schemas"]["DomainsFoodSelectionV1SchemaYamlCustomerNotefb95322a"];
             /** Format: int64 */
             publication_generation: number;
             /** Format: int64 */
@@ -1053,12 +1093,19 @@ export interface components {
         };
         FoodSelectionLine: {
             item_id: components["schemas"]["FoodLocalIdentifier"];
+            note?: components["schemas"]["DomainsFoodSelectionV1SchemaYamlCustomerNotefb95322a"];
             options: components["schemas"]["FoodSelectedOption"][];
             quantity: number;
             variant_id: components["schemas"]["FoodLocalIdentifier"];
         };
         FoodSelectionRequest: {
             lines: components["schemas"]["FoodSelectionLine"][];
+            /**
+             * @description Preferred language for retained labels; missing translations use the merchant's default name.
+             * @enum {string}
+             */
+            locale?: "de" | "en" | "ar";
+            note?: components["schemas"]["DomainsFoodSelectionV1SchemaYamlCustomerNotefb95322a"];
             /** Format: int64 */
             publication_generation: number;
         };
@@ -1067,6 +1114,7 @@ export interface components {
             name: string;
             /** Format: int64 */
             price_minor: number;
+            translations?: components["schemas"]["DomainsFoodMenuV1SchemaYamlNameTranslationseb9ea423"];
         };
         GuestSession: {
             /** @description Returned once. Keep private; send only as bearer authorization. */
@@ -2712,6 +2760,35 @@ export interface operations {
             400: components["responses"]["ProblemResponse"];
             404: components["responses"]["ProblemResponse"];
             429: components["responses"]["ProblemResponse"];
+            503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    WatchPublicOffering: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description UTF-8 change hints for public state, never order or customer data. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            400: components["responses"]["ProblemResponse"];
+            404: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
             default: components["responses"]["ProblemResponse"];
         };

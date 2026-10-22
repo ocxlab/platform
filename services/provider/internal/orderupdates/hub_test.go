@@ -82,3 +82,27 @@ func TestScopeCoalescingDisconnectAndCapacity(t *testing.T) {
 		t.Fatal("subscribe while disconnected")
 	}
 }
+
+func TestPublicOfferingHubKeepsIndependentCapacityAndChannel(t *testing.T) {
+	h := NewOfferings()
+	h.ready = true
+	if h.channel == New().channel {
+		t.Fatal("public and private streams share a channel")
+	}
+	actor := uuid.New()
+	for i := 0; i < 32; i++ {
+		_, release, ok := h.Subscribe(Change{}, actor)
+		if !ok {
+			t.Fatal("public peer capacity too small")
+		}
+		defer release()
+	}
+	if _, _, ok := h.Subscribe(Change{}, actor); ok {
+		t.Fatal("public peer limit missing")
+	}
+	if _, release, ok := h.Subscribe(Change{}, uuid.New()); !ok {
+		t.Fatal("peer limit leaked")
+	} else {
+		release()
+	}
+}

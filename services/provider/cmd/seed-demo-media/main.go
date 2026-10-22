@@ -95,6 +95,7 @@ func run() error {
 	operation := commerce.Media{DB: db, Storage: storage}
 	changed := 0
 	categorized := attachCategories(doc, fixtureMenu)
+	translated := devfixtures.TranslateDemoNames(doc)
 	for _, entry := range doc["items"].([]any) {
 		item := entry.(map[string]any)
 		id, _ := item["id"].(string)
@@ -158,7 +159,7 @@ func run() error {
 		changed++
 		fmt.Println("Prepared photo:", id)
 	}
-	if changed == 0 && !categorized {
+	if changed == 0 && !categorized && !translated {
 		fmt.Println("No missing matching demo photos or categories; existing edits preserved.")
 		return nil
 	}
@@ -184,7 +185,7 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Attached and published %d photos (categories added: %t) in revision %d. Other menu content preserved.\n", changed, categorized, revision.Revision)
+		fmt.Printf("Attached and published %d photos (categories added: %t; translations added: %t) in revision %d. Other menu content preserved.\n", changed, categorized, translated, revision.Revision)
 	} else {
 		fmt.Printf("Attached %d photos to private revision %d. Existing publication preserved; review and publish in the workspace.\n", changed, revision.Revision)
 	}
@@ -220,6 +221,11 @@ func attachCategories(doc map[string]any, fixture devfixtures.Menu) bool {
 			categories = append(categories, category)
 		}
 	}
-	doc["categories"] = categories
+	// Keep the enrichment tree consistently JSON-shaped so translation enrichment
+	// also visits categories inserted during this very first seed.
+	encoded, _ := json.Marshal(categories)
+	var entries []any
+	_ = json.Unmarshal(encoded, &entries)
+	doc["categories"] = entries
 	return true
 }

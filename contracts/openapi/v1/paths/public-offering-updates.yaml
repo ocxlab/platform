@@ -1,0 +1,35 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+get:
+  operationId: WatchPublicOffering
+  tags: [Customer commerce]
+  summary: Watch public menu and ordering availability changes
+  description: >-
+    Subscribe before reading the current offering and ordering state. Initial connection
+    and committed publication/ordering changes emit event invalidate with JSON data
+    {"resource":"public_offering"}. Re-read both public resources. Hints may coalesce;
+    no event IDs or replay are promised. No private draft or order events are sent.
+    Withdrawn, suspended and absent publications cannot open a stream. An existing
+    stream signals withdrawal so its client can re-read and stop ordering.
+    Heartbeat comments maintain transport; streams close after two minutes and
+    clients reconnect for a fresh initial hint. Capacity failures return 503.
+  security: []
+  x-access: public
+  responses:
+    '200':
+      description: UTF-8 change hints for public state, never order or customer data.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        text/event-stream:
+          schema: { type: string }
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '404':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    default:
+      $ref: ../components/responses/problem.yaml

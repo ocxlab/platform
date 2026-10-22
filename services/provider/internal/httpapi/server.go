@@ -31,6 +31,7 @@ type Server struct {
 	models              *offering.Registry
 	developmentPayments bool
 	updates             *orderupdates.Hub
+	offeringUpdates     *orderupdates.Hub
 	telemetry           *telemetry.Observer
 	localMerchantMCP    bool
 	mediaStore          commerce.MediaStorage
@@ -50,6 +51,9 @@ func WithTelemetry(observer *telemetry.Observer) Option {
 }
 
 func WithOrderUpdates(hub *orderupdates.Hub) Option { return func(s *Server) { s.updates = hub } }
+func WithOfferingUpdates(hub *orderupdates.Hub) Option {
+	return func(s *Server) { s.offeringUpdates = hub }
+}
 
 // Disabled by default. Enable only in explicit local/test composition.
 func WithDevelopmentPayments() Option { return func(s *Server) { s.developmentPayments = true } }
@@ -76,7 +80,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	}})
 	scopes := map[string]string{}
 	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:cancel": true, "order:manage": true, "order:inspect": true}
-	public := map[string]bool{"GetPublicMediaImage": true, "GetPublicFoodOrdering": true, "GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true, "GetPublicStoreByHandle": true}
+	public := map[string]bool{"WatchPublicOffering": true, "GetPublicMediaImage": true, "GetPublicFoodOrdering": true, "GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true, "GetPublicStoreByHandle": true}
 	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true, "ChangeDevelopmentPayment": true, "GetGuestFoodOrderByReference": true, "WatchGuestFoodOrder": true}
 	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true, "AdminListStores": true, "AdminListFoodOrders": true}
 	for _, path := range spec.Paths.Map() {
@@ -158,7 +162,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 		w.Header().Set("Cache-Control", "no-store")
 		route, pathParams, err := router.FindRoute(r)
 		timeout := 10 * time.Second
-		if err == nil && (route.Operation.OperationID == "WatchGuestFoodOrder" || route.Operation.OperationID == "WatchMerchantFoodOrders") {
+		if err == nil && (route.Operation.OperationID == "WatchPublicOffering" || route.Operation.OperationID == "WatchGuestFoodOrder" || route.Operation.OperationID == "WatchMerchantFoodOrders") {
 			timeout = 2 * time.Minute
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), timeout)

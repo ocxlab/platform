@@ -4,9 +4,9 @@ import { error } from '@sveltejs/kit';
 // Browser EventSource cannot attach our API bearer header. A same-origin endpoint
 // authenticates its HttpOnly session and forwards only a fixed API path. No token
 // is put in a URL, browser JavaScript, or SSE payload.
-export async function orderUpdates(request: Request, path: string, token: string) {
+export async function orderUpdates(request: Request, path: string, token?: string) {
   const upstream = await fetch(`${env.OCP_API_URL ?? 'http://api:8080'}${path}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), Accept: 'text/event-stream' },
     signal: AbortSignal.any([request.signal, AbortSignal.timeout(130_000)]),
     redirect: 'error',
   });

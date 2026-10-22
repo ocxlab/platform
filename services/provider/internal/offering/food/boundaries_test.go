@@ -89,10 +89,11 @@ func TestPriceMaximumSelectedOptions(t *testing.T) {
 		group.Max = 30
 		for o := 0; o < 30; o++ {
 			choice := struct {
-				ID    string `json:"id"`
-				Name  string `json:"name"`
-				Price int64  `json:"price_minor"`
-			}{fmt.Sprintf("o%d", o), "Extra", 0}
+				Translations map[string]string `json:"translations,omitempty"`
+				ID           string            `json:"id"`
+				Name         string            `json:"name"`
+				Price        int64             `json:"price_minor"`
+			}{nil, fmt.Sprintf("o%d", o), "Extra", 0}
 			group.Options = append(group.Options, choice)
 			line.Options = append(line.Options, SelectedOption{group.ID, choice.ID})
 		}

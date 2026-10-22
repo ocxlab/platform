@@ -178,6 +178,42 @@ tested abuse controls, appropriate limits, and a retention policy.
 
 ## Guest checkout
 
+### Basket notes and localized Food menus
+
+The coordinated draft menu addition supports optional `translations` for category,
+item, variant, option-group, and option names, limited to `de`, `en`, and `ar`.
+Default `name` remains required. Selection requests may supply `locale` for quote
+labels, with fallback to the default; identifiers and amounts are unchanged.
+Optional `default_option_ids` on option groups must resolve uniquely and, when
+nonempty, satisfy the group's selection limits. Defaults are suggestions for new
+selections, not replacements for the customer's previously chosen options.
+
+Selection-line `note` and request/quote `note` carry optional plain-text requests
+of at most 500 Unicode characters. Notes are retained in agreed terms and shown
+to the merchant; they do not change pricing or guarantee special preparation.
+The selection endpoint already supports multiple lines. Browser previews use
+that same guest API; automatic checks are not an independent purchase authority.
+These additions require coordinated client/server updates because older schemas
+were closed, despite retaining the current draft model version label.
+
+### Public availability updates
+
+`GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering-updates`
+is a public SSE hint stream. Clients re-read both the published offering and Food
+ordering state on connection/reconnection and matching changes. Publication and
+ordering revisions generate commit-time notifications; drafts and order events
+do not. The public listener uses a separate PostgreSQL channel from private order
+updates. An already subscribed viewer receives a withdrawal hint before closure.
+This is not event replay, a reservation, or permission to bypass placement checks.
+
+Each API process uses one additional LISTEN connection, not one per browser.
+Public streams are bounded to 1,000 total and 32 per direct network peer, with
+ten-second transport heartbeats and a two-minute lifetime. Forwarded headers are
+not trusted. A reverse proxy currently shares its peer allowance; a production
+trusted-proxy/admission policy and internet abuse controls remain release work.
+SvelteKit forwards the fixed public path without credentials. Hidden pages close
+the stream; reconnect forces a fresh JSON read instead of replay or state polling.
+
 Readable web navigation uses `/stores/{name}-{handle}/orders/{reference}`.
 `GET /api/v1/public/stores/{store_handle}` resolves one visible store through
 an indexed, narrowly authorized public projection; it never exposes private,

@@ -21,9 +21,18 @@ type Hub struct {
 	mu            sync.Mutex
 	ready         bool
 	subscriptions map[*subscription]struct{}
+	channel       string
+	public        bool
 }
 
-func New() *Hub { return &Hub{subscriptions: make(map[*subscription]struct{})} }
+func New() *Hub {
+	return &Hub{subscriptions: make(map[*subscription]struct{}), channel: "ocp_food_order_changed"}
+}
+
+// NewOfferings isolates public publication hints from private order activity.
+func NewOfferings() *Hub {
+	return &Hub{subscriptions: make(map[*subscription]struct{}), channel: "ocp_public_offering_changed", public: true}
+}
 
 // Subscribe fails closed while disconnected. Reconnection closes existing streams;
 // every new stream requests an authoritative fresh read instead of claiming replay.
@@ -39,7 +48,11 @@ func (h *Hub) Subscribe(change Change, actor uuid.UUID) (<-chan struct{}, func()
 			count++
 		}
 	}
-	if count >= 8 {
+	limit := 8
+	if h.public {
+		limit = 32
+	}
+	if count >= limit {
 		return nil, nil, false
 	}
 	s := &subscription{change, make(chan struct{}, 1), actor}
@@ -86,7 +99,8 @@ func (h *Hub) listen(ctx context.Context, dsn string) {
 	connect, cancel := context.WithTimeout(ctx, 5*time.Second)
 	conn, err := pgx.Connect(connect, dsn)
 	if err == nil {
-		_, err = conn.Exec(connect, "LISTEN ocp_food_order_changed")
+		// channel is set only by the constructors, never from a request.
+		_, err = conn.Exec(connect, "LISTEN "+h.channel)
 	}
 	cancel()
 	if conn != nil {
@@ -108,7 +122,7 @@ func (h *Hub) listen(ctx context.Context, dsn string) {
 			return
 		}
 		var change Change
-		if json.Unmarshal([]byte(notification.Payload), &change) == nil && change.Merchant != uuid.Nil && change.Store != uuid.Nil && change.Order != uuid.Nil {
+		if json.Unmarshal([]byte(notification.Payload), &change) == nil && change.Merchant != uuid.Nil && change.Store != uuid.Nil && (h.public && change.Order == uuid.Nil || !h.public && change.Order != uuid.Nil) {
 			h.publish(change)
 		}
 	}

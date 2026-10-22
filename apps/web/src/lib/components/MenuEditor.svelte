@@ -6,6 +6,7 @@
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import ActionButton from './ActionButton.svelte';
   import MenuPhoto from './MenuPhoto.svelte';
+  import MenuTranslations from './MenuTranslations.svelte';
   import type { components } from '$lib/api/generated';
   type Menu = components['schemas']['FoodMenu'];
   let { initial, base, mediaEndpoint, uploading = $bindable(false) }: { initial: Menu; base: number; mediaEndpoint?: string; uploading?: boolean } = $props();
@@ -30,6 +31,10 @@
     [categories[index], categories[index + offset]] = [categories[index + offset], categories[index]];
     menu.categories = categories;
   }
+  function setDefault(group: Menu['items'][number]['option_groups'][number], id: string, checked: boolean) {
+    const selected = group.default_option_ids ?? [];
+    group.default_option_ids = checked ? [...selected.filter(value => value !== id), id] : selected.filter(value => value !== id);
+  }
   function addOption(group: Menu['items'][number]['option_groups'][number]) {
     const allAllowed = group.max_selected === group.options.length;
     group.options.push({ id: identifier(), name: t('editor-default-option'), price_minor: 0 });
@@ -45,6 +50,7 @@
   {#each menu.categories ?? [] as category, index (category.id)}
     <div class="category-row">
       <label>{t('menu-category-name')}<input dir="auto" bind:value={category.name} required maxlength="80" /></label>
+      <MenuTranslations bind:value={category.translations} name={category.name} />
       <div class="category-actions">
         <button type="button" disabled={index === 0} aria-label={t('menu-move-up', { name: category.name })} onclick={() => moveCategory(index, -1)}>↑</button>
         <button type="button" disabled={index === (menu.categories?.length ?? 0) - 1} aria-label={t('menu-move-down', { name: category.name })} onclick={() => moveCategory(index, 1)}>↓</button>
@@ -57,6 +63,7 @@
 {#each menu.items as item (item.id)}
   <fieldset><legend>{t('editor-item')}</legend>
     <label>{t('editor-name')}<input dir="auto" bind:value={item.name} required maxlength="160" /></label>
+    <MenuTranslations bind:value={item.translations} name={item.name} />
     <label>{t('menu-category')}<select value={item.category_id ?? ''} onchange={(event) => { const id = event.currentTarget.value; if (id) item.category_id = id; else delete item.category_id; }}><option value="">{t('menu-uncategorized')}</option>{#each menu.categories ?? [] as category}<option value={category.id} dir="auto">{category.name}</option>{/each}</select></label>
     <label><input type="checkbox" bind:checked={item.available} />{t('editor-available')}</label>
     {#if mediaEndpoint}<MenuPhoto bind:imageId={item.image_id} endpoint={mediaEndpoint} name={item.name} onbusy={(busy) => uploadStatus(item.id, busy)} />{/if}
@@ -64,6 +71,7 @@
     <p class="muted">{t('editor-variants-help')}</p>
     {#each item.variants as choice (choice.id)}
       <div class="row"><label>{t('editor-variant')}<input dir="auto" bind:value={choice.name} required maxlength="80" /></label><label>{t('editor-variant-price')}<input type="number" min="0" step="0.01" max="10000000" required value={choice.price_minor / 100} oninput={(e) => choice.price_minor = Math.round(e.currentTarget.valueAsNumber * 100)} /></label></div>
+      <MenuTranslations bind:value={choice.translations} name={choice.name} />
     {/each}
     <ActionButton type="button" icon={Plus} label={t('editor-add-variant')} onclick={() => item.variants.push(variant())} disabled={item.variants.length >= 30} />
     <h3>{t('editor-extras-heading')}</h3>
@@ -72,9 +80,12 @@
     {#each item.option_groups as group (group.id)}
       <fieldset><legend>{t('editor-extras')}</legend>
         <label>{t('editor-group-name')}<input dir="auto" bind:value={group.name} required maxlength="80" /></label>
+        <MenuTranslations bind:value={group.translations} name={group.name} />
         <details class="choice-rules"><summary>{t('editor-choice-rules')}</summary><p class="muted">{t('editor-choice-rules-help')}</p><div class="row"><label>{t('editor-min')}<input type="number" min="0" max="30" bind:value={group.min_selected} required /></label><label>{t('editor-max')}<input type="number" min="1" max="30" bind:value={group.max_selected} required /></label></div></details>
         {#each group.options as option (option.id)}
           <div class="row"><label>{t('editor-option')}<input dir="auto" bind:value={option.name} required maxlength="80" /></label><label>{t('editor-option-price')}<input type="number" min="0" step="0.01" max="10000000" required value={option.price_minor / 100} oninput={(e) => option.price_minor = Math.round(e.currentTarget.valueAsNumber * 100)} /></label></div>
+          <MenuTranslations bind:value={option.translations} name={option.name} />
+          <label><input type="checkbox" checked={group.default_option_ids?.includes(option.id) ?? false} onchange={event => setDefault(group, option.id, event.currentTarget.checked)} />{t('menu-default-choice')}</label>
         {/each}
         <ActionButton type="button" icon={Plus} label={t('editor-add-option')} onclick={() => addOption(group)} disabled={group.options.length >= 30} />
         <ActionButton type="button" icon={Trash2} label={t('editor-remove-group', { name: group.name })} onclick={() => item.option_groups = item.option_groups.filter(candidate => candidate.id !== group.id)} />

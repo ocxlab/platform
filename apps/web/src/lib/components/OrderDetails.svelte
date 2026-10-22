@@ -34,9 +34,11 @@
   <ul class="selection">
   {#each order.terms.lines as line}
     <li><div><strong>{line.selection.quantity} × <bdi dir="auto">{line.item_name}</bdi></strong><span class="muted"><bdi dir="auto">{line.variant_name}</bdi></span>
-    {#each line.selected_options ?? [] as option}<small><bdi dir="auto">{option.group_name}</bdi>: <bdi dir="auto">{option.option_name}</bdi></small>{/each}</div><bdi>{money(line.total_minor, locale())}</bdi></li>
+    {#each line.selected_options ?? [] as option}<small><bdi dir="auto">{option.group_name}</bdi>: <bdi dir="auto">{option.option_name}</bdi></small>{/each}
+    {#if line.selection.note}<small>{t('basket-item-note')}: <bdi dir="auto">{line.selection.note}</bdi></small>{/if}</div><bdi>{money(line.total_minor, locale())}</bdi></li>
   {/each}
   </ul>
+  {#if order.terms.note}<p>{t('basket-note')}: <bdi dir="auto">{order.terms.note}</bdi></p>{/if}
   <p class="total"><strong>{t('storefront-total', { amount: money(order.terms.total_minor, locale()) })}</strong></p>
   {#if order.payment_provider === 'development'}<p class="muted">{t('payment-development-help')}</p>{/if}
 </section>

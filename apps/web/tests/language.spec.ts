@@ -16,7 +16,8 @@ test('language preference persists and names keep their own direction in both la
   await expect(page.locator('.language-picker summary img')).toBeVisible();
   const corner = await page.locator('.language-picker').boundingBox();
   const viewport = page.viewportSize()!;
-  expect(viewport.width - corner!.x - corner!.width).toBeLessThan(40);
+  const content = await page.locator('main').boundingBox();
+  expect(Math.abs(content!.x + content!.width - corner!.x - corner!.width)).toBeLessThan(40);
   expect(viewport.height - corner!.y - corner!.height).toBeLessThan(40);
   await page.locator('.language-picker summary').click();
   const arabic = page.locator('.language-picker button[value=ar] bdi');

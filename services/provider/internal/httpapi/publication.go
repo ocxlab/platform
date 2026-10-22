@@ -67,12 +67,20 @@ func (s *Server) createFoodQuote(w http.ResponseWriter, r *http.Request, merchan
 		if p.Model != food.Model {
 			return persistence.QuoteCalculation{}, food.ErrSelection
 		}
-		priced, total, err := food.Price(p.Document, lines)
+		locale := ""
+		if body.Locale != nil {
+			locale = string(*body.Locale)
+		}
+		priced, total, err := food.PriceLocalized(p.Document, lines, locale)
 		if err != nil {
 			return persistence.QuoteCalculation{}, err
 		}
 		encoded, err := json.Marshal(priced)
-		return persistence.QuoteCalculation{Lines: encoded, Total: total}, err
+		note := ""
+		if body.Note != nil {
+			note = *body.Note
+		}
+		return persistence.QuoteCalculation{Lines: encoded, Total: total, Note: note}, err
 	}
 	var value persistence.FoodQuote
 	var err error

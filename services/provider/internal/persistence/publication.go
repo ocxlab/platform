@@ -142,10 +142,12 @@ func GetPublicOffering(ctx context.Context, db *sql.DB, merchant, store uuid.UUI
 }
 
 type QuoteCalculation struct {
+	Note  string
 	Lines json.RawMessage
 	Total int64
 }
 type FoodQuote struct {
+	Note       string          `json:"note,omitempty"`
 	ID         uuid.UUID       `json:"id"`
 	MerchantID uuid.UUID       `json:"merchant_id"`
 	StoreID    uuid.UUID       `json:"store_id"`
@@ -212,7 +214,7 @@ func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 	if active >= 1000 {
 		return q, ErrQuoteCapacity
 	}
-	q = FoodQuote{ID: uuid.New(), MerchantID: merchant, StoreID: store, Generation: p.Generation, Revision: p.Revision, Model: p.Model, Currency: "EUR", Lines: calculation.Lines, Total: calculation.Total}
+	q = FoodQuote{ID: uuid.New(), MerchantID: merchant, StoreID: store, Generation: p.Generation, Revision: p.Revision, Model: p.Model, Currency: "EUR", Lines: calculation.Lines, Total: calculation.Total, Note: calculation.Note}
 	err = tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&q.CreatedAt)
 	if err != nil {
 		return q, err

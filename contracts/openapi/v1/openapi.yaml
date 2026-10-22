@@ -69,6 +69,8 @@ paths:
     $ref: paths/admin-publication.yaml
   /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering:
     $ref: paths/public-offering.yaml
+  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering-updates:
+    $ref: paths/public-offering-updates.yaml
   /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes:
     $ref: paths/food-quotes.yaml
   /api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions:

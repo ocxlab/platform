@@ -1,3 +1,4 @@
+import { reviewBasket } from './support/basket';
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
@@ -13,8 +14,10 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   const created = await request.post(base, { headers: headers(), data: { display_name: 'Large menu demo' } });
   expect(created.status()).toBe(201);
   const store = await created.json();
+  const document = JSON.parse(fixture.demo_menu);
+  document.items.find((item: { id: string }) => item.id === 'water').translations = { en: 'Water 0.5 l', de: 'Wasser 0,5 l', ar: 'ماء 0.5 لتر' };
   const saved = await request.put(`${base}/${store.id}/offering`, { headers: headers(), data: {
-    base_revision: 0, model: { id: 'ocp.food.menu', version: '1.0.0' }, document: JSON.parse(fixture.demo_menu),
+    base_revision: 0, model: { id: 'ocp.food.menu', version: '1.0.0' }, document,
   } });
   expect(saved.status()).toBe(201);
   const published = await request.put(`${base}/${store.id}/publication`, { headers: headers(), data: { expected_generation: 0, revision: 1 } });
@@ -46,24 +49,37 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   await page.goto(storefront!);
   await expect(page.getByText('This restaurant has paused new orders.', { exact: false })).toBeVisible();
   await page.getByRole('link', { name: /Choose.*Pizza Margherita/ }).click();
-  await expect(page.getByRole('button', { name: 'Check selection price' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Add to basket', exact: true })).toBeDisabled();
   // Existing customer screens are advisory; the backend test separately checks
   // that quotes issued before a pause cannot bypass authoritative enforcement.
   const resumed = await request.put(`${base}/${store.id}/food/ordering`, {
     headers: headers(), data: { expected_revision: 1, accepting_orders: true, acceptance_mode: 'automatic' },
   });
   expect(resumed.status()).toBe(201);
-  await page.goto(storefront!);
+  // SSE updates the open storefront, including an already-open customization.
+  await expect(page.getByRole('button', { name: 'Add to basket', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Close customization', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('.card-grid .menu-card')).toHaveCount(48);
   await expect(page.getByRole('heading', { name: 'Kitchen favourites', exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Categories' }).getByRole('link')).toHaveCount(7);
   await expect(page.getByRole('combobox', { name: /^Variant/ })).toHaveCount(0);
   await expect(page.getByRole('link', { name: /Choose.*Baklava/ })).toHaveAttribute('aria-disabled', 'true');
+  const pizzaCard = page.getByRole('link', { name: /Choose.*Pizza Margherita/ });
+  await pizzaCard.scrollIntoViewIfNeeded();
+  const scrollPosition = await page.evaluate(() => scrollY);
+  await pizzaCard.click();
+  await expect(page.getByRole('dialog').getByRole('heading')).toBeFocused();
+  expect(await page.evaluate(() => scrollY)).toBe(scrollPosition);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(pizzaCard).toBeFocused();
+  expect(await page.evaluate(() => scrollY)).toBe(scrollPosition);
   await page.locator('.language-picker summary').click();
   await page.locator('.language-picker button[value=ar]').click();
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('.menu-card').first()).toHaveCSS('direction', 'rtl');
+  await expect(page.getByRole('link', { name: /ماء 0.5 لتر/ })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/menu-cards-arabic-mobile.png' });
   await page.locator('.language-picker summary').click();
@@ -80,17 +96,82 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   await expect(items.locator('option')).toHaveCount(49);
   await expect(items.locator('option[value=baklava]')).toHaveJSProperty('disabled', true);
   await items.selectOption('pizza-margherita');
-  await expect(page.getByRole('heading', { name: /Customize.*Pizza Margherita/ })).toBeFocused();
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Pizza Margherita' })).toBeFocused();
   await page.getByRole('combobox', { name: /^Variant/ }).selectOption('large');
   await page.getByLabel('Extra Käse', { exact: false }).check();
   await page.getByLabel('Knoblauch', { exact: false }).check();
-  await page.getByRole('button', { name: 'Check selection price' }).click();
-  await expect(page.getByRole('region', { name: 'Selection quote' })).toContainText('12.00');
+  await page.getByText('Add a note for this dish', { exact: true }).click();
+  await page.getByRole('textbox', { name: 'Add a note for this dish', exact: true }).fill('Please slice the pizza');
+  await page.screenshot({ path: 'test-results/basket-customization-mobile.png' });
+  await page.getByRole('button', { name: 'Add to basket', exact: true }).click();
+  await reviewBasket(page);
+  await expect(page.getByRole('complementary', { name: 'Your basket' })).toContainText('12.00');
+  await page.getByRole('button', { name: 'Continue browsing', exact: true }).click();
+  // A second dish remains a separate line; changing the basket invalidates the
+  // previous review instead of leaving a stale checkout button available.
+  await page.getByRole('combobox', { name: 'Menu item', exact: true }).selectOption('water');
+  await page.getByRole('button', { name: 'Add to basket', exact: true }).click();
+  await page.getByRole('button', { name: /Your basket/ }).click();
+  const basket = page.getByRole('complementary', { name: 'Your basket' });
+  const water = basket.getByRole('listitem').filter({ hasText: 'Water 0.5 l' });
+  await water.getByRole('button', { name: 'Increase quantity', exact: true }).click();
+  await water.getByRole('button', { name: 'Decrease quantity', exact: true }).click();
+  await water.getByRole('button', { name: 'Remove selection', exact: true }).click();
+  await expect(basket.getByRole('listitem')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Continue browsing', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Menu item', exact: true }).selectOption('water');
+  await page.getByRole('button', { name: 'Add to basket', exact: true }).click();
+  await page.getByRole('button', { name: /Your basket/ }).click();
+  await water.getByRole('button', { name: 'Edit selection', exact: true }).click();
+  await page.getByRole('spinbutton', { name: 'Quantity', exact: true }).fill('2');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await basket.getByText('Note for the whole order', { exact: true }).click();
+  await basket.getByLabel('Note for the whole order', { exact: true }).fill('Please pack the drinks separately');
+  await page.reload();
+  await reviewBasket(page);
+  await expect(basket.getByRole('listitem')).toHaveCount(2);
+  await basket.locator('.order-note summary').click();
+  await expect(basket.getByLabel('Note for the whole order', { exact: true })).toHaveValue('Please pack the drinks separately');
+  await reviewBasket(page);
+  await expect(basket).toContainText('16.00');
+  // Publication changes keep the basket open and preserve customer choices.
+  const latest = await request.get(`${base}/${store.id}/offering`, { headers: headers() });
+  expect(latest.status()).toBe(200);
+  const latestMenu = (await latest.json()).document;
+  for (const available of [false, true]) {
+    latestMenu.items.find((item: { id: string }) => item.id === 'water').available = available;
+    const revision = available ? 3 : 2;
+    const updated = await request.put(`${base}/${store.id}/offering`, { headers: headers(), data: {
+      base_revision: revision, model: { id: 'ocp.food.menu', version: '1.0.0' }, document: latestMenu,
+    } });
+    expect(updated.status()).toBe(201);
+    const publication = await request.put(`${base}/${store.id}/publication`, { headers: headers(), data: { expected_generation: revision, revision: revision + 1 } });
+    expect(publication.status()).toBe(201);
+    if (available) await expect(page.getByRole('button', { name: 'Place pickup order', exact: true })).toBeEnabled();
+    else await expect(page.getByRole('button', { name: 'Place pickup order', exact: true })).toBeDisabled();
+    await expect(basket.getByRole('listitem')).toHaveCount(2);
+  }
+  await page.setViewportSize({ width: 390, height: 600 });
+  const headerBefore = await basket.locator('.basket-header').boundingBox();
+  const footerBefore = await basket.locator('.basket-checkout').boundingBox();
+  const scroll = basket.getByRole('region', { name: 'Items in your basket' });
+  expect(await scroll.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+  await scroll.evaluate(element => element.scrollTop = element.scrollHeight);
+  expect((await basket.locator('.basket-header').boundingBox())?.y).toBe(headerBefore?.y);
+  expect((await basket.locator('.basket-checkout').boundingBox())?.y).toBe(footerBefore?.y);
+  await page.screenshot({ path: 'test-results/basket-fixed-checkout-mobile.png' });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/large-menu-customer-mobile.png', fullPage: true });
   await page.getByRole('button', { name: 'Place pickup order', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Pizza Margherita');
-  await expect(page.getByRole('region', { name: 'Order details' })).toContainText('12.00');
+  await expect(page.getByRole('region', { name: 'Order details' })).toContainText('16.00');
+  await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Please slice the pizza');
+  await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Please pack the drinks separately');
+  await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Water 0.5 l');
+  const receipt = new URL(page.url()).pathname;
+  await page.goto(`${storefront!.replace('/stores/', '/merchant/stores/')}/orders`);
+  await page.getByRole('link', { name: receipt.split('/').at(-1), exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Please pack the drinks separately');
   expect(errors).toEqual([]);
 });

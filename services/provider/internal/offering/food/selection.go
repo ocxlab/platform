@@ -3,6 +3,7 @@ package food
 import (
 	"encoding/json"
 	"errors"
+	"unicode/utf8"
 )
 
 var ErrSelection = errors.New("invalid or unavailable selection")
@@ -24,6 +25,7 @@ type SelectedOption struct {
 	OptionID string `json:"option_id"`
 }
 type SelectionLine struct {
+	Note      string           `json:"note,omitempty"`
 	ItemID    string           `json:"item_id"`
 	VariantID string           `json:"variant_id"`
 	Quantity  int              `json:"quantity"`
@@ -58,7 +60,7 @@ func Price(raw json.RawMessage, lines []SelectionLine) ([]QuotedLine, int64, err
 	quoted := make([]QuotedLine, 0, len(lines))
 	var total int64
 	for _, line := range lines {
-		if line.Quantity < 1 || line.Quantity > 99 || len(line.Options) > 600 {
+		if line.Quantity < 1 || line.Quantity > 99 || len(line.Options) > 600 || utf8.RuneCountInString(line.Note) > 500 {
 			return nil, 0, ErrSelection
 		}
 		var selected *item
@@ -128,4 +130,40 @@ func Price(raw json.RawMessage, lines []SelectionLine) ([]QuotedLine, int64, err
 		quoted = append(quoted, QuotedLine{Selection: line, ItemName: selected.Name, VariantName: name, UnitPrice: unit, Total: lineTotal, SelectedOptions: descriptions})
 	}
 	return quoted, total, nil
+}
+
+// PriceLocalized retains display labels in the requested supported language.
+// Identifiers, availability and prices remain exactly those of the publication.
+func PriceLocalized(raw json.RawMessage, lines []SelectionLine, locale string) ([]QuotedLine, int64, error) {
+	var value menu
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return nil, 0, ErrSelection
+	}
+	name := func(base string, translations map[string]string) string {
+		if (locale == "de" || locale == "en" || locale == "ar") && translations[locale] != "" {
+			return translations[locale]
+		}
+		return base
+	}
+	for i := range value.Items {
+		item := &value.Items[i]
+		item.Name = name(item.Name, item.Translations)
+		for j := range item.Variants {
+			v := &item.Variants[j]
+			v.Name = name(v.Name, v.Translations)
+		}
+		for j := range item.Groups {
+			g := &item.Groups[j]
+			g.Name = name(g.Name, g.Translations)
+			for k := range g.Options {
+				o := &g.Options[k]
+				o.Name = name(o.Name, o.Translations)
+			}
+		}
+	}
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return nil, 0, err
+	}
+	return Price(encoded, lines)
 }

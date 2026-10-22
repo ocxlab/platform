@@ -41,8 +41,9 @@ export const actions: Actions = {
     const result = await api(token).POST('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes', { params: { path }, body });
     if (result.response.status === 401) guest.clear();
     if (!result.data) return fail(result.response.status, { error: message(result.error) });
-    guest.setIntent(result.data.id);
+    const intent = guest.setIntent(result.data.id);
     rememberCustomerStore(cookies, store);
+    if (request.headers.get('x-ocp-basket-preview') === 'true') return { quote: result.data, intent };
     // Post/redirect/get retains the quote and placement key across refresh/lost
     // placement responses. The cookie stores references, never authoritative prices.
     redirect(303, `${customerStorePath(store)}#selection-quote`);

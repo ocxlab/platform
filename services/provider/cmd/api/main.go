@@ -83,6 +83,9 @@ func main() {
 	updates := orderupdates.New()
 	go updates.Run(ctx, os.Getenv("OCP_DATABASE_URL"))
 	options = append(options, httpapi.WithOrderUpdates(updates))
+	offeringUpdates := orderupdates.NewOfferings()
+	go offeringUpdates.Run(ctx, os.Getenv("OCP_DATABASE_URL"))
+	options = append(options, httpapi.WithOfferingUpdates(offeringUpdates))
 	if os.Getenv("OCP_DEVELOPMENT_PAYMENTS") == "true" {
 		options = append(options, httpapi.WithDevelopmentPayments())
 		slog.Warn("development payments enabled; no real money is moved")

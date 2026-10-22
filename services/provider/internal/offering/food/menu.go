@@ -19,31 +19,37 @@ type menu struct {
 	Categories       []category `json:"categories,omitempty"`
 }
 type category struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	Translations map[string]string `json:"translations,omitempty"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
 }
 type item struct {
-	CategoryID string `json:"category_id,omitempty"`
-	ImageID    string `json:"image_id,omitempty"`
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Available  bool   `json:"available"`
-	Variants   []struct {
-		ID    string `json:"id"`
-		Name  string `json:"name"`
-		Price int64  `json:"price_minor"`
+	Translations map[string]string `json:"translations,omitempty"`
+	CategoryID   string            `json:"category_id,omitempty"`
+	ImageID      string            `json:"image_id,omitempty"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Available    bool              `json:"available"`
+	Variants     []struct {
+		Translations map[string]string `json:"translations,omitempty"`
+		ID           string            `json:"id"`
+		Name         string            `json:"name"`
+		Price        int64             `json:"price_minor"`
 	} `json:"variants"`
 	Groups []group `json:"option_groups"`
 }
 type group struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Min     int    `json:"min_selected"`
-	Max     int    `json:"max_selected"`
-	Options []struct {
-		ID    string `json:"id"`
-		Name  string `json:"name"`
-		Price int64  `json:"price_minor"`
+	Defaults     []string          `json:"default_option_ids,omitempty"`
+	Translations map[string]string `json:"translations,omitempty"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Min          int               `json:"min_selected"`
+	Max          int               `json:"max_selected"`
+	Options      []struct {
+		Translations map[string]string `json:"translations,omitempty"`
+		ID           string            `json:"id"`
+		Name         string            `json:"name"`
+		Price        int64             `json:"price_minor"`
 	} `json:"options"`
 }
 
@@ -95,6 +101,18 @@ func Validator(schema *openapi3.Schema) offering.Validator {
 						return nil, offering.ErrInvalid
 					}
 					choices[option.ID] = true
+				}
+				if len(group.Defaults) > 0 {
+					if len(group.Defaults) < group.Min || len(group.Defaults) > group.Max {
+						return nil, offering.ErrInvalid
+					}
+					seen := map[string]bool{}
+					for _, id := range group.Defaults {
+						if !choices[id] || seen[id] {
+							return nil, offering.ErrInvalid
+						}
+						seen[id] = true
+					}
 				}
 			}
 		}
