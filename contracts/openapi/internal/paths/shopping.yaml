@@ -1,0 +1,133 @@
+Order:
+  parameters:
+    - {$ref: '../components/parameters.yaml#/Agent'}
+    - {$ref: '../components/parameters.yaml#/RequestId'}
+    - {$ref: '../components/parameters.yaml#/Session'}
+  get:
+    operationId: getInternalShoppingOrder
+    x-access: internal
+    summary: Read retained Shopping order terms
+    description: Owned internal read endpoint for completion permalinks, not an upstream UCP order API. Requires the same store and customer authority.
+    tags: [Shopping]
+    responses:
+      '200':
+        description: Immutable accepted order terms.
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, checkout_id, terms]
+              properties:
+                id: {type: string, format: uuid}
+                checkout_id: {type: string, format: uuid}
+                terms: {type: object, additionalProperties: true}
+      default: {$ref: '../openapi.yaml#/components/responses/Problem'}
+Catalog:
+  parameters: &headers
+    - {$ref: '../components/parameters.yaml#/Agent'}
+    - {$ref: '../components/parameters.yaml#/RequestId'}
+  put:
+    operationId: replaceInternalShoppingCatalog
+    x-access: internal
+    summary: Replace a Shopping catalog and explicit stock counts
+    description: Requires a separately issued management credential and the expected catalog revision.
+    tags: [Shopping]
+    parameters: &replay
+      - {$ref: '../components/parameters.yaml#/Replay'}
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../domains/shopping.yaml#/CatalogWrite'}
+    responses:
+      '200':
+        description: New authoritative revision.
+        content:
+          application/json:
+            schema: {$ref: '../domains/shopping.yaml#/CatalogResult'}
+      default: &problem {$ref: '../openapi.yaml#/components/responses/Problem'}
+Collection:
+  parameters: *headers
+  post:
+    operationId: createInternalCheckout
+    x-access: internal
+    summary: Create a checkout session
+    description: Resolves variant SKU identifiers and computes prices without reserving stock.
+    tags: [Shopping]
+    parameters: *replay
+    requestBody: &selection
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../domains/shopping.yaml#/Selection'}
+    responses:
+      '201': &sessionResponse
+        description: Authoritative checkout session.
+        content:
+          application/json:
+            schema: {$ref: '../domains/shopping.yaml#/Session'}
+      '200': &businessError
+        description: No common capability; no checkout was created.
+        content:
+          application/json:
+            schema: {$ref: '../components/common.yaml#/Error'}
+      default: *problem
+Session:
+  parameters: &sessionHeaders
+    - {$ref: '../components/parameters.yaml#/Agent'}
+    - {$ref: '../components/parameters.yaml#/RequestId'}
+    - {$ref: '../components/parameters.yaml#/Session'}
+  get:
+    operationId: getInternalCheckout
+    x-access: internal
+    summary: Read a checkout session
+    description: Requires the customer and store authority bound to the internal credential.
+    tags: [Shopping]
+    responses:
+      '200': *sessionResponse
+      default: *problem
+  put:
+    operationId: replaceInternalCheckout
+    x-access: internal
+    summary: Replace checkout selections
+    description: Reprices an unfinished checkout against the current catalog.
+    tags: [Shopping]
+    parameters: *replay
+    requestBody: *selection
+    responses:
+      '200': *sessionResponse
+      default: *problem
+Complete:
+  parameters: *sessionHeaders
+  post:
+    operationId: completeInternalCheckout
+    x-access: internal
+    summary: Complete checkout with the configured pay later instrument
+    description: Allocates stock, retains immutable order terms, and records an outstanding obligation atomically. No charge is reported.
+    tags: [Shopping]
+    parameters: *replay
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../components/common.yaml#/Complete'}
+    responses:
+      '200': *sessionResponse
+      default: *problem
+Cancel:
+  parameters: *sessionHeaders
+  post:
+    operationId: cancelInternalCheckout
+    x-access: internal
+    summary: Cancel an unfinished checkout session
+    description: Does not cancel or refund an order already created by completion.
+    tags: [Shopping]
+    parameters: *replay
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../components/common.yaml#/Empty'}
+    responses:
+      '200': *sessionResponse
+      default: *problem

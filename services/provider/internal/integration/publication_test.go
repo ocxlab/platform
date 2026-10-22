@@ -110,6 +110,13 @@ func TestPublicationJourney(t *testing.T) {
 	f.request(t, "GET", public+"/offering", "", "", "", 404)
 	f.request(t, "POST", public+"/food/quotes", "", "", selection(3), 404)
 	f.request(t, "PUT", private+"/publication", f.token, "merchant-republish-suspended", `{"expected_generation":3,"revision":1}`, 201)
+	var hiddenIntent persistence.CatalogIntent
+	var hiddenPayload []byte
+	must(t, f.admin.QueryRow(`SELECT payload FROM runtime.effects WHERE store_id=$1 AND effect_key='4'`, store.ID).Scan(&hiddenPayload))
+	must(t, json.Unmarshal(hiddenPayload, &hiddenIntent))
+	if hiddenIntent.Action != "publish" || hiddenIntent.Visible || string(hiddenIntent.Document) != "null" {
+		t.Fatal("suspended merchant publication exposed a catalog")
+	}
 	f.request(t, "GET", public+"/offering", "", "", "", 404)
 	f.request(t, "PUT", admin, token, "restore-menu-founder-001", `{"expected_generation":4,"suspended":false,"reason":"Review complete"}`, 201)
 	f.request(t, "GET", public+"/offering", "", "", "", 200)

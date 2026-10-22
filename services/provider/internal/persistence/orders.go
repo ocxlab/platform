@@ -79,7 +79,7 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	if err = json.Unmarshal(body, &terms); err != nil {
 		return order, err
 	}
-	if current.Model != food.Model || terms.Model != food.Model {
+	if current.Model != terms.Model || (current.Model != food.Model && current.Model != food.ModelV2) {
 		return order, food.ErrSelection
 	}
 	var lines []food.QuotedLine
@@ -92,7 +92,7 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	}
 	// Current availability/choice validity still applies. Retain issued prices and
 	// names rather than repricing a live quote after a price-only publication edit.
-	if _, _, err = food.Price(current.Document, selections); err != nil {
+	if _, _, _, err = food.PriceModel(current.Model, current.Document, selections, "", now); err != nil {
 		return order, err
 	}
 	order = FoodOrder{ID: uuid.New(), MerchantID: guest.MerchantID, StoreID: guest.StoreID, Contract: "ocp.food.order.v1", Terms: terms, Fulfilment: "pickup", Acceptance: "pending", Payment: "not_started", FulfilmentProgress: "not_started", Resolution: "open", CreatedAt: now}

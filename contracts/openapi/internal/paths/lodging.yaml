@@ -1,0 +1,109 @@
+Catalog:
+  parameters: &headers
+    - {$ref: '../components/parameters.yaml#/Agent'}
+    - {$ref: '../components/parameters.yaml#/RequestId'}
+  put:
+    operationId: replaceInternalProperty
+    x-access: internal
+    summary: Replace property accommodation units and rates
+    description: Requires a separate management credential and expected property revision. Existing dated allocations remain intact.
+    tags: [Lodging]
+    parameters: &replay
+      - {$ref: '../components/parameters.yaml#/Replay'}
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../domains/lodging.yaml#/CatalogWrite'}
+    responses:
+      '200':
+        description: New authoritative property revision.
+        content:
+          application/json:
+            schema: {$ref: '../domains/lodging.yaml#/CatalogResult'}
+      default: &problem {$ref: '../openapi.yaml#/components/responses/Problem'}
+Collection:
+  parameters: *headers
+  post:
+    operationId: createInternalBooking
+    x-access: internal
+    summary: Create a booking session
+    description: Resolves property, individual accommodation units, rates, and occupancy. Availability is advisory; this does not hold a room.
+    tags: [Lodging]
+    parameters: *replay
+    requestBody: &selection
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../domains/lodging.yaml#/Selection'}
+    responses:
+      '201': &sessionResponse
+        description: Authoritative booking session.
+        content:
+          application/json:
+            schema: {$ref: '../domains/lodging.yaml#/Session'}
+      '200':
+        description: No common capability; no booking session was created.
+        content:
+          application/json:
+            schema: {$ref: '../components/common.yaml#/Error'}
+      default: *problem
+Session:
+  parameters: &sessionHeaders
+    - {$ref: '../components/parameters.yaml#/Agent'}
+    - {$ref: '../components/parameters.yaml#/RequestId'}
+    - {$ref: '../components/parameters.yaml#/Session'}
+  get:
+    operationId: getInternalBooking
+    x-access: internal
+    summary: Read a booking session
+    description: Checks customer and property authority on every call.
+    tags: [Lodging]
+    responses:
+      '200': *sessionResponse
+      default: *problem
+  put:
+    operationId: replaceInternalBooking
+    x-access: internal
+    summary: Replace booking selections
+    description: Recomputes rates and occupancy for an unfinished booking session.
+    tags: [Lodging]
+    parameters: *replay
+    requestBody: *selection
+    responses:
+      '200': *sessionResponse
+      default: *problem
+Complete:
+  parameters: *sessionHeaders
+  post:
+    operationId: completeInternalBooking
+    x-access: internal
+    summary: Confirm a booking with payment due later
+    description: Requires an identified booker. Allocates non-overlapping dates, retains immutable terms, and records the outstanding obligation atomically.
+    tags: [Lodging]
+    parameters: *replay
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../components/common.yaml#/Complete'}
+    responses:
+      '200': *sessionResponse
+      default: *problem
+Cancel:
+  parameters: *sessionHeaders
+  post:
+    operationId: cancelInternalBooking
+    x-access: internal
+    summary: Cancel an unfinished booking session
+    description: This is not a post-confirmation reservation cancellation or refund interface.
+    tags: [Lodging]
+    parameters: *replay
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../components/common.yaml#/Empty'}
+    responses:
+      '200': *sessionResponse
+      default: *problem

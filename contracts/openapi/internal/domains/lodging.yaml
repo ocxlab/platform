@@ -1,0 +1,147 @@
+Reference:
+  type: object
+  additionalProperties: false
+  required: [id]
+  properties:
+    id: {type: string, minLength: 1, maxLength: 80}
+Occupancy:
+  type: object
+  additionalProperties: false
+  required: [total]
+  properties:
+    total: {type: integer, minimum: 1, maximum: 20}
+    adults: {type: integer, minimum: 0, maximum: 20}
+    children: {type: integer, minimum: 0, maximum: 20}
+    child_ages:
+      type: array
+      maxItems: 20
+      items: {type: integer, minimum: 0, maximum: 17}
+Dates:
+  type: object
+  additionalProperties: false
+  required: [start_date, end_date]
+  properties:
+    start_date: {type: string, format: date}
+    end_date: {type: string, format: date}
+Booker:
+  type: object
+  additionalProperties: false
+  properties:
+    first_name: {type: string, maxLength: 100}
+    last_name: {type: string, maxLength: 100}
+    email: {type: string, maxLength: 254}
+    phone_number: {type: string, maxLength: 32}
+Selection:
+  type: object
+  additionalProperties: false
+  required: [property, stays]
+  properties:
+    property: {$ref: '#/Reference'}
+    stays:
+      type: array
+      minItems: 1
+      maxItems: 8
+      items:
+        type: object
+        additionalProperties: false
+        required: [stay_dates, accommodation_type, rate_plan, occupancy]
+        properties:
+          id: {type: string, maxLength: 80}
+          stay_dates: {$ref: '#/Dates'}
+          accommodation_type: {$ref: '#/Reference'}
+          rate_plan: {$ref: '#/Reference'}
+          occupancy: {$ref: '#/Occupancy'}
+    booker: {$ref: '#/Booker'}
+    travel_purpose: {type: string, maxLength: 100}
+Session:
+  allOf:
+    - {$ref: '../components/common.yaml#/Base'}
+    - type: object
+      required: [property, stays]
+      properties:
+        property:
+          type: object
+          required: [id, name]
+          properties:
+            id: {type: string}
+            name: {type: string}
+        stays:
+          type: array
+          items:
+            type: object
+            required: [id, stay_dates, accommodation_type, rate_plan, occupancy, totals]
+            properties:
+              id: {type: string}
+              stay_dates: {$ref: '#/Dates'}
+              accommodation_type:
+                type: object
+                required: [id, title]
+                properties:
+                  id: {type: string}
+                  title: {type: string}
+              rate_plan:
+                type: object
+                required: [id, title]
+                properties:
+                  id: {type: string}
+                  title: {type: string}
+              occupancy: {$ref: '#/Occupancy'}
+              totals: {$ref: '../components/common.yaml#/Totals'}
+        booker: {$ref: '#/Booker'}
+        confirmation:
+          type: object
+          required: [id]
+          properties:
+            id: {$ref: '../components/common.yaml#/Id'}
+Catalog:
+  type: object
+  additionalProperties: false
+  required: [currency, payment_condition, time_zone, property, units]
+  properties:
+    currency: {type: string, enum: [EUR]}
+    payment_condition: {type: string, enum: [pay_later]}
+    time_zone: {type: string, minLength: 1, maxLength: 100}
+    property:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id: {type: string, minLength: 1, maxLength: 80}
+        name: {type: string, minLength: 1, maxLength: 200}
+    units:
+      type: array
+      minItems: 1
+      maxItems: 200
+      items:
+        type: object
+        additionalProperties: false
+        required: [id, title, capacity, rates]
+        properties:
+          id: {type: string, minLength: 1, maxLength: 80}
+          title: {type: string, minLength: 1, maxLength: 200}
+          capacity: {type: integer, minimum: 1, maximum: 20}
+          rates:
+            type: array
+            minItems: 1
+            maxItems: 20
+            items:
+              type: object
+              additionalProperties: false
+              required: [id, title, nightly_price_minor]
+              properties:
+                id: {type: string, minLength: 1, maxLength: 80}
+                title: {type: string, minLength: 1, maxLength: 200}
+                nightly_price_minor: {type: integer, format: int64, minimum: 0, maximum: 100000000}
+CatalogWrite:
+  type: object
+  additionalProperties: false
+  required: [base_revision, document]
+  properties:
+    base_revision: {type: integer, format: int64, minimum: 0}
+    document: {$ref: '#/Catalog'}
+CatalogResult:
+  type: object
+  required: [revision, document]
+  properties:
+    revision: {type: integer, format: int64, minimum: 1}
+    document: {$ref: '#/Catalog'}

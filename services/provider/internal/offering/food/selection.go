@@ -32,15 +32,17 @@ type SelectionLine struct {
 	Options   []SelectedOption `json:"options"`
 }
 type QuotedLine struct {
-	Selection       SelectionLine  `json:"selection"`
-	ItemName        string         `json:"item_name"`
-	VariantName     string         `json:"variant_name"`
-	UnitPrice       int64          `json:"unit_price_minor"`
-	Total           int64          `json:"total_minor"`
-	SelectedOptions []QuotedOption `json:"selected_options"`
+	PriceExplanation *PriceExplanation `json:"price_explanation,omitempty"`
+	Selection        SelectionLine     `json:"selection"`
+	ItemName         string            `json:"item_name"`
+	VariantName      string            `json:"variant_name"`
+	UnitPrice        int64             `json:"unit_price_minor"`
+	Total            int64             `json:"total_minor"`
+	SelectedOptions  []QuotedOption    `json:"selected_options"`
 }
 
 type QuotedOption struct {
+	Price      *int64 `json:"price_minor,omitempty"`
 	GroupID    string `json:"group_id"`
 	OptionID   string `json:"option_id"`
 	GroupName  string `json:"group_name"`

@@ -1,0 +1,117 @@
+openapi: 3.0.3
+info:
+  title: OCP internal Shopping and Lodging cohort
+  version: 0.1.0
+  description: >-
+    Owned bounded implementation contract, not the complete upstream UCP binding.
+    UCP session paths and payload projections target source commit
+    d13cc61455d2a90f7e6038df07fdbe72dcccdcc7. These draft shapes do not establish
+    conformance to the stable 2026-08-25 release. No public ingress registration.
+  contact:
+    name: OCP Lab
+servers:
+  - url: https://internal.ocplab.org
+    description: Controlled internal fixture origin; no public service is asserted.
+tags:
+  - name: Discovery
+    description: Controlled UCP business profile.
+  - name: Lodging
+    description: Internal property and booking operations.
+  - name: Shopping
+    description: Internal catalog and checkout operations.
+security:
+  - InternalBearer: []
+paths:
+  /health/live:
+    get:
+      operationId: getInternalLiveness
+      x-access: internal
+      summary: Check process liveness
+      description: Does not establish domain readiness or database availability.
+      tags: [Discovery]
+      security: []
+      responses:
+        '200':
+          description: Process is live.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: {type: string, enum: [live]}
+  /schemas/internal/pay-later.json:
+    get:
+      operationId: getInternalPayLaterSchema
+      x-access: internal
+      summary: Read the controlled pay later instrument schema
+      description: Defines the internal fixture instrument; it is not a public payment handler standard.
+      tags: [Discovery]
+      responses:
+        '200':
+          description: JSON Schema for the internal instrument.
+          content:
+            application/json:
+              schema: {type: object, additionalProperties: true}
+        default: {$ref: '#/components/responses/Problem'}
+  /.well-known/ucp:
+    get:
+      operationId: getInternalProfile
+      x-access: internal
+      summary: Read the credential-bound business profile
+      description: Returns only the enabled domain bound to this internal credential.
+      tags: [Discovery]
+      responses:
+        '200':
+          description: Controlled business profile.
+          content:
+            application/json:
+              schema: {$ref: 'components/common.yaml#/Profile'}
+        default: {$ref: '#/components/responses/Problem'}
+  /shopping/catalog:
+    $ref: 'paths/shopping.yaml#/Catalog'
+  /shopping/orders/{id}:
+    $ref: 'paths/shopping.yaml#/Order'
+  /shopping/checkout-sessions:
+    $ref: 'paths/shopping.yaml#/Collection'
+  /shopping/checkout-sessions/{id}:
+    $ref: 'paths/shopping.yaml#/Session'
+  /shopping/checkout-sessions/{id}/complete:
+    $ref: 'paths/shopping.yaml#/Complete'
+  /shopping/checkout-sessions/{id}/cancel:
+    $ref: 'paths/shopping.yaml#/Cancel'
+  /lodging/catalog:
+    $ref: 'paths/lodging.yaml#/Catalog'
+  /lodging/booking-sessions:
+    $ref: 'paths/lodging.yaml#/Collection'
+  /lodging/booking-sessions/{id}:
+    $ref: 'paths/lodging.yaml#/Session'
+  /lodging/booking-sessions/{id}/complete:
+    $ref: 'paths/lodging.yaml#/Complete'
+  /lodging/booking-sessions/{id}/cancel:
+    $ref: 'paths/lodging.yaml#/Cancel'
+components:
+  securitySchemes:
+    InternalBearer:
+      type: http
+      scheme: bearer
+      description: Expiring internal audience credential bound to merchant, store, domain, customer, and controlled profile. Catalog management uses a separate management credential.
+  responses:
+    Problem:
+      description: Transport, authorization, replay, or dependency failure.
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            required: [type, title, status, code, detail, instance]
+            properties:
+              type: {type: string, format: uri}
+              title: {type: string}
+              status: {type: integer, minimum: 400, maximum: 599}
+              code: {type: string}
+              detail: {type: string}
+              instance: {type: string, format: uri}
+  schemas:
+    ShoppingSelection: {$ref: 'domains/shopping.yaml#/Selection'}
+    LodgingSelection: {$ref: 'domains/lodging.yaml#/Selection'}
+    CompleteRequest: {$ref: 'components/common.yaml#/Complete'}

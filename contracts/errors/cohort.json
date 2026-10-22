@@ -1,0 +1,12 @@
+{
+  "internal_capacity": {
+    "status": 429,
+    "title": "Internal domain capacity reached",
+    "message_key": "error-cohort-internal-capacity"
+  },
+  "unsupported_accept": {
+    "status": 406,
+    "title": "Response format not supported",
+    "message_key": "error-cohort-unsupported-accept"
+  }
+}

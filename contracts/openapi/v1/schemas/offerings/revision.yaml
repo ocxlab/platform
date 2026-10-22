@@ -28,7 +28,7 @@ WriteOfferingRequest:
       additionalProperties: true
       description: >-
         Bounded JSON validated by the installed model registry. The initial model
-        is ocp.food.menu version 1.0.0 (domains/food/menu/v1/schema.yaml).
+        supports ocp.food.menu versions 1.0.0 and 2.0.0 (domains/food/menu/).
         Unknown models return unsupported_model (422), never silent acceptance.
 OfferingRevision:
   type: object

@@ -1,0 +1,40 @@
+# Optional internal role layout. No Shopping/Lodging ports are published.
+# Same maintained image; shared development PostgreSQL is still a common limit.
+services:
+  internal-shopping:
+    profiles: [domains]
+    image: ocp-platform-api
+    command: [-role, internal]
+    environment:
+      OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@db:5432/ocp_dev?sslmode=disable
+      OCP_ENABLED_DOMAINS: shopping
+      OCP_INTERNAL_ENDPOINT: https://internal.ocplab.org
+      OCP_DOMAIN_CONCURRENCY: '2'
+      OCP_DB_MAX_OPEN: '2'
+      OCP_DB_MAX_IDLE: '1'
+    read_only: true
+    mem_limit: 128m
+    cpus: 0.5
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, /ocp-api, -healthcheck]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  internal-lodging:
+    extends:
+      service: internal-shopping
+    environment:
+      OCP_ENABLED_DOMAINS: lodging
+  catalog-worker:
+    extends:
+      service: internal-shopping
+    command: [-role, worker]
+    environment:
+      OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@network-db:5432/provider_a?sslmode=disable
+      OCP_ENABLED_DOMAINS: food
+      OCP_NETWORK_PUBLISHER_CONFIG: /run/ocp/publisher.json
+      OCP_LOCAL_NETWORK: 'true'
+    volumes:
+      - ./working/native-onix/provider-a-worker.json:/run/ocp/publisher.json:ro

@@ -14,6 +14,11 @@ func TestErrorCallSitesAreRegistered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	internal, err := filepath.Glob("../ucpinternal/*.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	files = append(files, internal...)
 	for _, file := range files {
 		tree, err := parser.ParseFile(token.NewFileSet(), file, nil, 0)
 		if err != nil {
@@ -25,7 +30,7 @@ func TestErrorCallSitesAreRegistered(t *testing.T) {
 				return true
 			}
 			name, ok := call.Fun.(*ast.Ident)
-			if !ok || name.Name != "problem" || len(call.Args) < 3 {
+			if !ok || (name.Name != "problem" && name.Name != "failure") || len(call.Args) < 3 {
 				return true
 			}
 			code, ok := call.Args[2].(*ast.BasicLit)

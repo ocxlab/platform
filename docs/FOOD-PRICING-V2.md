@@ -10,7 +10,7 @@ Restaurants need to sell differently sized dishes with appropriately priced
 extras and to schedule offers such as a weekday lunch price. These belong to
 the published menu model; customers select identifiers, never prices or discounts.
 
-## Proposed contract
+## Implemented contract
 
 Use the exact model `ocp.food.menu` / `2.0.0` for the additional semantics.
 Retain the current categories, translations, images, variants, availability,
@@ -64,19 +64,22 @@ Quote expiry is no later than the earliest future price or availability boundary
 across all selected lines, including currently inactive offers and UTC campaign
 bounds. This
 prevents a normal quote lifetime from extending stale pricing into a lunch
-window. The existing expiry ceiling remains. Do not introduce this model into
-placement until that boundary calculation is exercised end to end. Successful
+window. The existing expiry ceiling remains. The HTTP journey exercises V2
+quotation and placement with retained pricing facts. Successful
 placement retains agreed terms; it does not reprice an accepted order later.
 
 Existing manual availability remains: no ingredient inventory is required.
 Publication changes and placement retain their current store serialization and
 revision/authority checks. A quote is neither a stock reservation nor acceptance.
 
-## Verification required before enabling the model
+## Verification
 
-Exercise ordinary and size-specific extras, unknown references, exact monetary
-limits, overlap/ties, inclusive/exclusive boundaries, multiple zones, DST changes,
-season bounds, quote expiry, retained prices after menu changes, and replay.
-Cover both public previews and guest-owned quotes through HTTP and persistence.
-Use targeted mutation testing for the new pricing/boundary logic. Neither this
-decision nor schema validation constitutes execution evidence.
+Unit and PostgreSQL/HTTP tests exercise size-specific extras, invalid references,
+monetary limits, offer priority/ties, inclusive/exclusive boundaries, IANA zones,
+DST changes, campaign bounds, quote expiry, retained prices after publication
+changes, model mismatch, and replay. V1 remains supported; V2 is an explicit
+installed model rather than a silent reinterpretation of V1 documents.
+The latest completed Gremlins follow-up killed 151 Food mutants, with 10 surviving
+and none uncovered. Survivors remain test-strength debt, not automatically
+equivalent code. See `STATUS.md` for final regression evidence. The UI does not
+yet expose every V2 field.

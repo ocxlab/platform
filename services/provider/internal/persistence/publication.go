@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/offering"
 )
 
@@ -59,6 +61,7 @@ func ChangePublication(ctx context.Context, tx *sql.Tx, actor Principal, store u
 	if p.Generation != expected {
 		return p, &PublicationConflict{p.Generation}
 	}
+	previousRevision := p.Revision
 	action, kind := "withdraw", "merchant"
 	if suspension != nil {
 		if !actor.Provider {
@@ -101,10 +104,60 @@ func ChangePublication(ctx context.Context, tx *sql.Tx, actor Principal, store u
 	}
 	p.Generation++
 	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.publication_audit(merchant_id,store_id,generation,actor_id,actor_kind,action,reason,revision,suspended,request_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, actor.MerchantID, store, p.Generation, actor.ID, kind, action, reason, p.Revision, p.Suspended, requestID)
+	if err != nil {
+		return p, err
+	}
+	modelRevision := p.Revision
+	if modelRevision == nil {
+		modelRevision = previousRevision
+	}
+	if modelRevision != nil {
+		var model offering.Model
+		var displayName string
+		var public json.RawMessage
+		if err = tx.QueryRowContext(ctx, `SELECT r.model_id,r.model_version,s.display_name,coalesce(s.public_document,'null'::jsonb) FROM commerce.offering_revisions r JOIN commerce.stores s ON (s.merchant_id,s.id)=(r.merchant_id,r.store_id) WHERE r.merchant_id=$1 AND r.store_id=$2 AND r.revision=$3`, actor.MerchantID, store, *modelRevision).Scan(&model.ID, &model.Version, &displayName, &public); err != nil {
+			return p, err
+		}
+		var domain capability.Domain
+		switch model.ID {
+		case "ocp.food.menu":
+			domain = capability.Food
+		case "ocp.shopping.catalog":
+			domain = capability.Shopping
+		case "ocp.lodging.property":
+			domain = capability.Lodging
+		default:
+			return p, offering.ErrUnsupported
+		}
+		visible := p.Revision != nil && !p.Suspended
+		if !visible {
+			public = json.RawMessage(`null`)
+		}
+		payload, marshalErr := json.Marshal(CatalogIntent{Action: action, Visible: visible, Generation: p.Generation, Revision: modelRevision, Model: model, DisplayName: displayName, Document: public})
+		if marshalErr != nil {
+			return p, marshalErr
+		}
+		_, err = EnqueueEffect(ctx, tx, Effect{MerchantID: actor.MerchantID, StoreID: store, Domain: domain, Kind: "catalog.publish", SubjectID: store, Key: fmt.Sprint(p.Generation), Payload: payload})
+	}
 	return p, err
 }
 
+// CatalogIntent is a public-only, immutable snapshot made in the visibility
+// transaction. Delivery never needs to read another tenant's mutable store.
+// Action describes the actor's change; Visible is the resulting public state.
+// A merchant can publish while provider-suspended, producing a hidden publish.
+type CatalogIntent struct {
+	Action      string          `json:"action"`
+	Visible     bool            `json:"visible"`
+	Generation  int64           `json:"generation"`
+	Revision    *int64          `json:"revision"`
+	Model       offering.Model  `json:"model"`
+	DisplayName string          `json:"display_name"`
+	Document    json.RawMessage `json:"document"`
+}
+
 type PublicOffering struct {
+	EvaluatedAt time.Time       `json:"-"`
 	MerchantID  uuid.UUID       `json:"merchant_id"`
 	StoreID     uuid.UUID       `json:"store_id"`
 	DisplayName string          `json:"display_name"`
@@ -142,9 +195,10 @@ func GetPublicOffering(ctx context.Context, db *sql.DB, merchant, store uuid.UUI
 }
 
 type QuoteCalculation struct {
-	Note  string
-	Lines json.RawMessage
-	Total int64
+	ExpiresAt time.Time
+	Note      string
+	Lines     json.RawMessage
+	Total     int64
 }
 type FoodQuote struct {
 	Note       string          `json:"note,omitempty"`
@@ -197,6 +251,11 @@ func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 	if p.Generation != expected {
 		return q, &PublicationConflict{p.Generation}
 	}
+	var evaluatedAt time.Time
+	if err = tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&evaluatedAt); err != nil {
+		return q, err
+	}
+	p.EvaluatedAt = evaluatedAt
 	calculation, err := calculate(p)
 	if err != nil {
 		return q, err
@@ -215,11 +274,14 @@ func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 		return q, ErrQuoteCapacity
 	}
 	q = FoodQuote{ID: uuid.New(), MerchantID: merchant, StoreID: store, Generation: p.Generation, Revision: p.Revision, Model: p.Model, Currency: "EUR", Lines: calculation.Lines, Total: calculation.Total, Note: calculation.Note}
-	err = tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&q.CreatedAt)
-	if err != nil {
-		return q, err
-	}
+	q.CreatedAt = evaluatedAt
 	q.ExpiresAt = q.CreatedAt.Add(10 * time.Minute)
+	if !calculation.ExpiresAt.IsZero() && calculation.ExpiresAt.Before(q.ExpiresAt) {
+		q.ExpiresAt = calculation.ExpiresAt
+	}
+	if !q.ExpiresAt.After(q.CreatedAt) {
+		return q, ErrQuoteExpired
+	}
 	body, err := json.Marshal(q)
 	if err != nil {
 		return q, err

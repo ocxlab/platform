@@ -1,0 +1,199 @@
+FoodMenu:
+  type: object
+  additionalProperties: false
+  required: [currency, availability_mode, time_zone, items]
+  properties:
+    currency:
+      type: string
+      enum: [EUR]
+    availability_mode:
+      type: string
+      enum: [manual]
+    time_zone:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: IANA business time zone used for weekly schedules. Local and empty names are rejected; UTC is supported. Repeated DST wall times both qualify, and skipped spring times never occur.
+    categories:
+      type: array
+      maxItems: 50
+      items:
+        $ref: ../v1/schema.yaml#/Category
+    items:
+      type: array
+      minItems: 1
+      maxItems: 200
+      items:
+        $ref: '#/Item'
+    offers:
+      type: array
+      maxItems: 200
+      description: Replacement base prices, not stacked discounts. Highest active priority wins; ties select the lexicographically smallest offer ID. Extras retain their independently selected variant prices. Quotes expire no later than the next relevant price or availability edge.
+      items:
+        $ref: '#/Offer'
+Item:
+  type: object
+  additionalProperties: false
+  required: [id, name, available, variants, option_groups]
+  properties:
+    id:
+      $ref: ../v1/schema.yaml#/LocalIdentifier
+    name:
+      type: string
+      minLength: 1
+      maxLength: 160
+    translations:
+      $ref: ../v1/schema.yaml#/NameTranslations
+    category_id:
+      $ref: ../v1/schema.yaml#/LocalIdentifier
+    image_id:
+      type: string
+      format: uuid
+    available:
+      type: boolean
+    availability_windows:
+      $ref: '#/Windows'
+    variants:
+      type: array
+      minItems: 1
+      maxItems: 30
+      items:
+        $ref: '#/Variant'
+    option_groups:
+      type: array
+      maxItems: 20
+      items:
+        $ref: '#/OptionGroup'
+Variant:
+  type: object
+  additionalProperties: false
+  required: [id, name, price_minor]
+  properties:
+    id:
+      $ref: ../v1/schema.yaml#/LocalIdentifier
+    name:
+      type: string
+      minLength: 1
+      maxLength: 80
+    translations:
+      $ref: ../v1/schema.yaml#/NameTranslations
+    price_minor:
+      $ref: '#/Price'
+    availability_windows:
+      $ref: '#/Windows'
+OptionGroup:
+  type: object
+  additionalProperties: false
+  required: [id, name, min_selected, max_selected, options]
+  properties:
+    id:
+      $ref: ../v1/schema.yaml#/LocalIdentifier
+    name:
+      type: string
+      minLength: 1
+      maxLength: 80
+    translations:
+      $ref: ../v1/schema.yaml#/NameTranslations
+    min_selected:
+      type: integer
+      minimum: 0
+      maximum: 30
+    max_selected:
+      type: integer
+      minimum: 1
+      maximum: 30
+    default_option_ids:
+      type: array
+      maxItems: 30
+      uniqueItems: true
+      description: Merchant-selected initial choices. When nonempty, defaults must meet this group's selection bounds and refer to its options. Customers may change them.
+      items:
+        $ref: ../v1/schema.yaml#/LocalIdentifier
+    options:
+      type: array
+      minItems: 1
+      maxItems: 30
+      items:
+        $ref: '#/Option'
+Option:
+  type: object
+  additionalProperties: false
+  required: [id, name, price_minor]
+  properties:
+    id:
+      $ref: ../v1/schema.yaml#/LocalIdentifier
+    name:
+      type: string
+      minLength: 1
+      maxLength: 80
+    translations:
+      $ref: ../v1/schema.yaml#/NameTranslations
+    price_minor:
+      $ref: '#/Price'
+    variant_prices:
+      type: object
+      maxProperties: 30
+      description: Replacement extra price keyed by an existing variant of this item.
+      additionalProperties:
+        $ref: '#/Price'
+Price:
+  type: integer
+  format: int64
+  minimum: 0
+  maximum: 1000000000
+Windows:
+  type: array
+  minItems: 1
+  maxItems: 14
+  uniqueItems: true
+  items:
+    $ref: '#/Window'
+Window:
+  type: object
+  additionalProperties: false
+  description: Half-open business-local weekly window, optionally constrained by inclusive valid_from and exclusive valid_until UTC instants. Start must precede end; split overnight windows explicitly. ISO weekdays use Monday 1 through Sunday 7.
+  required: [weekdays, start, end]
+  properties:
+    weekdays:
+      type: array
+      minItems: 1
+      maxItems: 7
+      uniqueItems: true
+      items:
+        type: integer
+        minimum: 1
+        maximum: 7
+    start:
+      type: string
+      pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+    end:
+      type: string
+      pattern: '^(([01][0-9]|2[0-3]):[0-5][0-9]|24:00)$'
+    valid_from:
+      type: string
+      format: date-time
+      pattern: 'Z$'
+    valid_until:
+      type: string
+      format: date-time
+      pattern: 'Z$'
+Offer:
+  type: object
+  additionalProperties: false
+  required: [id, item_id, variant_id, price_minor, priority, windows]
+  properties:
+    id:
+      type: string
+      pattern: '^[a-z][a-z0-9_-]{0,63}$'
+    item_id:
+      $ref: ../v1/schema.yaml#/LocalIdentifier
+    variant_id:
+      $ref: ../v1/schema.yaml#/LocalIdentifier
+    price_minor:
+      $ref: '#/Price'
+    priority:
+      type: integer
+      minimum: 0
+      maximum: 1000
+    windows:
+      $ref: '#/Windows'

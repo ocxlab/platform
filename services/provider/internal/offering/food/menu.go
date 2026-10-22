@@ -13,10 +13,12 @@ import (
 var Model = offering.Model{ID: "ocp.food.menu", Version: "1.0.0"}
 
 type menu struct {
-	Currency         string     `json:"currency"`
-	AvailabilityMode string     `json:"availability_mode"`
-	Items            []item     `json:"items"`
-	Categories       []category `json:"categories,omitempty"`
+	TimeZone         string           `json:"time_zone,omitempty"`
+	Offers           []scheduledOffer `json:"offers,omitempty"`
+	Currency         string           `json:"currency"`
+	AvailabilityMode string           `json:"availability_mode"`
+	Items            []item           `json:"items"`
+	Categories       []category       `json:"categories,omitempty"`
 }
 type category struct {
 	Translations map[string]string `json:"translations,omitempty"`
@@ -24,17 +26,19 @@ type category struct {
 	Name         string            `json:"name"`
 }
 type item struct {
-	Translations map[string]string `json:"translations,omitempty"`
-	CategoryID   string            `json:"category_id,omitempty"`
-	ImageID      string            `json:"image_id,omitempty"`
-	ID           string            `json:"id"`
-	Name         string            `json:"name"`
-	Available    bool              `json:"available"`
-	Variants     []struct {
-		Translations map[string]string `json:"translations,omitempty"`
-		ID           string            `json:"id"`
-		Name         string            `json:"name"`
-		Price        int64             `json:"price_minor"`
+	AvailabilityWindows []Window          `json:"availability_windows,omitempty"`
+	Translations        map[string]string `json:"translations,omitempty"`
+	CategoryID          string            `json:"category_id,omitempty"`
+	ImageID             string            `json:"image_id,omitempty"`
+	ID                  string            `json:"id"`
+	Name                string            `json:"name"`
+	Available           bool              `json:"available"`
+	Variants            []struct {
+		AvailabilityWindows []Window          `json:"availability_windows,omitempty"`
+		Translations        map[string]string `json:"translations,omitempty"`
+		ID                  string            `json:"id"`
+		Name                string            `json:"name"`
+		Price               int64             `json:"price_minor"`
 	} `json:"variants"`
 	Groups []group `json:"option_groups"`
 }
@@ -46,10 +50,11 @@ type group struct {
 	Min          int               `json:"min_selected"`
 	Max          int               `json:"max_selected"`
 	Options      []struct {
-		Translations map[string]string `json:"translations,omitempty"`
-		ID           string            `json:"id"`
-		Name         string            `json:"name"`
-		Price        int64             `json:"price_minor"`
+		VariantPrices map[string]int64  `json:"variant_prices,omitempty"`
+		Translations  map[string]string `json:"translations,omitempty"`
+		ID            string            `json:"id"`
+		Name          string            `json:"name"`
+		Price         int64             `json:"price_minor"`
 	} `json:"options"`
 }
 

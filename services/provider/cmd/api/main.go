@@ -9,21 +9,31 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
+	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/media"
+	"ocp.local/platform/internal/networkcatalog"
 	"ocp.local/platform/internal/orderupdates"
 	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/runtimehttp"
 	"ocp.local/platform/internal/telemetry"
+	"ocp.local/platform/internal/ucpinternal"
+	"ocp.local/platform/internal/work"
 )
 
 func main() {
 	listen := flag.String("listen", ":8080", "HTTP listen address")
+	role := flag.String("role", "public", "Process role: public, internal, or worker")
 	check := flag.Bool("healthcheck", false, "check the local API process and exit")
 	flag.Parse()
+	if *role != "public" && *role != "internal" && *role != "worker" {
+		slog.Error("invalid listener role")
+		os.Exit(1)
+	}
 	if *check {
 		client := &http.Client{Timeout: 2 * time.Second}
 		res, err := client.Get("http://127.0.0.1:8080/health/live")
@@ -57,7 +67,13 @@ func main() {
 		}
 	}()
 	startup, cancel := context.WithTimeout(ctx, 10*time.Second)
-	db, err := persistence.Open(startup, os.Getenv("OCP_DATABASE_URL"))
+	pool, err := persistence.PoolFromEnv(os.Getenv)
+	if err != nil {
+		cancel()
+		slog.Error("invalid database pool configuration")
+		os.Exit(1)
+	}
+	db, err := persistence.OpenWithPool(startup, os.Getenv("OCP_DATABASE_URL"), pool)
 	if err == nil {
 		err = persistence.CheckRuntimeRole(startup, db)
 	}
@@ -67,6 +83,56 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+	if *role == "worker" {
+		enabled, err := capability.Parse(os.Getenv("OCP_ENABLED_DOMAINS"), []capability.Domain{capability.Food}, []capability.Domain{capability.Food})
+		if err != nil || len(enabled.Enabled()) != 1 {
+			slog.Error("invalid worker domains")
+			os.Exit(1)
+		}
+		publisher, err := networkcatalog.LoadPublisher(os.Getenv("OCP_NETWORK_PUBLISHER_CONFIG"), os.Getenv("OCP_LOCAL_NETWORK") == "true")
+		if err != nil {
+			slog.Error("invalid publisher configuration")
+			os.Exit(1)
+		}
+		worker := work.Worker{DB: db, Domains: enabled.Enabled(), Handlers: map[string]work.Handler{"food/catalog.publish": publisher.Deliver}, Concurrency: 2, Observer: signals.Observer}
+		result := make(chan error, 1)
+		go func() { result <- worker.Run(ctx) }()
+		mux := http.NewServeMux()
+		mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"status":"live"}`))
+		})
+		go func() { result <- serve(ctx, *listen, mux) }()
+		select {
+		case err = <-result:
+		case <-ctx.Done():
+		}
+		if err != nil {
+			slog.Error("worker stopped")
+			os.Exit(1)
+		}
+		return
+	}
+	if *role == "internal" {
+		concurrency := 4
+		if raw := os.Getenv("OCP_DOMAIN_CONCURRENCY"); raw != "" {
+			concurrency, err = strconv.Atoi(raw)
+			if err != nil {
+				slog.Error("invalid domain concurrency")
+				os.Exit(1)
+			}
+		}
+		handler, err := ucpinternal.NewHandler(db, ucpinternal.Config{Domains: os.Getenv("OCP_ENABLED_DOMAINS"), Endpoint: os.Getenv("OCP_INTERNAL_ENDPOINT"), Concurrency: concurrency, Observer: signals.Observer})
+		if err != nil {
+			slog.Error("internal contract startup failed")
+			os.Exit(1)
+		}
+		if err := serve(ctx, *listen, handler); err != nil {
+			slog.Error("internal API stopped")
+			os.Exit(1)
+		}
+		return
+	}
 	var options []httpapi.Option
 	options = append(options, httpapi.WithDomains(os.Getenv("OCP_ENABLED_DOMAINS")))
 	options = append(options, httpapi.WithTelemetry(signals.Observer))

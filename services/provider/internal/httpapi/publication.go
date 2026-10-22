@@ -64,14 +64,11 @@ func (s *Server) createFoodQuote(w http.ResponseWriter, r *http.Request, merchan
 		return
 	}
 	calculate := func(p persistence.PublicOffering) (persistence.QuoteCalculation, error) {
-		if p.Model != food.Model {
-			return persistence.QuoteCalculation{}, food.ErrSelection
-		}
 		locale := ""
 		if body.Locale != nil {
 			locale = string(*body.Locale)
 		}
-		priced, total, err := food.PriceLocalized(p.Document, lines, locale)
+		priced, total, expires, err := food.PriceModel(p.Model, p.Document, lines, locale, p.EvaluatedAt)
 		if err != nil {
 			return persistence.QuoteCalculation{}, err
 		}
@@ -80,7 +77,7 @@ func (s *Server) createFoodQuote(w http.ResponseWriter, r *http.Request, merchan
 		if body.Note != nil {
 			note = *body.Note
 		}
-		return persistence.QuoteCalculation{Lines: encoded, Total: total, Note: note}, err
+		return persistence.QuoteCalculation{Lines: encoded, Total: total, Note: note, ExpiresAt: expires}, err
 	}
 	var value persistence.FoodQuote
 	var err error

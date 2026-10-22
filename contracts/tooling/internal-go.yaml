@@ -1,0 +1,8 @@
+package: ucpcontract
+output: internal/ucpcontract/generated.go
+generate:
+  models: true
+  client: true
+  embedded-spec: true
+output-options:
+  skip-prune: true

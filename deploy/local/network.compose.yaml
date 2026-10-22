@@ -1,0 +1,59 @@
+# Synthetic enrolled peers only. No host ports, public registry, or live payments.
+services:
+  network-db:
+    profiles: [network]
+    image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    environment:
+      POSTGRES_USER: ocp_network
+      POSTGRES_PASSWORD: ocp_network_local_only
+      POSTGRES_DB: ocp_network
+    volumes:
+      - network-postgres-data:/var/lib/postgresql
+      - ./deploy/local/init/roles.sql:/docker-entrypoint-initdb.d/roles.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U ocp_network -d ocp_network']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  network-lab:
+    profiles: [network]
+    image: ocp-platform-tools
+    working_dir: /workspace/services/provider
+    command: [/workspace/working/native-onix/ocp-network-lab, -mode, serve]
+    volumes:
+      - .:/workspace
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  onix-provider-a:
+    profiles: [network]
+    image: ocp-platform-onix:local
+    command: [-config, /app/provider.json]
+    volumes:
+      - ./working/native-onix/provider-a.json:/app/provider.json:ro
+      - ./working/native-onix/provider-a:/workspace/working/native-onix/provider-a
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  onix-provider-b:
+    profiles: [network]
+    image: ocp-platform-onix:local
+    command: [-config, /app/provider.json]
+    volumes:
+      - ./working/native-onix/provider-b.json:/app/provider.json:ro
+      - ./working/native-onix/provider-b:/workspace/working/native-onix/provider-b
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  onix-crawler:
+    profiles: [network]
+    image: ocp-platform-onix:local
+    command: [-config, /app/crawler.json]
+    volumes:
+      - ./working/native-onix/crawler.json:/app/crawler.json:ro
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+volumes:
+  network-postgres-data:

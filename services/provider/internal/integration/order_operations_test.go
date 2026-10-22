@@ -38,7 +38,10 @@ func TestFoodOrderProgressMigrationPreservesLegacyReplay(t *testing.T) {
 	private := f.merchantPath + "/" + store.ID.String()
 	public := strings.Replace(private, "/api/v1/", "/api/v1/public/", 1)
 	guest := strings.Replace(private, "/api/v1/", "/api/v1/guest/", 1)
-	f.request(t, "PUT", private+"/publication", f.token, "legacy-menu-publish-001", `{"expected_generation":0,"revision":1}`, 201)
+	// Seed the historical visibility shape directly: current publication also
+	// writes a durable export intent, a table deliberately absent from v3.
+	_, seedErr = f.admin.Exec(`UPDATE commerce.stores s SET published_revision=1,publication_generation=1,public_document=r.document FROM commerce.offering_revisions r WHERE s.id=$1 AND r.store_id=s.id AND r.revision=1`, store.ID)
+	must(t, seedErr)
 	var session persistence.GuestSession
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &session))
 	// Current quote handlers require current ordering-policy columns. Build the

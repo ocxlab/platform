@@ -16,9 +16,12 @@ RUN go mod download
 COPY services/provider/cmd ./cmd
 COPY services/provider/internal ./internal
 COPY contracts/openapi/v1 /workspace/contracts/openapi/v1
+COPY contracts/openapi/internal /workspace/contracts/openapi/internal
 COPY contracts/tooling/go.yaml /workspace/contracts/tooling/go.yaml
+COPY contracts/tooling/internal-go.yaml /workspace/contracts/tooling/internal-go.yaml
 COPY --from=errors /workspace/services/provider/internal/problems/catalog.generated.json ./internal/problems/catalog.generated.json
 RUN go run ./cmd/contracts && go tool oapi-codegen --config ../../contracts/tooling/go.yaml ../../contracts/build/provider.openapi.json
+RUN go run ./cmd/contracts -source ../../contracts/openapi/internal/openapi.yaml -output ../../contracts/build/internal.openapi.json && go tool oapi-codegen --config ../../contracts/tooling/internal-go.yaml ../../contracts/build/internal.openapi.json
 RUN CGO_ENABLED=0 go build -trimpath -o /out/ocp-api ./cmd/api
 
 FROM scratch AS api

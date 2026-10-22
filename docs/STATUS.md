@@ -1,5 +1,56 @@
 # Development status
 
+## Three-domain foundation verified before administration
+
+22 October 2026. The agreed pre-administration implementation is complete for
+its bounded scope. Food V2 supports size-specific extras, scheduled offers,
+availability windows and boundary-aware quotes. Shopping and Lodging have
+internal-only catalogs and session APIs with their own stock/date allocation,
+retained terms and atomic outstanding pay-later obligations. Native ONIX
+publishers/crawler carry Food discovery between two configured providers.
+
+Read [the acceptance summary](THREE-DOMAIN-ACCEPTANCE.md) for the capabilities,
+executed evidence and remaining limits; [internal commerce](INTERNAL-COMMERCE.md)
+lists operations and local commands. Generated artifacts remain ignored and
+untracked. No public Shopping/Lodging product or whole-UCP conformance is claimed.
+
+Completed verification:
+
+- `task check`: source-only generation guard, deterministic contracts, error
+  catalog checks, formatting, Spectral (14 rule tests; no lint findings), Go
+  vet/race tests, PostgreSQL integration (98.535 seconds), image builds, zero
+  Svelte diagnostics and all 84 frontend tests passed. Final small error-catalog
+  and observer-dispatch edits were additionally covered by targeted Go race
+  tests and the following domain/process rerun.
+- `task test:domains`: all nine PostgreSQL/race/schema/process tests passed
+  again on the final code (32.447 seconds). Actual session responses validate
+  against UCP draft source `d13cc61455d2a90f7e6038df07fdbe72dcccdcc7`;
+  a deliberately invalid response fails validation.
+- `task test:network`: native two-provider publish/update/crawl/search/withdraw
+  and authoritative-quote journey passed (10.44 seconds; package 11.514 seconds),
+  including stale-generation and wrong-provider negatives.
+- `task test:mutation:go`: capability 5 killed/0 lived; payment 17/0;
+  Food 151/10; none uncovered. Food survivors remain explicit test-strength debt,
+  enumerated in the acceptance summary.
+- `task domains:dev` and a final Compose restart ran all four roles from one
+  image, with internal APIs/worker healthy and no host ports. Separate-process
+  tests covered Shopping saturation without blocking Lodging, replica replay
+  after process kill, and worker recovery after retained external receipt.
+- `task smoke` passed and applied migrations without resetting development data.
+  No new browser suite, real payment-provider call, public federation test,
+  production load benchmark or cloud failover test was run in this slice.
+
+Engineering and protocol static reviews closed their blockers; review notes are
+under `docs/reviews/`. Initial worker-container startup exposed a UID/config-file
+ownership problem; the corrected file remains mode 0600 and readable by the
+non-root runtime. All four roles subsequently passed health checks.
+
+Optional domain/network lab services are stopped after verification, retaining
+their data; normal development Food API/database remain available. Provider-admin
+redesign has not started. Ask for the founder's screenshots before that work.
+
+Older entries below are historical checkpoints, not the current feature inventory.
+
 ## Explicit commerce domain admission
 
 22 October 2026. The first three-domain foundation batch separates installed

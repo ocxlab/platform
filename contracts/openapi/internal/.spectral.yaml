@@ -1,0 +1,17 @@
+extends: ../../../.spectral.yaml
+rules:
+  # The well-known path is upstream syntax; all other paths retain owned rules.
+  paths-kebab-case:
+    given: $.paths[?(@property != '/.well-known/ucp' && @property != '/schemas/internal/pay-later.json')]~
+    severity: error
+    then:
+      function: pattern
+      functionOptions:
+        match: '^/(?:[a-z0-9]+(?:-[a-z0-9]+)*|\{[A-Za-z][A-Za-z0-9_]*\})(?:/(?:[a-z0-9]+(?:-[a-z0-9]+)*|\{[A-Za-z][A-Za-z0-9_]*\}))*$'
+  operation-access-required:
+    given: $.paths[*][get,put,post,delete,options,head,patch,trace]
+    then:
+      - field: x-access
+        function: enumeration
+        functionOptions:
+          values: [internal]

@@ -1,0 +1,24 @@
+Agent:
+  name: UCP-Agent
+  in: header
+  required: true
+  description: Controlled caller profile in RFC 8941 dictionary syntax; profile URI ends with /.well-known/ucp.
+  schema: {type: string, maxLength: 500}
+RequestId:
+  name: Request-Id
+  in: header
+  required: true
+  description: Pinned UCP request correlation identifier, not the owned public API's X-Request-ID.
+  schema: {type: string, format: uuid}
+Replay:
+  name: Idempotency-Key
+  in: header
+  required: true
+  description: Durable caller, domain, operation, and resource scoped replay identity.
+  schema: {type: string, format: uuid}
+Session:
+  name: id
+  in: path
+  required: true
+  description: Checkout or booking session identifier; it never supplies authorization.
+  schema: {type: string, format: uuid}

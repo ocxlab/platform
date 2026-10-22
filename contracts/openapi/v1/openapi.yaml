@@ -182,6 +182,8 @@ components:
       $ref: schemas/common/health.yaml
     FoodMenu:
       $ref: domains/food/menu/v1/schema.yaml#/FoodMenu
+    FoodMenuV2:
+      $ref: domains/food/menu/v2/schema.yaml#/FoodMenu
     FoodMenuItem:
       $ref: domains/food/menu/v1/schema.yaml#/Item
     FoodVariant:

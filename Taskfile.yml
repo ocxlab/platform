@@ -2,8 +2,61 @@ version: '3'
 
 vars:
   COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml
+  NETWORK_COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml --file deploy/local/network.compose.yaml
+  DOMAINS_COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml --file deploy/local/network.compose.yaml --file deploy/local/domains.compose.yaml
 
 tasks:
+  dev:internal-credential:
+    desc: Print a one-hour internal cohort credential (STORE, DOMAIN, optional MANAGEMENT=true and CUSTOMER=UUID)
+    env:
+      OCP_DEV_STORE: '{{.STORE | default ""}}'
+      OCP_DEV_CUSTOMER: '{{.CUSTOMER | default ""}}'
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_DEV_STORE -e OCP_DEV_CUSTOMER -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/provision-internal -domain={{.DOMAIN | default "shopping"}} -management={{.MANAGEMENT | default "false"}}'
+  domains:dev:
+    desc: Start optional internal domain API and catalog worker roles from the same image
+    cmds:
+      - task: db:prepare
+      - task: network:prepare
+      - '{{.COMPOSE}} build api'
+      - '{{.DOMAINS_COMPOSE}} up --detach --wait api internal-shopping internal-lodging catalog-worker'
+
+  domains:stop:
+    desc: Stop optional role processes, retaining all local data
+    cmds:
+      - '{{.DOMAINS_COMPOSE}} stop internal-shopping internal-lodging catalog-worker'
+  test:domains:
+    desc: Test separate domain API and worker processes, recovery, saturation, and pinned UCP schemas
+    deps: [generate:go]
+    cmds:
+      - '{{.COMPOSE}} up --detach --wait test-db'
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable -e OCP_TEST_API_BINARY=/tmp/ocp-api -e OCP_TEST_UCP_SOURCE=true tools sh -ec ''go build -o /tmp/ocp-api ./cmd/api; go test -race -count=1 ./internal/integration -run "TestInternal|TestDomainProcess|TestWorkerProcess" -v'''
+  network:prepare:
+    desc: Build pinned native ONIX and provision isolated synthetic provider databases
+    deps: [generate:go]
+    cmds:
+      - 'docker build --file services/onix/Dockerfile --tag ocp-platform-onix:local .'
+      - '{{.COMPOSE}} run --rm --no-deps tools go build -o /workspace/working/native-onix/ocp-network-lab ./cmd/network-lab'
+      - '{{.NETWORK_COMPOSE}} up --detach --wait network-db'
+      - '{{.NETWORK_COMPOSE}} run --rm --no-deps tools /workspace/working/native-onix/ocp-network-lab -mode init'
+
+  network:dev:
+    desc: Start the native publisher/crawler and isolated two-provider acceptance harness
+    cmds:
+      - task: network:prepare
+      - '{{.NETWORK_COMPOSE}} up --detach --force-recreate network-lab onix-provider-a onix-provider-b onix-crawler'
+
+  test:network:
+    desc: Exercise native ONIX publication, crawl, withdrawal, discovery, and authoritative quotes
+    cmds:
+      - task: network:dev
+      - '{{.NETWORK_COMPOSE}} run --rm --no-deps -e OCP_TEST_NATIVE_NETWORK=true tools go test -race -count=1 ./internal/integration -run TestNativeONIXFoodJourney -v'
+
+  network:stop:
+    desc: Stop only the synthetic network services, preserving generated keys and local databases
+    cmds:
+      - '{{.NETWORK_COMPOSE}} stop network-lab onix-provider-a onix-provider-b onix-crawler network-db'
+
   generate:
     desc: Generate all ignored Go/TypeScript artifacts from source contracts
     cmds:
@@ -12,14 +65,14 @@ tasks:
 
   generate:go:
     desc: Prepare generated Go API and embedded error catalog before compilation
-    deps: [contracts:generate, errors:generate]
+    deps: [contracts:generate, contracts:internal:generate, errors:generate]
 
   generated:check:
     desc: Reject generated outputs accidentally added to Git tracking
     cmds:
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
-        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/provider/internal/httpapi/generated.go services/provider/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
+        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/provider/internal/httpapi/generated.go services/provider/internal/ucpcontract/generated.go services/provider/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
 
   media:start:
     desc: Start optional local S3-compatible storage without changing application data
@@ -259,6 +312,7 @@ tasks:
       - task: contracts:install
       - '{{.COMPOSE}} run --rm --no-deps contracts-tools pnpm test'
       - '{{.COMPOSE}} run --rm --no-deps contracts-tools pnpm run lint'
+      - '{{.COMPOSE}} run --rm --no-deps contracts-tools pnpm exec spectral lint ../openapi/internal/openapi.yaml --ruleset ../openapi/internal/.spectral.yaml --fail-severity warn'
 
   errors:generate:
     desc: Generate Go and TypeScript error catalogs from module-owned contract files
@@ -295,6 +349,26 @@ tasks:
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
         'sed "s@^output:.*@output: /tmp/generated.go@" ../../contracts/tooling/go.yaml > /tmp/codegen.yaml; go tool oapi-codegen --config /tmp/codegen.yaml ../../contracts/build/provider.openapi.json; cmp internal/httpapi/generated.go /tmp/generated.go'
+      - task: contracts:internal:generate
+      - >-
+        {{.COMPOSE}} run --rm --no-deps tools sh -ec
+        'sed "s@^output:.*@output: /tmp/internal-generated.go@" ../../contracts/tooling/internal-go.yaml > /tmp/internal-codegen.yaml; go tool oapi-codegen --config /tmp/internal-codegen.yaml ../../contracts/build/internal.openapi.json; cmp internal/ucpcontract/generated.go /tmp/internal-generated.go'
+
+  contracts:internal:bundle:
+    desc: Validate and bundle the isolated internal UCP cohort contract
+    deps: [tools:build]
+    sources: [contracts/openapi/internal/**/*, services/provider/cmd/contracts/*.go]
+    generates: [contracts/build/internal.openapi.json]
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/contracts -source ../../contracts/openapi/internal/openapi.yaml -output ../../contracts/build/internal.openapi.json'
+
+  contracts:internal:generate:
+    desc: Generate ignored internal UCP cohort models and client
+    deps: [contracts:internal:bundle]
+    sources: [contracts/build/internal.openapi.json, contracts/tooling/internal-go.yaml, services/provider/go.mod, services/provider/go.sum]
+    generates: [services/provider/internal/ucpcontract/generated.go]
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools go tool oapi-codegen --config ../../contracts/tooling/internal-go.yaml ../../contracts/build/internal.openapi.json'
 
   db:prepare:
     desc: Start the development database, provision its restricted role, and apply migrations explicitly

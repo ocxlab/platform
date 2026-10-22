@@ -28,9 +28,15 @@ contracts/
       stores/                   Store resource and creation request
       offerings/                Model reference and immutable revision envelope
     domains/food/menu/v1/       Replaceable Food menu definition
+    domains/food/menu/v2/       Size-specific prices and scheduled offers
     domains/food/selection/v1/  Selection and priced quote definitions
     examples/                   Fictional JSON documents checked in tests
   tooling/go.yaml               Pinned generator configuration
+  openapi/internal/              Isolated Shopping/Lodging contract root
+    components/                 Shared wire records and headers
+    domains/                    Domain catalogs and selections
+    paths/                      Domain session operations and owned reads
+  tooling/internal-go.yaml      Internal cohort generator configuration
   build/                        Ignored, self-contained generated bundle
 ```
 
@@ -38,8 +44,12 @@ The entry document composes resources through local `$ref` references. Keep
 shared concepts in their owning file rather than copying them into operations.
 Group small, cohesive resource/request schemas in one file; split a file when
 its contents have different owners or lifecycles, not just to maximize file count.
-No remote references are fetched during generation. Files outside the v1 root
-are rejected. Dependencies and image digests are pinned separately from API versions.
+No remote references are fetched during generation. Files outside the selected
+entry document's contract root are rejected. Dependencies and image digests are
+pinned separately from API versions. The internal contract is a bounded
+implementation subset, not a replacement upstream UCP specification; see
+[internal commerce](../docs/INTERNAL-COMMERCE.md). Its generated client and
+embedded contract remain ignored, like the public generated outputs.
 
 ## Change and verify a contract
 
