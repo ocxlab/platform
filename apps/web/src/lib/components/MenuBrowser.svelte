@@ -160,7 +160,10 @@
   .search-input { block-size: 44px; box-sizing: border-box; }
   .view-switch button { min-block-size: 44px; box-sizing: border-box; }
   .search-input { border: 1px solid #9ab2be; border-radius: .6rem; background: white; padding-inline: .85rem; color: #20586f; }
+  /* Highlight the composite field, not a second rectangle around its inner input. */
+  .search-input:focus-within { border-color: #20586f; box-shadow: 0 0 0 1px #20586f; }
   .search-input input { border: 0; background: transparent; margin: 0; padding-inline: 0; min-inline-size: 0; }
+  .search-input input:focus-visible { outline: none; }
   .floating-menu-tools { position: fixed; inset-inline-start: max(1.4rem, (100vw - 1080px) / 2 + 1.4rem); bottom: max(1rem, env(safe-area-inset-bottom)); display: flex; gap: .5rem; z-index: 6; max-inline-size: calc(100vw - 2.8rem); }
   details { position: relative; min-inline-size: 0; }
   summary { display: flex; gap: .4rem; align-items: center; cursor: pointer; height: 44px; padding: .5rem .7rem; border: 1px solid #9ab2be; border-radius: .6rem; color: #20586f; background: white; list-style: none; box-shadow: 0 3px 12px #102c3b22; }

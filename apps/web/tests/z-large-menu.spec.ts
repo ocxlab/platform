@@ -77,6 +77,10 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   await expect(page.getByRole('group', { name: 'Selected categories' }).getByRole('button')).toHaveCount(2);
   await page.screenshot({ path: 'test-results/menu-filter-chips-mobile.png' });
   await page.getByRole('searchbox', { name: 'Search the menu', exact: true }).fill('doner');
+  await expect(page.getByRole('searchbox', { name: 'Search the menu', exact: true })).toHaveCSS('outline-style', 'none');
+  await expect(page.locator('.search-input')).toHaveCSS('border-color', 'rgb(32, 88, 111)');
+  await expect(page.locator('.search-input')).toHaveCSS('box-shadow', 'rgb(32, 88, 111) 0px 0px 0px 1px');
+  await page.screenshot({ path: 'test-results/menu-search-focus-mobile.png' });
   await expect(page.locator('.menu-card')).toHaveCount(5);
   await page.getByRole('button', { name: 'Clear search and filters', exact: true }).click();
   await expect(page.locator('.menu-card')).toHaveCount(48);

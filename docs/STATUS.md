@@ -1,5 +1,14 @@
 # Development status
 
+## Menu search focus styling
+
+22 October 2026. Focus highlights the complete menu search field in brand blue,
+replacing the brown rectangle around its inner input. Other focus indicators are
+unchanged. All six browser journeys passed (38.2 seconds), including assertions
+for the replacement focus styling; the focused mobile screenshot was inspected.
+Full `task check` passed, including 84 frontend tests, zero Svelte diagnostics,
+contract lint/drift checks, Go race/integration checks, and runtime builds.
+
 ## Compact menu controls and category filtering
 
 22 October 2026. Customers switch between cards, list, and dropdown through one
