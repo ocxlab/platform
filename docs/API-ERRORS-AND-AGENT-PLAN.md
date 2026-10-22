@@ -45,9 +45,12 @@ arbitrary destination URL, provider-admin authority, or automatic exposure of
 every endpoint. Preserve merchant scope, revisions, and idempotency keys.
 Conflicts require rereading, not silent overwrites. Structured tool errors retain
 safe application codes and correlation IDs.
-Start with a local development stdio adapter using an explicitly supplied scoped
-test grant. A publicly reachable HTTP MCP endpoint and its authorization flow
-are a later deployment increment, not an implied capability of that local test.
+Start with a local Streamable HTTP endpoint at `/mcp`, using an explicitly scoped
+development credential for that resource. This supersedes the earlier stdio-first
+proposal. Public OAuth authorization remains a separate deployment increment.
+Use the same authorized application operations as REST; do not blindly pass
+REST credentials through an MCP proxy. The [transport and chat investigation](MCP-AND-CHAT-RESEARCH.md)
+records protocol-version compatibility, authentication, and acceptance checks.
 
 Pin a compatible SDK/protocol/Inspector cohort and add Task commands to run the
 adapter, launch Inspector locally, and run scripted checks, using Docker where
@@ -76,6 +79,13 @@ Show proposed changes and tool activity, preserve work on failure, and retain
 ordinary editing. Imported menu text is untrusted data, not instructions.
 Never put credentials in prompts. Choose the model/provider and data-handling
 settings before sending real merchant content externally.
+
+Evaluate Vercel AI SDK with its Svelte bindings and HTTP MCP client first. Feature
+coverage takes precedence over preserving a framework choice. Direct OpenAI API
+access does not require Vercel Gateway; API usage is separate from ChatGPT Pro.
+Keep keys in ignored, server-only runtime configuration initially. Prefer
+Infisical EU when growing secrets/environment/CI needs justify centralization.
+No AI SDK dependency, API key, or Infisical integration was added by the research.
 
 Customer ordering tools follow the cart/checkout work. Multilingual conversational
 testing remains separate; neither delays the initial model-free setup journey.

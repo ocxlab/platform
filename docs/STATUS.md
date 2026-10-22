@@ -1,5 +1,22 @@
 # Development status
 
+## Streamable HTTP and chat research
+
+22 October 2026, Europe/Berlin (UTC+02:00). The
+[product investigation](MCP-AND-CHAT-RESEARCH.md) recommends Streamable HTTP MCP
+in the existing Go provider, then Vercel AI SDK/SvelteKit onboarding through that
+HTTP tool boundary. It supersedes the stdio-first plan. Feature coverage takes
+precedence over stack preservation; official documentation shows no current
+reason to replace SvelteKit. The compatible package release set, authorization
+implementation, and end-to-end feature support still require execution checks.
+
+The note records protocol-era differences, scoped authentication without token
+passthrough, explicit review before publishing, model-free Inspector tests,
+separate API billing, and Infisical EU as the preferred later secrets manager.
+This is documentation/source research only: no dependencies, secrets, application
+behavior, cloud services, or candidate-review ledgers changed. No application
+test suite was rerun for this documentation-only batch.
+
 ## Ordering controls and the early agent-facing plan
 
 22 October 2026, Europe/Berlin (UTC+02:00). The store Orders tab now exposes
