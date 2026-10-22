@@ -13,8 +13,8 @@ export async function loadReceipt(params: ReceiptRoute, cookies: Cookies) {
   const token = guestCheckout(cookies, scope.merchant, scope.store).token();
   if (!token) error(401, text('receipt-browser-required'));
   if (!/^O-[0-9]{6,19}$/.test(params.order)) error(404, text('receipt-not-available'));
-  const result = await api(token).GET('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/by-reference/{order_reference}', {
-    params: { path: { merchant_id: scope.merchant, store_id: scope.store, order_reference: params.order } },
+  const result = await api(token).GET('/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/by-reference/{orderReference}', {
+    params: { path: { merchantId: scope.merchant, storeId: scope.store, orderReference: params.order } },
   });
   if (!result.data) error(result.response.status, result.response.status === 404 ? text('receipt-not-available') : message(result.error));
   return result.data;

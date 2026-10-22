@@ -2,10 +2,12 @@ get:
   operationId: GetPublicStoreByHandle
   tags: [Customer commerce]
   summary: Resolve a visible store's provider-local handle
+  description: Resolve public routing metadata for a currently visible publication; absent, suspended, and withdrawn stores return not found.
   security: []
   x-access: public
   parameters:
-    - name: store_handle
+    - name: storeHandle
+      description: Provider-local readable store handle, not merchant identity or purchase authority.
       in: path
       required: true
       schema: { type: string, pattern: '^store-[1-9][0-9]{0,17}$' }

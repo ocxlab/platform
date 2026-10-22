@@ -14,6 +14,7 @@ get:
   parameters:
     - $ref: ../components/parameters/page-limit.yaml
     - name: after
+      description: Opaque continuation from next_after; retains descending order without granting access.
       in: query
       schema:
         type: string

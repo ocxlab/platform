@@ -8,6 +8,7 @@ get:
   x-required-scope: offering:read
   tags: [Merchant commerce]
   summary: Read owned image metadata without a storage capability
+  description: Read this store's upload/verification state and owned media identifier without issuing a signed storage URL.
   responses:
     '200':
       description: Authorized result.

@@ -4,6 +4,7 @@ parameters:
 get:
   operationId: WatchMerchantFoodOrders
   summary: Watch change hints for this store's order inbox
+  description: Subscribe to store-scoped SSE hints and re-read the inbox on connection and change; hints may coalesce and are not replayed.
   tags: [Merchant commerce]
   x-access: merchant
   x-required-scope: order:read

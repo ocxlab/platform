@@ -1,4 +1,4 @@
-name: merchant_id
+name: merchantId
 in: path
 required: true
 schema:

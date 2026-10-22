@@ -1,5 +1,29 @@
 # Development status
 
+## Spectral API design checks
+
+22 October 2026. Root `.spectral.yaml` starts with the full Spectral OAS baseline
+and adds path naming, camelCase path/query parameters, object-root JSON requests,
+Problem JSON errors, explicit operation audiences, and body-free GET operations.
+`task contracts:lint` runs pinned Spectral 6.17.0 and 14 rule tests in Docker;
+`task check` includes it. The modular source currently has no lint warnings/errors.
+Private publication metadata and exported code-generation aliases have four
+documented baseline exceptions, not a blanket warning suppression.
+
+Generated Go/TypeScript contracts, tenant middleware, and clients use camelCase
+placeholder names together. Actual URL segments, JSON properties, stored records,
+and replay bodies are unchanged. Declared search/filter query parameters remain
+supported; the rule rejects query strings embedded in path keys. Successful SSE
+responses and image redirects retain their appropriate media/body behavior.
+
+Full `task check` and `task smoke` passed, including race-enabled Go tests,
+database integration, generated-contract drift checks, 82 frontend tests,
+zero Svelte diagnostics, and API/web builds. No development data was reset.
+All six browser journeys passed (37.2 seconds), covering merchant publication,
+guest ordering, provider moderation, localization, and direct image upload.
+These checks do not establish third-party protocol conformance or production
+payment-provider behavior. MCP implementation and admin redesign remain separate work.
+
 ## Item note spacing
 
 22 October 2026. Expanded basket item notes now have a 12px gap below the
@@ -472,7 +496,7 @@ resetting development data; native Vite remains on port 18181.
 Initial checks exposed a ServeMux conflict with readable-order lookup, an overly
 strict EventSource test type, and a test that left Arabic selected before expecting
 an English login label. These were corrected and the affected checks rerun;
-the guest stream uses the distinct `/food/order-updates/{order_id}` path.
+the guest stream uses the distinct `/food/order-updates/{orderId}` path.
 This batch does not change real payment adapters, the cart, or native ONIX
 integration. Mutation tests and production load/failover tests are not claimed.
 Next: pause/resume ordering and manual/automatic acceptance, followed by the

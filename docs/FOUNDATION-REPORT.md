@@ -24,11 +24,11 @@ uses intentional names such as `Store`, `OfferingRevision`, and `FoodOption`.
 
 | Operation | Result |
 | --- | --- |
-| `POST /api/v1/merchants/{merchant_id}/stores` | Create a store under the authorized merchant |
-| `GET /api/v1/merchants/{merchant_id}/stores/{store_id}` | Read that store |
-| `PUT .../stores/{store_id}/offering` | Append a validated draft revision if `base_revision` matches |
-| `GET .../stores/{store_id}/offering` | Read the current draft head |
-| `GET .../stores/{store_id}/offering/revisions/{revision}` | Read a retained revision |
+| `POST /api/v1/merchants/{merchantId}/stores` | Create a store under the authorized merchant |
+| `GET /api/v1/merchants/{merchantId}/stores/{storeId}` | Read that store |
+| `PUT .../stores/{storeId}/offering` | Append a validated draft revision if `base_revision` matches |
+| `GET .../stores/{storeId}/offering` | Read the current draft head |
+| `GET .../stores/{storeId}/offering/revisions/{revision}` | Read a retained revision |
 | `GET /health/live` | Establish process liveness, not commerce readiness |
 
 ## What the checks establish

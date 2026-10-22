@@ -2,6 +2,7 @@ parameters:
   - $ref: ../components/parameters/merchant-id.yaml
   - $ref: ../components/parameters/store-id.yaml
   - name: revision
+    description: Immutable offering revision number within this store.
     in: path
     required: true
     schema:

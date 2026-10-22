@@ -10,9 +10,11 @@ get:
     - $ref: ../components/parameters/admin-query.yaml
     - $ref: ../components/parameters/admin-after.yaml
     - name: status
+      description: Filter by current publication visibility.
       in: query
       schema: { type: string, enum: [unpublished, published, suspended] }
     - name: limit
+      description: Maximum number of store summaries in this page.
       in: query
       schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
   responses:

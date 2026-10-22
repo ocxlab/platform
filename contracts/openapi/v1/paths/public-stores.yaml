@@ -10,6 +10,7 @@ get:
   x-access: public
   parameters:
     - name: q
+      description: Literal case-insensitive store-name substring, trimmed before matching.
       in: query
       schema: { type: string, maxLength: 160 }
     - name: after
@@ -17,6 +18,7 @@ get:
       description: Opaque continuation value bound to the trimmed search query. A different query returns 400; omit after to begin a new search.
       schema: { type: string, pattern: '^[0-9a-f]{64}:[0-9a-fA-F-]{36}:[0-9a-fA-F-]{36}$' }
     - name: limit
+      description: Maximum number of public store summaries in this page.
       in: query
       schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
   responses:

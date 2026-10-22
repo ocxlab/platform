@@ -187,6 +187,7 @@ tasks:
       - task: errors:check
       - task: fmt:check
       - task: contracts:check
+      - task: contracts:lint
       - task: vet
       - task: test:race
       - task: test:integration
@@ -205,6 +206,19 @@ tasks:
     desc: Validate modular local OpenAPI sources and build a self-contained bundle
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/contracts'
+
+  contracts:install:
+    desc: Install pinned API lint tooling in Docker, independently of the UI
+    cmds:
+      - '{{.COMPOSE}} build contracts-tools'
+      - '{{.COMPOSE}} run --rm --no-deps contracts-tools pnpm install --frozen-lockfile --ignore-scripts --store-dir /root/.local/share/pnpm/store'
+
+  contracts:lint:
+    desc: Lint modular OpenAPI contracts and test the API style rules
+    cmds:
+      - task: contracts:install
+      - '{{.COMPOSE}} run --rm --no-deps contracts-tools pnpm test'
+      - '{{.COMPOSE}} run --rm --no-deps contracts-tools pnpm run lint'
 
   errors:generate:
     desc: Generate Go and TypeScript error catalogs from module-owned contract files

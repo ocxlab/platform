@@ -35,7 +35,7 @@ The modular OpenAPI entry defines these bearer-authenticated endpoints:
 | Audience | Endpoint suffix beneath its merchant/store scope | Required access |
 | --- | --- | --- |
 | Merchant | `/food/order-updates` | `order:read` for the merchant and existing store |
-| Guest | `/food/order-updates/{order_id}` | `order:read` and ownership of that order in that store |
+| Guest | `/food/order-updates/{orderId}` | `order:read` and ownership of that order in that store |
 
 They return UTF-8 `text/event-stream`. The initial connection and matching changes
 emit `event: invalidate` with `data: {"resource":"food_orders"}`. Clients re-read

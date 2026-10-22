@@ -1,0 +1,13 @@
+{
+  "name": "@ocp/contract-tooling",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "scripts": {
+    "lint": "spectral lint ../openapi/v1/openapi.yaml --ruleset ../../.spectral.yaml --fail-severity warn",
+    "test": "node --test spectral.test.mjs"
+  },
+  "devDependencies": {
+    "@stoplight/spectral-cli": "6.17.0"
+  }
+}

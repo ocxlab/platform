@@ -8,17 +8,17 @@ import { customerStore, rememberCustomerStore, customerReceiptScope } from '$lib
 import { customerStorePath } from '$lib/merchant-paths';
 export const load: PageServerLoad = async ({ params, cookies, url }) => {
   const store = await customerStore(params.slug);
-  const result = await api().GET('/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering', { params: { path: { merchant_id: store.merchant_id, store_id: store.id } } });
+  const result = await api().GET('/api/v1/public/merchants/{merchantId}/stores/{storeId}/offering', { params: { path: { merchantId: store.merchant_id, storeId: store.id } } });
   if (!result.data) error(result.response.status, result.response.status === 404 ? text('storefront-no-menu') : message(result.error));
   if (result.data.model.id !== 'ocp.food.menu' || result.data.model.version !== '1.0.0') error(422, text('storefront-unsupported'));
   const guest = guestCheckout(cookies, store.merchant_id, store.id);
   const intent = guest.intent();
   let quote: components['schemas']['FoodQuote'] | undefined;
   if (intent && guest.token()) {
-    const saved = await api(guest.token()).GET('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}', { params: { path: { merchant_id: store.merchant_id, store_id: store.id, quote_id: intent.quote } } });
+    const saved = await api(guest.token()).GET('/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes/{quoteId}', { params: { path: { merchantId: store.merchant_id, storeId: store.id, quoteId: intent.quote } } });
     quote = saved.data;
   }
-  const ordering = await api().GET('/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering', { params: { path: { merchant_id: store.merchant_id, store_id: store.id } } });
+  const ordering = await api().GET('/api/v1/public/merchants/{merchantId}/stores/{storeId}/food/ordering', { params: { path: { merchantId: store.merchant_id, storeId: store.id } } });
   if (!ordering.data) error(ordering.response.status, message(ordering.error));
   const menu = result.data.document as components['schemas']['FoodMenu'];
   const selectedItem = menu.items.find(item => item.id === url.searchParams.get('item') && item.available)?.id ?? '';
@@ -30,15 +30,15 @@ export const actions: Actions = {
     const body = foodSelection(await request.formData());
     if (!body) return fail(400, { error: text('storefront-select-required') });
     const guest = guestCheckout(cookies, store.merchant_id, store.id);
-    const path = { merchant_id: store.merchant_id, store_id: store.id };
+    const path = { merchantId: store.merchant_id, storeId: store.id };
     let token = guest.token();
     if (!token) {
-      const session = await api().POST('/api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions', { params: { path }, body: {} });
+      const session = await api().POST('/api/v1/public/merchants/{merchantId}/stores/{storeId}/guest-sessions', { params: { path }, body: {} });
       if (!session.data) return fail(session.response.status, { error: message(session.error) });
       token = session.data.access_token;
       guest.setToken(token, session.data.expires_at);
     }
-    const result = await api(token).POST('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes', { params: { path }, body });
+    const result = await api(token).POST('/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes', { params: { path }, body });
     if (result.response.status === 401) guest.clear();
     if (!result.data) return fail(result.response.status, { error: message(result.error) });
     const intent = guest.setIntent(result.data.id);
@@ -59,8 +59,8 @@ export const actions: Actions = {
     if (form.get('quote') !== intent.quote || form.get('key') !== intent.key) return fail(409, { error: text('storefront-intent-changed') });
     let result;
     try {
-      result = await api(guest.token()).POST('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders', {
-        params: { path: { merchant_id: scope.merchant, store_id: scope.store }, header: { 'Idempotency-Key': intent.key } },
+      result = await api(guest.token()).POST('/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders', {
+        params: { path: { merchantId: scope.merchant, storeId: scope.store }, header: { 'Idempotency-Key': intent.key } },
         body: { quote_id: intent.quote, fulfilment: 'pickup' },
       });
     } catch {
@@ -69,7 +69,7 @@ export const actions: Actions = {
     if (!result.data) return fail(result.response.status, { error: message(result.error) });
     let order = result.data;
     if (!order.reference) {
-      const current = await api(guest.token()).GET('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}', { params: { path: { merchant_id: scope.merchant, store_id: scope.store, order_id: order.id } } });
+      const current = await api(guest.token()).GET('/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}', { params: { path: { merchantId: scope.merchant, storeId: scope.store, orderId: order.id } } });
       if (!current.data) return fail(current.response.status, { error: message(current.error) });
       order = current.data;
     }

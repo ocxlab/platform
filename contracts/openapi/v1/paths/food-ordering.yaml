@@ -5,6 +5,7 @@ get:
   operationId: GetFoodOrdering
   tags: [Merchant commerce]
   summary: Read store ordering settings
+  description: Read the store's current acceptance mode, pause state, and settings revision.
   x-access: merchant
   x-required-scope: order:read
   responses:

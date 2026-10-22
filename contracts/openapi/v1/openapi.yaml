@@ -2,6 +2,8 @@ openapi: 3.0.3
 info:
   title: OCP Platform API
   version: 0.1.0
+  contact:
+    name: OCP Lab
   description: >-
     Draft owned contract, not UCP or Beckn conformance.
     JSON bodies; responses are not cacheable in this slice. Merchant grants are bound
@@ -13,87 +15,92 @@ info:
 servers:
   - url: /
 tags:
-  - name: Operations
-  - name: Merchant account
-  - name: Merchant commerce
   - name: Customer commerce
+    description: Public browsing and guest-scoped quotes, orders, and payment interaction.
+  - name: Merchant account
+    description: Merchant store setup and account-owned store listings.
+  - name: Merchant commerce
+    description: Offering administration, ordering settings, and merchant order operations.
+  - name: Operations
+    description: Process liveness and operational transport checks.
   - name: Provider administration
+    description: Separately authorized provider-wide inspection and publication moderation.
 security:
   - BearerAuth: []
 paths:
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/media:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/media:
     $ref: paths/media-uploads.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}:
     $ref: paths/media-asset.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/upload-grant:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/upload-grant:
     $ref: paths/media-upload-grant.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/completion:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/completion:
     $ref: paths/media-completion.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/image:
     $ref: paths/media-preview.yaml
-  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image:
+  /api/v1/public/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/image:
     $ref: paths/public-media.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/food/ordering:
     $ref: paths/food-ordering.yaml
-  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering:
+  /api/v1/public/merchants/{merchantId}/stores/{storeId}/food/ordering:
     $ref: paths/public-food-ordering.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/order-updates:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/food/order-updates:
     $ref: paths/merchant-order-updates.yaml
-  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/order-updates/{order_id}:
+  /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/order-updates/{orderId}:
     $ref: paths/guest-order-updates.yaml
-  /api/v1/public/stores/{store_handle}:
+  /api/v1/public/stores/{storeHandle}:
     $ref: paths/public-store-handle.yaml
-  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/by-reference/{order_reference}:
+  /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/by-reference/{orderReference}:
     $ref: paths/food-order-reference.yaml
   /api/v1/admin/stores:
     $ref: paths/admin-stores.yaml
   /api/v1/admin/food/orders:
     $ref: paths/admin-orders.yaml
-  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/development-payment:
+  /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/development-payment:
     $ref: paths/development-payment.yaml
   /api/v1/public/stores:
     $ref: paths/public-stores.yaml
   /health/live:
     $ref: paths/health.yaml
-  /api/v1/merchants/{merchant_id}/stores:
+  /api/v1/merchants/{merchantId}/stores:
     $ref: paths/stores.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}:
+  /api/v1/merchants/{merchantId}/stores/{storeId}:
     $ref: paths/store.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/offering:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/offering:
     $ref: paths/offering.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision}:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/offering/revisions/{revision}:
     $ref: paths/offering-revision.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/publication:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/publication:
     $ref: paths/publication.yaml
-  /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication:
+  /api/v1/admin/merchants/{merchantId}/stores/{storeId}/publication:
     $ref: paths/admin-publication.yaml
-  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering:
+  /api/v1/public/merchants/{merchantId}/stores/{storeId}/offering:
     $ref: paths/public-offering.yaml
-  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering-updates:
+  /api/v1/public/merchants/{merchantId}/stores/{storeId}/offering-updates:
     $ref: paths/public-offering-updates.yaml
-  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes:
+  /api/v1/public/merchants/{merchantId}/stores/{storeId}/food/quotes:
     $ref: paths/food-quotes.yaml
-  /api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions:
+  /api/v1/public/merchants/{merchantId}/stores/{storeId}/guest-sessions:
     $ref: paths/guest-sessions.yaml
-  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes:
+  /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes:
     $ref: paths/guest-quotes.yaml
-  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}:
+  /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes/{quoteId}:
     $ref: paths/guest-quote.yaml
-  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders:
+  /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders:
     $ref: paths/food-orders.yaml
-  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}:
+  /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}:
     $ref: paths/food-order.yaml
-  /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation:
+  /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/cancellation:
     $ref: paths/food-order-cancellation.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/food/orders:
     $ref: paths/merchant-food-orders.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}:
     $ref: paths/merchant-food-order.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/decisions:
     $ref: paths/food-order-decisions.yaml
-  /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment:
+  /api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/fulfilment:
     $ref: paths/food-order-fulfilment.yaml
-  /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}:
+  /api/v1/admin/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}:
     $ref: paths/admin-food-order.yaml
 components:
   parameters:

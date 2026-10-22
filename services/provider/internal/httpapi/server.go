@@ -198,7 +198,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 					return
 				}
 				merchant := uuid.Nil
-				if value, ok := pathParams["merchant_id"]; ok {
+				if value, ok := pathParams["merchantId"]; ok {
 					merchant, err = uuid.Parse(value)
 				} else if !provider[route.Operation.OperationID] {
 					err = errors.New("merchant scope required")
@@ -216,7 +216,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 					return
 				}
 				if principal.Guest {
-					store, err := uuid.Parse(pathParams["store_id"])
+					store, err := uuid.Parse(pathParams["storeId"])
 					if err != nil {
 						problem(w, 400, "invalid_request", "Store identifier must be a UUID.", nil)
 						return

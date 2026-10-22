@@ -1,0 +1,84 @@
+extends: [[spectral:oas, all]]
+functionsDir: contracts/tooling/functions
+functions: [objectRequest, problemResponses]
+rules:
+  # This private draft has no granted publication/reuse license. Do not invent one.
+  info-license: off
+  license-url: off
+  # Name identifies the private maintainer; no public support email/URL is published yet.
+  contact-properties: off
+  # Root aliases deliberately export stable code-generation names for modular files.
+  oas3-unused-component: off
+  paths-kebab-case:
+    description: Literal URL segments use lower kebab case; placeholders have their own naming rule.
+    severity: error
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: '^/(?:[a-z0-9]+(?:-[a-z0-9]+)*|\{[A-Za-z][A-Za-z0-9_]*\})(?:/(?:[a-z0-9]+(?:-[a-z0-9]+)*|\{[A-Za-z][A-Za-z0-9_]*\}))*$'
+  paths-no-trailing-slash:
+    description: Resource paths have no trailing slash.
+    severity: error
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: '/$'
+  paths-no-http-verbs:
+    description: HTTP methods express actions; do not repeat verb segments in resource paths.
+    severity: error
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: '/(get|post|put|patch|delete|head|options|trace|connect|create|update|remove|fetch|list)(/|$)'
+  paths-no-query-params:
+    description: Declare query parameters using Parameter Objects, not inside path keys.
+    severity: error
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: '\?'
+  parameters-camel-case:
+    description: Path and query parameter names use lower camelCase. HTTP headers retain standard names.
+    severity: error
+    given: $..parameters[?(@.in == 'path' || @.in == 'query')]
+    then:
+      field: name
+      function: pattern
+      functionOptions:
+        match: '^[a-z][a-zA-Z0-9]*$'
+  request-body-must-be-object:
+    description: Request body schemas must be a JSON object, not a primitive or array.
+    message: '{{error}}'
+    severity: error
+    given: $..requestBody
+    then:
+      function: objectRequest
+  error-response-must-use-problem-json:
+    description: Error and default responses must use application/problem+json.
+    message: '{{error}}'
+    severity: error
+    given: $..responses
+    then:
+      function: problemResponses
+  operation-access-required:
+    description: Every owned operation explicitly declares its access audience.
+    severity: error
+    given: $.paths[*][get,put,post,delete,options,head,patch,trace]
+    then:
+      - field: x-access
+        function: truthy
+      - field: x-access
+        function: enumeration
+        functionOptions:
+          values: [public, guest, merchant, provider]
+  get-no-request-body:
+    description: GET inputs belong in path/query parameters, not request bodies.
+    severity: error
+    given: $.paths[*].get
+    then:
+      field: requestBody
+      function: falsy

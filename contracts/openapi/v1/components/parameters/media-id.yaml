@@ -1,4 +1,5 @@
-name: media_id
+name: mediaId
+description: Owned media asset identifier within this merchant and store.
 in: path
 required: true
 schema:

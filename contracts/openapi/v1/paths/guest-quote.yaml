@@ -1,7 +1,8 @@
 parameters:
   - $ref: ../components/parameters/merchant-id.yaml
   - $ref: ../components/parameters/store-id.yaml
-  - name: quote_id
+  - name: quoteId
+    description: Retained quote identifier owned by the authenticated guest.
     in: path
     required: true
     schema:
@@ -10,6 +11,7 @@ get:
   operationId: GetGuestFoodQuote
   tags: [Customer commerce]
   summary: Retrieve this guest's retained terms
+  description: Read the guest-owned snapshot; expiration prevents first placement, not inspection.
   security:
     - GuestBearerAuth: []
   x-access: guest

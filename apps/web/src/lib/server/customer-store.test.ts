@@ -16,7 +16,7 @@ beforeEach(() => vi.clearAllMocks());
 it('resolves an exact public handle rather than scanning names or trusting the name prefix', async () => {
   mocks.get.mockResolvedValue({ data: { id: store, merchant_id: merchant, handle: 'store-1', display_name: 'New name' } });
   expect((await customerStore('old-name-store-1')).id).toBe(store);
-  expect(mocks.get).toHaveBeenCalledWith('/api/v1/public/stores/{store_handle}', { params: { path: { store_handle: 'store-1' } } });
+  expect(mocks.get).toHaveBeenCalledWith('/api/v1/public/stores/{storeHandle}', { params: { path: { storeHandle: 'store-1' } } });
 });
 it('rejects malformed slugs and preserves upstream failure status', async () => {
   await expect(customerStore('bad-store-01')).rejects.toMatchObject({ status: 404 });
@@ -48,7 +48,7 @@ it('uses the authenticated reference lookup even when a routing cookie exists', 
   j.values.set(`ocp_guest_${merchant}_${store}`, 'synthetic-scoped-token');
   mocks.get.mockResolvedValue({ data: { id: 'internal-order-id' } });
   await expect(loadReceipt(route, j.cookies)).resolves.toEqual({ id: 'internal-order-id' });
-  expect(mocks.get).toHaveBeenCalledWith('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/by-reference/{order_reference}', { params: { path: { merchant_id: merchant, store_id: store, order_reference: 'O-000042' } } });
+  expect(mocks.get).toHaveBeenCalledWith('/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/by-reference/{orderReference}', { params: { path: { merchantId: merchant, storeId: store, orderReference: 'O-000042' } } });
   expect(receiptPath(route)).toBe('/stores/shop-store-1/orders/O-000042');
 });
 it('does not convert denied reference reads into successful or public reads', async () => {

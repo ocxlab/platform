@@ -15,18 +15,18 @@ export const POST: RequestHandler = async ({ params, cookies, request, url }) =>
   if (typeof input.key !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$/.test(input.key)) error(400);
   const client = api(current.token);
   if (input.intent === 'start') {
-    const result = await client.POST('/api/v1/merchants/{merchant_id}/stores/{store_id}/media', {
+    const result = await client.POST('/api/v1/merchants/{merchantId}/stores/{storeId}/media', {
       params: { path: current.path, header: { 'Idempotency-Key': input.key } },
       body: { content_type: input.content_type as components['schemas']['MediaUploadRequest']['content_type'], size_bytes: input.size_bytes as number, sha256: input.sha256 as string },
     });
     if (!result.data) return json({ error: message(result.error) }, { status: result.response.status });
-    const grant = await client.POST('/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/upload-grant', { params: { path: { ...current.path, media_id: result.data.id } } });
+    const grant = await client.POST('/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/upload-grant', { params: { path: { ...current.path, mediaId: result.data.id } } });
     if (!grant.data) return json({ error: message(grant.error) }, { status: grant.response.status });
     return json({ id: result.data.id, grant: grant.data }, { headers: { 'cache-control': 'no-store' } });
   }
   if (input.intent === 'complete' && typeof input.id === 'string') {
-    const result = await client.POST('/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/completion', {
-      params: { path: { ...current.path, media_id: input.id }, header: { 'Idempotency-Key': input.key } },
+    const result = await client.POST('/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/completion', {
+      params: { path: { ...current.path, mediaId: input.id }, header: { 'Idempotency-Key': input.key } },
     });
     if (!result.data) return json({ error: message(result.error) }, { status: result.response.status });
     return json({ id: result.data.id }, { headers: { 'cache-control': 'no-store' } });

@@ -24,15 +24,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}": {
+    "/api/v1/admin/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -49,14 +51,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication": {
+    "/api/v1/admin/merchants/{merchantId}/stores/{storeId}/publication": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -97,19 +100,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/order-updates/{order_id}": {
+    "/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/order-updates/{orderId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
-        /** Watch change hints for an order owned by this guest */
+        /**
+         * Watch change hints for an order owned by this guest
+         * @description Subscribe to authorized SSE invalidation hints and re-read the order on connection and change; this is not event replay.
+         */
         get: operations["WatchGuestFoodOrder"];
         put?: never;
         post?: never;
@@ -119,14 +127,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders": {
+    "/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -143,15 +152,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/by-reference/{order_reference}": {
+    "/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/by-reference/{orderReference}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_reference: string;
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Human-readable order reference within this store; not an access credential. */
+                orderReference: string;
             };
             cookie?: never;
         };
@@ -168,15 +179,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}": {
+    "/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -193,15 +206,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation": {
+    "/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/cancellation": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -218,15 +233,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/development-payment": {
+    "/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/development-payment": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -243,14 +260,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes": {
+    "/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -267,19 +285,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}": {
+    "/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes/{quoteId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                quote_id: components["schemas"]["Identifier"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Retained quote identifier owned by the authenticated guest. */
+                quoteId: components["schemas"]["Identifier"];
             };
             cookie?: never;
         };
-        /** Retrieve this guest's retained terms */
+        /**
+         * Retrieve this guest's retained terms
+         * @description Read the guest-owned snapshot; expiration prevents first placement, not inspection.
+         */
         get: operations["GetGuestFoodQuote"];
         put?: never;
         post?: never;
@@ -289,13 +312,13 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores": {
+    "/api/v1/merchants/{merchantId}/stores": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
+                merchantId: components["parameters"]["MerchantID"];
             };
             cookie?: never;
         };
@@ -316,14 +339,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -340,18 +364,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/order-updates": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/food/order-updates": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
-        /** Watch change hints for this store's order inbox */
+        /**
+         * Watch change hints for this store's order inbox
+         * @description Subscribe to store-scoped SSE hints and re-read the inbox on connection and change; hints may coalesce and are not replayed.
+         */
         get: operations["WatchMerchantFoodOrders"];
         put?: never;
         post?: never;
@@ -361,18 +389,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/food/ordering": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
-        /** Read store ordering settings */
+        /**
+         * Read store ordering settings
+         * @description Read the store's current acceptance mode, pause state, and settings revision.
+         */
         get: operations["GetFoodOrdering"];
         /**
          * Pause or resume new orders and select acceptance mode
@@ -386,14 +418,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -410,19 +443,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
-        /** Read an order and its durable progress */
+        /**
+         * Read an order and its durable progress
+         * @description Read the store-scoped order's agreed terms, current revision, and retained operational history.
+         */
         get: operations["GetMerchantFoodOrder"];
         put?: never;
         post?: never;
@@ -432,15 +470,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/decisions": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -457,15 +497,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/fulfilment": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -482,14 +524,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/media": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -506,19 +549,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
-        /** Read owned image metadata without a storage capability */
+        /**
+         * Read owned image metadata without a storage capability
+         * @description Read this store's upload/verification state and owned media identifier without issuing a signed storage URL.
+         */
         get: operations["GetMediaAsset"];
         put?: never;
         post?: never;
@@ -528,15 +576,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/completion": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/completion": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
@@ -553,19 +603,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/image": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
-        /** Redirect to a ready owned draft image */
+        /**
+         * Redirect to a ready owned draft image
+         * @description Verify merchant offering access and redirect to a short-lived signed image URL; the client reads bytes directly from storage.
+         */
         get: operations["GetMerchantMediaImage"];
         put?: never;
         post?: never;
@@ -575,15 +630,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/upload-grant": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/upload-grant": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
@@ -600,14 +657,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/offering": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/offering": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -628,14 +686,16 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision}": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/offering/revisions/{revision}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Immutable offering revision number within this store. */
                 revision: number;
             };
             cookie?: never;
@@ -653,14 +713,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/merchants/{merchant_id}/stores/{store_id}/publication": {
+    "/api/v1/merchants/{merchantId}/stores/{storeId}/publication": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -681,14 +742,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering": {
+    "/api/v1/public/merchants/{merchantId}/stores/{storeId}/food/ordering": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -705,14 +767,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes": {
+    "/api/v1/public/merchants/{merchantId}/stores/{storeId}/food/quotes": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -729,14 +792,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions": {
+    "/api/v1/public/merchants/{merchantId}/stores/{storeId}/guest-sessions": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -753,15 +817,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image": {
+    "/api/v1/public/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/image": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
@@ -778,14 +844,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering": {
+    "/api/v1/public/merchants/{merchantId}/stores/{storeId}/offering": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -802,14 +869,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering-updates": {
+    "/api/v1/public/merchants/{merchantId}/stores/{storeId}/offering-updates": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -846,14 +914,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/public/stores/{store_handle}": {
+    "/api/v1/public/stores/{storeHandle}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Resolve a visible store's provider-local handle */
+        /**
+         * Resolve a visible store's provider-local handle
+         * @description Resolve public routing metadata for a currently visible publication; absent, suspended, and withdrawn stores return not found.
+         */
         get: operations["GetPublicStoreByHandle"];
         put?: never;
         post?: never;
@@ -870,7 +941,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Check process liveness, not commerce or database readiness */
+        /**
+         * Check process liveness, not commerce or database readiness
+         * @description Reports only that the HTTP process is alive; does not test dependencies or readiness to accept orders.
+         */
         get: operations["GetLiveness"];
         put?: never;
         post?: never;
@@ -1436,7 +1510,9 @@ export interface components {
         ComponentsParametersAdminAfterYaml1d0e5be5: components["schemas"]["SchemasAdminDirectoryYamlCursore845fa77"];
         /** @description Case-insensitive literal substring. Stores match store name, merchant name or handle; orders match store name or readable order reference. */
         ComponentsParametersAdminQueryYaml6ee53b16: string;
+        /** @description Owned media asset identifier within this merchant and store. */
         ComponentsParametersMediaIdYamlea7ce297: components["schemas"]["Identifier"];
+        /** @description Order identifier within the requested merchant and store. */
         ComponentsParametersOrderIdYaml294fa0a5: components["schemas"]["Identifier"];
         /** @description Maximum resources per page. Defaults to 50, with an upper bound of 100. */
         ComponentsParametersPageLimitYaml06bb837c: number;
@@ -1446,6 +1522,7 @@ export interface components {
         IdempotencyKey: string;
         /** @description Requested merchant; must match the authenticated grant. */
         MerchantID: components["schemas"]["Identifier"];
+        /** @description Store identifier within the requested merchant. */
         StoreID: components["schemas"]["Identifier"];
     };
     requestBodies: never;
@@ -1466,6 +1543,7 @@ export interface operations {
                 after?: components["parameters"]["ComponentsParametersAdminAfterYaml1d0e5be5"];
                 /** @description Cancelled or rejected resolution takes precedence over acceptance. */
                 status?: "pending" | "accepted" | "rejected" | "cancelled";
+                /** @description Maximum number of order summaries in this page. */
                 limit?: number;
             };
             header?: never;
@@ -1497,9 +1575,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -1520,8 +1600,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -1555,8 +1636,9 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -1596,7 +1678,9 @@ export interface operations {
                 q?: components["parameters"]["ComponentsParametersAdminQueryYaml6ee53b16"];
                 /** @description Opaque continuation bound to resource, trimmed query and status. Omit when changing filters. Live pages, not a snapshot; return to the first page for new records. */
                 after?: components["parameters"]["ComponentsParametersAdminAfterYaml1d0e5be5"];
+                /** @description Filter by current publication visibility. */
                 status?: "unpublished" | "published" | "suspended";
+                /** @description Maximum number of store summaries in this page. */
                 limit?: number;
             };
             header?: never;
@@ -1628,9 +1712,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -1649,8 +1735,9 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -1688,9 +1775,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_reference: string;
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Human-readable order reference within this store; not an access credential. */
+                orderReference: string;
             };
             cookie?: never;
         };
@@ -1720,9 +1809,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -1759,9 +1850,11 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -1792,9 +1885,11 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -1822,8 +1917,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -1862,9 +1958,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                quote_id: components["schemas"]["Identifier"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Retained quote identifier owned by the authenticated guest. */
+                quoteId: components["schemas"]["Identifier"];
             };
             cookie?: never;
         };
@@ -1901,7 +1999,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
+                merchantId: components["parameters"]["MerchantID"];
             };
             cookie?: never;
         };
@@ -1933,7 +2031,7 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
+                merchantId: components["parameters"]["MerchantID"];
             };
             cookie?: never;
         };
@@ -1969,8 +2067,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2000,8 +2099,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2017,8 +2117,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2055,8 +2156,9 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2093,13 +2195,15 @@ export interface operations {
             query?: {
                 /** @description Maximum resources per page. Defaults to 50, with an upper bound of 100. */
                 limit?: components["parameters"]["ComponentsParametersPageLimitYaml06bb837c"];
+                /** @description Opaque continuation from next_after; retains descending order without granting access. */
                 after?: string;
             };
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2129,9 +2233,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -2155,9 +2261,11 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -2188,9 +2296,11 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Order identifier within the requested merchant and store. */
+                orderId: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
             };
             cookie?: never;
         };
@@ -2221,8 +2331,9 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2261,9 +2372,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
@@ -2301,9 +2414,11 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
@@ -2338,9 +2453,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
@@ -2374,9 +2491,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
@@ -2411,8 +2530,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2445,8 +2565,9 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2484,8 +2605,10 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Immutable offering revision number within this store. */
                 revision: number;
             };
             cookie?: never;
@@ -2516,8 +2639,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2551,8 +2675,9 @@ export interface operations {
             };
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2591,8 +2716,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2626,8 +2752,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2664,8 +2791,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2704,9 +2832,11 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
-                media_id: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
+                /** @description Owned media asset identifier within this merchant and store. */
+                mediaId: components["parameters"]["ComponentsParametersMediaIdYamlea7ce297"];
             };
             cookie?: never;
         };
@@ -2740,8 +2870,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2770,8 +2901,9 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Requested merchant; must match the authenticated grant. */
-                merchant_id: components["parameters"]["MerchantID"];
-                store_id: components["parameters"]["StoreID"];
+                merchantId: components["parameters"]["MerchantID"];
+                /** @description Store identifier within the requested merchant. */
+                storeId: components["parameters"]["StoreID"];
             };
             cookie?: never;
         };
@@ -2796,9 +2928,11 @@ export interface operations {
     ListPublicStores: {
         parameters: {
             query?: {
+                /** @description Literal case-insensitive store-name substring, trimmed before matching. */
                 q?: string;
                 /** @description Opaque continuation value bound to the trimmed search query. A different query returns 400; omit after to begin a new search. */
                 after?: string;
+                /** @description Maximum number of public store summaries in this page. */
                 limit?: number;
             };
             header?: never;
@@ -2827,7 +2961,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                store_handle: string;
+                /** @description Provider-local readable store handle, not merchant identity or purchase authority. */
+                storeHandle: string;
             };
             cookie?: never;
         };

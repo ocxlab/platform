@@ -45,25 +45,25 @@ export const actions: Actions = {
   inspectOrder: async ({ request, cookies }) => {
     const current = session(cookies, 'provider'); if (!current) return fail(401, { error: text('admin-connect-first') });
     const form = await request.formData();
-    const path = { merchant_id: String(form.get('merchant') ?? ''), store_id: String(form.get('store') ?? ''), order_id: String(form.get('order') ?? '') };
+    const path = { merchantId: String(form.get('merchant') ?? ''), storeId: String(form.get('store') ?? ''), orderId: String(form.get('order') ?? '') };
     if (!Object.values(path).every((value) => uuid.test(value))) return fail(400, { error: text('error-common-invalid-request') });
-    const result = await api(current.token).GET('/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}', { params: { path } });
+    const result = await api(current.token).GET('/api/v1/admin/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}', { params: { path } });
     if (!result.data) return fail(result.response.status, { error: message(result.error) });
     return { order: result.data };
   },
   inspect: async ({ request, cookies }) => {
     const current = session(cookies, 'provider'); if (!current) return fail(401, { error: text('admin-connect-first') });
-    const form = await request.formData(); const path = { merchant_id: String(form.get('merchant') ?? ''), store_id: String(form.get('store') ?? '') };
-    if (!uuid.test(path.merchant_id) || !uuid.test(path.store_id)) return fail(400, { error: text('admin-identifiers-required') });
-    const result = await api(current.token).GET('/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication', { params: { path } });
+    const form = await request.formData(); const path = { merchantId: String(form.get('merchant') ?? ''), storeId: String(form.get('store') ?? '') };
+    if (!uuid.test(path.merchantId) || !uuid.test(path.storeId)) return fail(400, { error: text('admin-identifiers-required') });
+    const result = await api(current.token).GET('/api/v1/admin/merchants/{merchantId}/stores/{storeId}/publication', { params: { path } });
     if (!result.data) return fail(result.response.status, { error: message(result.error) });
     return { publication: result.data };
   },
   suspend: async ({ request, cookies }) => {
     const current = session(cookies, 'provider'); if (!current) return fail(401, { error: text('admin-connect-first') });
     const form = await request.formData();
-    const result = await api(current.token).PUT('/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication', {
-      params: { path: { merchant_id: String(form.get('merchant')), store_id: String(form.get('store')) }, header: { 'Idempotency-Key': String(form.get('key')) } },
+    const result = await api(current.token).PUT('/api/v1/admin/merchants/{merchantId}/stores/{storeId}/publication', {
+      params: { path: { merchantId: String(form.get('merchant')), storeId: String(form.get('store')) }, header: { 'Idempotency-Key': String(form.get('key')) } },
       body: { expected_generation: Number(form.get('generation')), suspended: form.get('suspended') === 'true', reason: String(form.get('reason') ?? '') },
     });
     if (!result.data) return fail(result.response.status, { error: message(result.error) });

@@ -43,6 +43,48 @@ are rejected. Dependencies and image digests are pinned separately from API vers
 
 ## Change and verify a contract
 
+`task contracts:lint` runs pinned Spectral 6.17.0 and its rule regression tests
+inside Docker, separately from frontend dependencies. `task check` includes it.
+Edit the root [`.spectral.yaml`](../.spectral.yaml), not an editor-only configuration.
+The linter follows local references from the modular entry document, so findings
+point to owning source files rather than only to the generated bundle. Warnings
+fail the check; there is no blanket legacy-warning baseline.
+
+The rules start with `extends: [[spectral:oas, all]]` and add these owned-API policies:
+
+- Literal path segments use kebab case, without trailing slashes, HTTP/action verb
+  segments, or embedded query strings. Search/filter/pagination parameters are
+  declared normally, not banned.
+- Path and query names use lower camelCase. Standard header names such as
+  `Idempotency-Key` retain their HTTP spelling. JSON property names remain the
+  existing snake_case contract; this is not a payload-format migration.
+- Request bodies use `application/json` with an object root, including composed
+  schemas that constrain the root to objects. Put batch arrays inside an object.
+  GET operations have no request body. Direct signed object-storage uploads are
+  a separate storage interface, not exceptions to the business REST contract.
+- Error responses (4xx, 5xx, wildcard error ranges, and `default`) declare only
+  `application/problem+json` with a schema. Redirects are not errors: signed-image
+  redirects may omit bodies, and successful SSE streams use `text/event-stream`.
+- Operations declare their access audience. Standard OAS rules check unique
+  operation IDs, valid parameters/references, examples, descriptions, and tags.
+  Runtime authorization, recognized scopes, replay, and actual error bodies still
+  require the existing Go and integration checks; lint cannot establish behavior.
+
+Four explicit baseline exceptions are documented beside their switches: private
+drafts have no granted public license/URL to claim, the maintainer has no published
+support email/URL, and stable root code-generation aliases may appear unused to
+source-level analysis. Do not invent metadata or remove exported names to silence
+these findings. Revisit those exceptions when the API is published.
+
+Configuration follows Spectral's [ruleset](https://github.com/stoplightio/spectral/blob/develop/docs/getting-started/3-rulesets.md)
+and [custom-function guidance](https://github.com/stoplightio/spectral/blob/develop/docs/guides/5-custom-functions.md),
+consulted 22 October 2026; the installed CLI and transitive dependencies are pinned
+in `tooling/package.json` and `tooling/pnpm-lock.yaml`.
+
+The camelCase placeholder migration updates the generated Go/TypeScript contracts,
+tenant-matching middleware, and client parameter objects together. Actual URL
+segments, query names, stored JSON, and persisted replay bodies are unchanged.
+
 ```text
 task contracts:generate
 task web:generate
@@ -113,7 +155,7 @@ material-specific reuse rights rather than copying an ecosystem wholesale.
 
 ## Managed store listing
 
-`GET /api/v1/merchants/{merchant_id}/stores` requires the merchant's `store:read`
+`GET /api/v1/merchants/{merchantId}/stores` requires the merchant's `store:read`
 grant and returns private managed stores, including unpublished stores. The web
 workspace uses this same API to offer store-name links instead of ID entry.
 The table shows latest draft item counts, revision numbers, and update times.
@@ -198,7 +240,7 @@ were closed, despite retaining the current draft model version label.
 
 ### Public availability updates
 
-`GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering-updates`
+`GET /api/v1/public/merchants/{merchantId}/stores/{storeId}/offering-updates`
 is a public SSE hint stream. Clients re-read both the published offering and Food
 ordering state on connection/reconnection and matching changes. Publication and
 ordering revisions generate commit-time notifications; drafts and order events
@@ -215,9 +257,9 @@ SvelteKit forwards the fixed public path without credentials. Hidden pages close
 the stream; reconnect forces a fresh JSON read instead of replay or state polling.
 
 Readable web navigation uses `/stores/{name}-{handle}/orders/{reference}`.
-`GET /api/v1/public/stores/{store_handle}` resolves one visible store through
+`GET /api/v1/public/stores/{storeHandle}` resolves one visible store through
 an indexed, narrowly authorized public projection; it never exposes private,
-withdrawn, or suspended stores. The guest-only `food/orders/by-reference/{order_reference}`
+withdrawn, or suspended stores. The guest-only `food/orders/by-reference/{orderReference}`
 read has the same store scope and guest ownership checks as the UUID read and
 does not depend on publication. Other operations continue to use UUIDs.
 The web retains a small HttpOnly store-routing hint alongside the scoped guest
@@ -239,7 +281,7 @@ See `docs/STATUS.md` for executed checks and remaining product boundaries.
 ## Restaurant decisions and guest cancellation
 
 Store ordering settings have their own Food resource:
-`GET/PUT /api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering`.
+`GET/PUT /api/v1/merchants/{merchantId}/stores/{storeId}/food/ordering`.
 Read requires `order:read`; changes require `order:manage`, an expected settings
 revision, and an idempotency key. Defaults preserve existing behavior: open and
 manual acceptance. Pause/resume is independent of publication. Pausing blocks

@@ -1,4 +1,5 @@
-name: store_id
+name: storeId
+description: Store identifier within the requested merchant.
 in: path
 required: true
 schema:

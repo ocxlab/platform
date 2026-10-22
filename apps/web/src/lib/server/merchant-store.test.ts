@@ -15,10 +15,10 @@ beforeEach(() => {
 it('resolves the readable handle within the authenticated merchant only', async () => {
   mocks.get.mockResolvedValue({ data: { items: [{ id: 'store-uuid', display_name: 'Kitchen', handle: 'store-42' }] } });
   const result = await merchantStore(cookies, 'kitchen-store-42');
-  expect(mocks.get).toHaveBeenCalledWith('/api/v1/merchants/{merchant_id}/stores', {
-    params: { path: { merchant_id: 'merchant-a' }, query: { handle: 'store-42', limit: 1 } },
+  expect(mocks.get).toHaveBeenCalledWith('/api/v1/merchants/{merchantId}/stores', {
+    params: { path: { merchantId: 'merchant-a' }, query: { handle: 'store-42', limit: 1 } },
   });
-  expect(result.path).toEqual({ merchant_id: 'merchant-a', store_id: 'store-uuid' });
+  expect(result.path).toEqual({ merchantId: 'merchant-a', storeId: 'store-uuid' });
 });
 
 it('redirects an unauthenticated visitor before resolving any store', async () => {

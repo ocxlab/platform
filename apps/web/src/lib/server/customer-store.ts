@@ -6,7 +6,7 @@ import { api, message, text } from './api';
 export async function customerStore(slug: string) {
   const handle = storeHandleFromSlug(slug);
   if (!handle) error(404, text('storefront-no-menu'));
-  const result = await api().GET('/api/v1/public/stores/{store_handle}', { params: { path: { store_handle: handle } } });
+  const result = await api().GET('/api/v1/public/stores/{storeHandle}', { params: { path: { storeHandle: handle } } });
   if (!result.data) error(result.response.status, result.response.status === 404 ? text('storefront-no-menu') : message(result.error));
   return result.data;
 }

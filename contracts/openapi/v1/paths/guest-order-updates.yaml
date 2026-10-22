@@ -5,6 +5,7 @@ parameters:
 get:
   operationId: WatchGuestFoodOrder
   summary: Watch change hints for an order owned by this guest
+  description: Subscribe to authorized SSE invalidation hints and re-read the order on connection and change; this is not event replay.
   tags: [Customer commerce]
   security:
     - GuestBearerAuth: []

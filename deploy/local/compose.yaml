@@ -51,6 +51,21 @@ services:
       - web-pnpm-cache:/root/.local/share/pnpm/store
     command: [node, --version]
 
+  contracts-tools:
+    profiles: [tools]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: tools
+    working_dir: /workspace/contracts/tooling
+    environment:
+      CI: 'true'
+    volumes:
+      - .:/workspace
+      - contracts-node-modules:/workspace/contracts/tooling/node_modules
+      - web-pnpm-cache:/root/.local/share/pnpm/store
+    command: [node, --version]
+
   web-mutation:
     extends:
       service: web-tools
@@ -214,6 +229,7 @@ services:
       retries: 20
 
 volumes:
+  contracts-node-modules:
   object-store-data:
   web-node-modules:
   web-svelte-kit:

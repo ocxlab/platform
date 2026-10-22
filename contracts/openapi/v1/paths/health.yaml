@@ -4,6 +4,7 @@ get:
   tags: [Operations]
   security: []
   summary: Check process liveness, not commerce or database readiness
+  description: Reports only that the HTTP process is alive; does not test dependencies or readiness to accept orders.
   responses:
     '200':
       description: Process is alive; no commerce readiness assertion.

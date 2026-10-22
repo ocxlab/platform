@@ -8,11 +8,11 @@ export const load: PageServerLoad = async ({ cookies, params, url }) => {
   const current = await merchantStore(cookies, params.slug);
   const client = api(current.token);
   const path = current.path;
-  const orders = await client.GET('/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders', {
+  const orders = await client.GET('/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders', {
     params: { path, query: { limit: 50, after: url.searchParams.get('after') ?? undefined } },
   });
   if (!orders.data) error(orders.response.status, message(orders.error));
-  const ordering = await client.GET('/api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering', { params: { path } });
+  const ordering = await client.GET('/api/v1/merchants/{merchantId}/stores/{storeId}/food/ordering', { params: { path } });
   if (!ordering.data) error(ordering.response.status, message(ordering.error));
   return { store: current.store, orders: orders.data, ordering: ordering.data, settingsKey: randomUUID() };
 };
@@ -27,7 +27,7 @@ export const actions: Actions = {
     if (!form.has('revision') || !Number.isSafeInteger(revision) || revision < 0 || typeof key !== 'string' || key.length < 16 || key.length > 128 || (mode !== 'manual' && mode !== 'automatic')) {
       return fail(400, { error: message({ code: 'invalid_request' }) });
     }
-    const result = await api(current.token).PUT('/api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering', {
+    const result = await api(current.token).PUT('/api/v1/merchants/{merchantId}/stores/{storeId}/food/ordering', {
       params: { path: current.path, header: { 'Idempotency-Key': key } },
       body: { expected_revision: revision, accepting_orders: form.get('accepting') === 'on', acceptance_mode: mode },
     });

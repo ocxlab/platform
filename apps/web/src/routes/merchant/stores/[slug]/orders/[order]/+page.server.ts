@@ -4,8 +4,8 @@ import { api, message, text } from '$lib/server/api';
 import { merchantStore } from '$lib/server/merchant-store';
 export const load: PageServerLoad = async ({ params, cookies }) => {
   const current = await merchantStore(cookies, params.slug);
-  const result = await api(current.token).GET('/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}', {
-    params: { path: { ...current.path, order_id: params.order } },
+  const result = await api(current.token).GET('/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}', {
+    params: { path: { ...current.path, orderId: params.order } },
   });
   if (!result.data) error(result.response.status, message(result.error));
   return { store: current.store, order: result.data };
@@ -16,8 +16,8 @@ export const actions: Actions = {
     const form = await request.formData();
     const action = form.get('action');
     if (action !== 'start_preparation' && action !== 'mark_ready' && action !== 'record_collection') return fail(400, { error: text('error-common-invalid-request') });
-    const result = await api(current.token).POST('/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment', {
-      params: { path: { ...current.path, order_id: params.order }, header: { 'Idempotency-Key': String(form.get('key')) } },
+    const result = await api(current.token).POST('/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/fulfilment', {
+      params: { path: { ...current.path, orderId: params.order }, header: { 'Idempotency-Key': String(form.get('key')) } },
       body: { expected_revision: Number(form.get('revision')), action },
     });
     if (!result.data) return fail(result.response.status, { error: message(result.error) });
@@ -28,8 +28,8 @@ export const actions: Actions = {
     const form = await request.formData();
     const decision = form.get('decision');
     if (decision !== 'accept' && decision !== 'reject') return fail(400, { error: text('error-common-invalid-request') });
-    const result = await api(current.token).POST('/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions', {
-      params: { path: { ...current.path, order_id: params.order }, header: { 'Idempotency-Key': String(form.get('key')) } },
+    const result = await api(current.token).POST('/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/decisions', {
+      params: { path: { ...current.path, orderId: params.order }, header: { 'Idempotency-Key': String(form.get('key')) } },
       body: { expected_revision: Number(form.get('revision')), decision },
     });
     if (!result.data) return fail(result.response.status, { error: message(result.error) });

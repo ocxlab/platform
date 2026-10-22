@@ -1374,7 +1374,9 @@ type AdminListFoodOrdersParams struct {
 
 	// Status Cancelled or rejected resolution takes precedence over acceptance.
 	Status *AdminListFoodOrdersParamsStatus `form:"status,omitempty" json:"status,omitempty"`
-	Limit  *int                             `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of order summaries in this page.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // AdminListFoodOrdersParamsStatus defines parameters for AdminListFoodOrders.
@@ -1392,9 +1394,13 @@ type AdminListStoresParams struct {
 	Q *ComponentsParametersAdminQueryYaml6ee53b16 `form:"q,omitempty" json:"q,omitempty"`
 
 	// After Opaque continuation bound to resource, trimmed query and status. Omit when changing filters. Live pages, not a snapshot; return to the first page for new records.
-	After  *ComponentsParametersAdminAfterYaml1d0e5be5 `form:"after,omitempty" json:"after,omitempty"`
-	Status *AdminListStoresParamsStatus                `form:"status,omitempty" json:"status,omitempty"`
-	Limit  *int                                        `form:"limit,omitempty" json:"limit,omitempty"`
+	After *ComponentsParametersAdminAfterYaml1d0e5be5 `form:"after,omitempty" json:"after,omitempty"`
+
+	// Status Filter by current publication visibility.
+	Status *AdminListStoresParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+
+	// Limit Maximum number of store summaries in this page.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // AdminListStoresParamsStatus defines parameters for AdminListStores.
@@ -1446,7 +1452,9 @@ type ChangeFoodOrderingParams struct {
 type ListMerchantFoodOrdersParams struct {
 	// Limit Maximum resources per page. Defaults to 50, with an upper bound of 100.
 	Limit *ComponentsParametersPageLimitYaml06bb837c `form:"limit,omitempty" json:"limit,omitempty"`
-	After *string                                    `form:"after,omitempty" json:"after,omitempty"`
+
+	// After Opaque continuation from next_after; retains descending order without granting access.
+	After *string `form:"after,omitempty" json:"after,omitempty"`
 }
 
 // DecideFoodOrderParams defines parameters for DecideFoodOrder.
@@ -1487,11 +1495,14 @@ type ChangePublicationParams struct {
 
 // ListPublicStoresParams defines parameters for ListPublicStores.
 type ListPublicStoresParams struct {
+	// Q Literal case-insensitive store-name substring, trimmed before matching.
 	Q *string `form:"q,omitempty" json:"q,omitempty"`
 
 	// After Opaque continuation value bound to the trimmed search query. A different query returns 400; omit after to begin a new search.
 	After *string `form:"after,omitempty" json:"after,omitempty"`
-	Limit *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of public store summaries in this page.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // AdminSuspendPublicationJSONRequestBody defines body for AdminSuspendPublication for application/json ContentType.
@@ -2539,21 +2550,21 @@ func NewAdminGetFoodOrderRequest(server string, merchantId MerchantID, storeId S
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "orderId", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -2587,14 +2598,14 @@ func NewAdminGetPublicationRequest(server string, merchantId MerchantID, storeId
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -2639,14 +2650,14 @@ func NewAdminSuspendPublicationRequestWithBody(server string, merchantId Merchan
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -2792,21 +2803,21 @@ func NewWatchGuestFoodOrderRequest(server string, merchantId MerchantID, storeId
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "orderId", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -2851,14 +2862,14 @@ func NewPlaceFoodOrderRequestWithBody(server string, merchantId MerchantID, stor
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -2907,21 +2918,21 @@ func NewGetGuestFoodOrderByReferenceRequest(server string, merchantId MerchantID
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_reference", orderReference, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "orderReference", orderReference, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
 	if err != nil {
 		return nil, err
 	}
@@ -2955,21 +2966,21 @@ func NewGetGuestFoodOrderRequest(server string, merchantId MerchantID, storeId S
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "orderId", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3014,21 +3025,21 @@ func NewCancelGuestFoodOrderRequestWithBody(server string, merchantId MerchantID
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "orderId", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3088,21 +3099,21 @@ func NewChangeDevelopmentPaymentRequestWithBody(server string, merchantId Mercha
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "orderId", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3162,14 +3173,14 @@ func NewCreateGuestFoodQuoteRequestWithBody(server string, merchantId MerchantID
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3205,21 +3216,21 @@ func NewGetGuestFoodQuoteRequest(server string, merchantId MerchantID, storeId S
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "quote_id", quoteId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "quoteId", quoteId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3253,7 +3264,7 @@ func NewListStoresRequest(server string, merchantId MerchantID, params *ListStor
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3352,7 +3363,7 @@ func NewCreateStoreRequestWithBody(server string, merchantId MerchantID, params 
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3401,14 +3412,14 @@ func NewGetStoreRequest(server string, merchantId MerchantID, storeId StoreID) (
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3442,14 +3453,14 @@ func NewWatchMerchantFoodOrdersRequest(server string, merchantId MerchantID, sto
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3483,14 +3494,14 @@ func NewGetFoodOrderingRequest(server string, merchantId MerchantID, storeId Sto
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3535,14 +3546,14 @@ func NewChangeFoodOrderingRequestWithBody(server string, merchantId MerchantID, 
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3591,14 +3602,14 @@ func NewListMerchantFoodOrdersRequest(server string, merchantId MerchantID, stor
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3670,21 +3681,21 @@ func NewGetMerchantFoodOrderRequest(server string, merchantId MerchantID, storeI
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "orderId", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3729,21 +3740,21 @@ func NewDecideFoodOrderRequestWithBody(server string, merchantId MerchantID, sto
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "orderId", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3803,21 +3814,21 @@ func NewProgressFoodFulfilmentRequestWithBody(server string, merchantId Merchant
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "order_id", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "orderId", orderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3877,14 +3888,14 @@ func NewStartMediaUploadRequestWithBody(server string, merchantId MerchantID, st
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3933,21 +3944,21 @@ func NewGetMediaAssetRequest(server string, merchantId MerchantID, storeId Store
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "mediaId", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -3981,21 +3992,21 @@ func NewCompleteMediaUploadRequest(server string, merchantId MerchantID, storeId
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "mediaId", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4042,21 +4053,21 @@ func NewGetMerchantMediaImageRequest(server string, merchantId MerchantID, store
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "mediaId", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4090,21 +4101,21 @@ func NewCreateMediaUploadGrantRequest(server string, merchantId MerchantID, stor
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "mediaId", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4138,14 +4149,14 @@ func NewGetOfferingRequest(server string, merchantId MerchantID, storeId StoreID
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4190,14 +4201,14 @@ func NewWriteOfferingRequestWithBody(server string, merchantId MerchantID, store
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4246,14 +4257,14 @@ func NewGetOfferingRevisionRequest(server string, merchantId MerchantID, storeId
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4294,14 +4305,14 @@ func NewGetPublicationRequest(server string, merchantId MerchantID, storeId Stor
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4346,14 +4357,14 @@ func NewChangePublicationRequestWithBody(server string, merchantId MerchantID, s
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4402,14 +4413,14 @@ func NewGetPublicFoodOrderingRequest(server string, merchantId MerchantID, store
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4454,14 +4465,14 @@ func NewCreateFoodQuoteRequestWithBody(server string, merchantId MerchantID, sto
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4508,14 +4519,14 @@ func NewCreateGuestSessionRequestWithBody(server string, merchantId MerchantID, 
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4551,21 +4562,21 @@ func NewGetPublicMediaImageRequest(server string, merchantId MerchantID, storeId
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam2 string
 
-	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "media_id", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "mediaId", mediaId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4599,14 +4610,14 @@ func NewGetPublicOfferingRequest(server string, merchantId MerchantID, storeId S
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4640,14 +4651,14 @@ func NewWatchPublicOfferingRequest(server string, merchantId MerchantID, storeId
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchant_id", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "merchantId", merchantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "store_id", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "storeId", storeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -4762,7 +4773,7 @@ func NewGetPublicStoreByHandleRequest(server string, storeHandle string) (*http.
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "store_handle", storeHandle, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "storeHandle", storeHandle, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
 	if err != nil {
 		return nil, err
 	}
@@ -10039,124 +10050,124 @@ type ServerInterface interface {
 	// (GET /api/v1/admin/food/orders)
 	AdminListFoodOrders(w http.ResponseWriter, r *http.Request, params AdminListFoodOrdersParams)
 	// Inspect an order without impersonating a merchant or changing its outcome
-	// (GET /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id})
+	// (GET /api/v1/admin/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId})
 	AdminGetFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5)
 	// Inspect store publication
-	// (GET /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication)
+	// (GET /api/v1/admin/merchants/{merchantId}/stores/{storeId}/publication)
 	AdminGetPublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Suspend or restore publication visibility
-	// (PUT /api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication)
+	// (PUT /api/v1/admin/merchants/{merchantId}/stores/{storeId}/publication)
 	AdminSuspendPublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params AdminSuspendPublicationParams)
 	// Browse private store summaries across this provider
 	// (GET /api/v1/admin/stores)
 	AdminListStores(w http.ResponseWriter, r *http.Request, params AdminListStoresParams)
 	// Watch change hints for an order owned by this guest
-	// (GET /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/order-updates/{order_id})
+	// (GET /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/order-updates/{orderId})
 	WatchGuestFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5)
 	// Place a pickup order using agreed quote terms
-	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders)
+	// (POST /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders)
 	PlaceFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params PlaceFoodOrderParams)
 	// Inspect this guest's order using its readable reference
-	// (GET /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/by-reference/{order_reference})
+	// (GET /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/by-reference/{orderReference})
 	GetGuestFoodOrderByReference(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderReference string)
 	// Inspect this guest's pickup order
-	// (GET /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id})
+	// (GET /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId})
 	GetGuestFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5)
 	// Cancel this guest's unprepared pickup order
-	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation)
+	// (POST /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/cancellation)
 	CancelGuestFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params CancelGuestFoodOrderParams)
 	// Exercise a development-only payment for the placing guest's accepted order
-	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/development-payment)
+	// (POST /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/development-payment)
 	ChangeDevelopmentPayment(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params ChangeDevelopmentPaymentParams)
 	// Quote a selection for this guest
-	// (POST /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes)
+	// (POST /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes)
 	CreateGuestFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Retrieve this guest's retained terms
-	// (GET /api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id})
+	// (GET /api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes/{quoteId})
 	GetGuestFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, quoteId Identifier)
 	// List stores managed by the authorized merchant
-	// (GET /api/v1/merchants/{merchant_id}/stores)
+	// (GET /api/v1/merchants/{merchantId}/stores)
 	ListStores(w http.ResponseWriter, r *http.Request, merchantId MerchantID, params ListStoresParams)
 	// Create a store for the authorized merchant
-	// (POST /api/v1/merchants/{merchant_id}/stores)
+	// (POST /api/v1/merchants/{merchantId}/stores)
 	CreateStore(w http.ResponseWriter, r *http.Request, merchantId MerchantID, params CreateStoreParams)
 	// Read an authorized store
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id})
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId})
 	GetStore(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Watch change hints for this store's order inbox
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/food/order-updates)
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId}/food/order-updates)
 	WatchMerchantFoodOrders(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Read store ordering settings
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering)
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId}/food/ordering)
 	GetFoodOrdering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Pause or resume new orders and select acceptance mode
-	// (PUT /api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering)
+	// (PUT /api/v1/merchants/{merchantId}/stores/{storeId}/food/ordering)
 	ChangeFoodOrdering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params ChangeFoodOrderingParams)
 	// Read a bounded pickup order inbox
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders)
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId}/food/orders)
 	ListMerchantFoodOrders(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params ListMerchantFoodOrdersParams)
 	// Read an order and its durable progress
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id})
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId})
 	GetMerchantFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5)
 	// Accept or reject a pending pickup order
-	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions)
+	// (POST /api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/decisions)
 	DecideFoodOrder(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params DecideFoodOrderParams)
 	// Report preparation and pickup progress
-	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment)
+	// (POST /api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/fulfilment)
 	ProgressFoodFulfilment(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, orderId ComponentsParametersOrderIdYaml294fa0a5, params ProgressFoodFulfilmentParams)
 	// Allocate an owned image upload record
-	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/media)
+	// (POST /api/v1/merchants/{merchantId}/stores/{storeId}/media)
 	StartMediaUpload(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params StartMediaUploadParams)
 	// Read owned image metadata without a storage capability
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id})
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId})
 	GetMediaAsset(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297)
 	// Verify a direct upload and retain a safe image derivative
-	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/completion)
+	// (POST /api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/completion)
 	CompleteMediaUpload(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297, params CompleteMediaUploadParams)
 	// Redirect to a ready owned draft image
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image)
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/image)
 	GetMerchantMediaImage(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297)
 	// Issue a fresh short-lived direct-upload capability
-	// (POST /api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/upload-grant)
+	// (POST /api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/upload-grant)
 	CreateMediaUploadGrant(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297)
 	// Read the current draft revision
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/offering)
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId}/offering)
 	GetOffering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Append an immutable draft revision using an expected current head
-	// (PUT /api/v1/merchants/{merchant_id}/stores/{store_id}/offering)
+	// (PUT /api/v1/merchants/{merchantId}/stores/{storeId}/offering)
 	WriteOffering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params WriteOfferingParams)
 	// Read a retained immutable draft revision
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision})
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId}/offering/revisions/{revision})
 	GetOfferingRevision(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, revision int64)
 	// Read publication state
-	// (GET /api/v1/merchants/{merchant_id}/stores/{store_id}/publication)
+	// (GET /api/v1/merchants/{merchantId}/stores/{storeId}/publication)
 	GetPublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Publish an exact revision or withdraw
-	// (PUT /api/v1/merchants/{merchant_id}/stores/{store_id}/publication)
+	// (PUT /api/v1/merchants/{merchantId}/stores/{storeId}/publication)
 	ChangePublication(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, params ChangePublicationParams)
 	// Read ordering availability for a published store
-	// (GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering)
+	// (GET /api/v1/public/merchants/{merchantId}/stores/{storeId}/food/ordering)
 	GetPublicFoodOrdering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Validate and price a food selection
-	// (POST /api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes)
+	// (POST /api/v1/public/merchants/{merchantId}/stores/{storeId}/food/quotes)
 	CreateFoodQuote(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Start guest checkout without registering
-	// (POST /api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions)
+	// (POST /api/v1/public/merchants/{merchantId}/stores/{storeId}/guest-sessions)
 	CreateGuestSession(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Redirect to an image referenced by a visible published menu
-	// (GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image)
+	// (GET /api/v1/public/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/image)
 	GetPublicMediaImage(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID, mediaId ComponentsParametersMediaIdYamlea7ce297)
 	// Browse current public offering
-	// (GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering)
+	// (GET /api/v1/public/merchants/{merchantId}/stores/{storeId}/offering)
 	GetPublicOffering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Watch public menu and ordering availability changes
-	// (GET /api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering-updates)
+	// (GET /api/v1/public/merchants/{merchantId}/stores/{storeId}/offering-updates)
 	WatchPublicOffering(w http.ResponseWriter, r *http.Request, merchantId MerchantID, storeId StoreID)
 	// Find this provider's published stores
 	// (GET /api/v1/public/stores)
 	ListPublicStores(w http.ResponseWriter, r *http.Request, params ListPublicStoresParams)
 	// Resolve a visible store's provider-local handle
-	// (GET /api/v1/public/stores/{store_handle})
+	// (GET /api/v1/public/stores/{storeHandle})
 	GetPublicStoreByHandle(w http.ResponseWriter, r *http.Request, storeHandle string)
 	// Check process liveness, not commerce or database readiness
 	// (GET /health/live)
@@ -10234,30 +10245,30 @@ func (siw *ServerInterfaceWrapper) AdminGetFoodOrder(w http.ResponseWriter, r *h
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "order_id" -------------
+	// ------------- Path parameter "orderId" -------------
 	var orderId ComponentsParametersOrderIdYaml294fa0a5
 
-	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", r.PathValue("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orderId", Err: err})
 		return
 	}
 
@@ -10283,21 +10294,21 @@ func (siw *ServerInterfaceWrapper) AdminGetPublication(w http.ResponseWriter, r 
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -10323,21 +10334,21 @@ func (siw *ServerInterfaceWrapper) AdminSuspendPublication(w http.ResponseWriter
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -10448,30 +10459,30 @@ func (siw *ServerInterfaceWrapper) WatchGuestFoodOrder(w http.ResponseWriter, r 
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "order_id" -------------
+	// ------------- Path parameter "orderId" -------------
 	var orderId ComponentsParametersOrderIdYaml294fa0a5
 
-	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", r.PathValue("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orderId", Err: err})
 		return
 	}
 
@@ -10497,21 +10508,21 @@ func (siw *ServerInterfaceWrapper) PlaceFoodOrder(w http.ResponseWriter, r *http
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -10565,30 +10576,30 @@ func (siw *ServerInterfaceWrapper) GetGuestFoodOrderByReference(w http.ResponseW
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "order_reference" -------------
+	// ------------- Path parameter "orderReference" -------------
 	var orderReference string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "order_reference", r.PathValue("order_reference"), &orderReference, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "orderReference", r.PathValue("orderReference"), &orderReference, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_reference", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orderReference", Err: err})
 		return
 	}
 
@@ -10614,30 +10625,30 @@ func (siw *ServerInterfaceWrapper) GetGuestFoodOrder(w http.ResponseWriter, r *h
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "order_id" -------------
+	// ------------- Path parameter "orderId" -------------
 	var orderId ComponentsParametersOrderIdYaml294fa0a5
 
-	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", r.PathValue("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orderId", Err: err})
 		return
 	}
 
@@ -10663,30 +10674,30 @@ func (siw *ServerInterfaceWrapper) CancelGuestFoodOrder(w http.ResponseWriter, r
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "order_id" -------------
+	// ------------- Path parameter "orderId" -------------
 	var orderId ComponentsParametersOrderIdYaml294fa0a5
 
-	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", r.PathValue("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orderId", Err: err})
 		return
 	}
 
@@ -10740,30 +10751,30 @@ func (siw *ServerInterfaceWrapper) ChangeDevelopmentPayment(w http.ResponseWrite
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "order_id" -------------
+	// ------------- Path parameter "orderId" -------------
 	var orderId ComponentsParametersOrderIdYaml294fa0a5
 
-	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", r.PathValue("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orderId", Err: err})
 		return
 	}
 
@@ -10817,21 +10828,21 @@ func (siw *ServerInterfaceWrapper) CreateGuestFoodQuote(w http.ResponseWriter, r
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -10857,30 +10868,30 @@ func (siw *ServerInterfaceWrapper) GetGuestFoodQuote(w http.ResponseWriter, r *h
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "quote_id" -------------
+	// ------------- Path parameter "quoteId" -------------
 	var quoteId Identifier
 
-	err = runtime.BindStyledParameterWithOptions("simple", "quote_id", r.PathValue("quote_id"), &quoteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "quoteId", r.PathValue("quoteId"), &quoteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "quote_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "quoteId", Err: err})
 		return
 	}
 
@@ -10906,12 +10917,12 @@ func (siw *ServerInterfaceWrapper) ListStores(w http.ResponseWriter, r *http.Req
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
@@ -10964,12 +10975,12 @@ func (siw *ServerInterfaceWrapper) CreateStore(w http.ResponseWriter, r *http.Re
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
@@ -11023,21 +11034,21 @@ func (siw *ServerInterfaceWrapper) GetStore(w http.ResponseWriter, r *http.Reque
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11063,21 +11074,21 @@ func (siw *ServerInterfaceWrapper) WatchMerchantFoodOrders(w http.ResponseWriter
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11103,21 +11114,21 @@ func (siw *ServerInterfaceWrapper) GetFoodOrdering(w http.ResponseWriter, r *htt
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11143,21 +11154,21 @@ func (siw *ServerInterfaceWrapper) ChangeFoodOrdering(w http.ResponseWriter, r *
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11211,21 +11222,21 @@ func (siw *ServerInterfaceWrapper) ListMerchantFoodOrders(w http.ResponseWriter,
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11270,30 +11281,30 @@ func (siw *ServerInterfaceWrapper) GetMerchantFoodOrder(w http.ResponseWriter, r
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "order_id" -------------
+	// ------------- Path parameter "orderId" -------------
 	var orderId ComponentsParametersOrderIdYaml294fa0a5
 
-	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", r.PathValue("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orderId", Err: err})
 		return
 	}
 
@@ -11319,30 +11330,30 @@ func (siw *ServerInterfaceWrapper) DecideFoodOrder(w http.ResponseWriter, r *htt
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "order_id" -------------
+	// ------------- Path parameter "orderId" -------------
 	var orderId ComponentsParametersOrderIdYaml294fa0a5
 
-	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", r.PathValue("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orderId", Err: err})
 		return
 	}
 
@@ -11396,30 +11407,30 @@ func (siw *ServerInterfaceWrapper) ProgressFoodFulfilment(w http.ResponseWriter,
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "order_id" -------------
+	// ------------- Path parameter "orderId" -------------
 	var orderId ComponentsParametersOrderIdYaml294fa0a5
 
-	err = runtime.BindStyledParameterWithOptions("simple", "order_id", r.PathValue("order_id"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", r.PathValue("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orderId", Err: err})
 		return
 	}
 
@@ -11473,21 +11484,21 @@ func (siw *ServerInterfaceWrapper) StartMediaUpload(w http.ResponseWriter, r *ht
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11541,30 +11552,30 @@ func (siw *ServerInterfaceWrapper) GetMediaAsset(w http.ResponseWriter, r *http.
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "media_id" -------------
+	// ------------- Path parameter "mediaId" -------------
 	var mediaId ComponentsParametersMediaIdYamlea7ce297
 
-	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "mediaId", r.PathValue("mediaId"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mediaId", Err: err})
 		return
 	}
 
@@ -11590,30 +11601,30 @@ func (siw *ServerInterfaceWrapper) CompleteMediaUpload(w http.ResponseWriter, r 
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "media_id" -------------
+	// ------------- Path parameter "mediaId" -------------
 	var mediaId ComponentsParametersMediaIdYamlea7ce297
 
-	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "mediaId", r.PathValue("mediaId"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mediaId", Err: err})
 		return
 	}
 
@@ -11667,30 +11678,30 @@ func (siw *ServerInterfaceWrapper) GetMerchantMediaImage(w http.ResponseWriter, 
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "media_id" -------------
+	// ------------- Path parameter "mediaId" -------------
 	var mediaId ComponentsParametersMediaIdYamlea7ce297
 
-	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "mediaId", r.PathValue("mediaId"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mediaId", Err: err})
 		return
 	}
 
@@ -11716,30 +11727,30 @@ func (siw *ServerInterfaceWrapper) CreateMediaUploadGrant(w http.ResponseWriter,
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "media_id" -------------
+	// ------------- Path parameter "mediaId" -------------
 	var mediaId ComponentsParametersMediaIdYamlea7ce297
 
-	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "mediaId", r.PathValue("mediaId"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mediaId", Err: err})
 		return
 	}
 
@@ -11765,21 +11776,21 @@ func (siw *ServerInterfaceWrapper) GetOffering(w http.ResponseWriter, r *http.Re
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11805,21 +11816,21 @@ func (siw *ServerInterfaceWrapper) WriteOffering(w http.ResponseWriter, r *http.
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11873,21 +11884,21 @@ func (siw *ServerInterfaceWrapper) GetOfferingRevision(w http.ResponseWriter, r 
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11922,21 +11933,21 @@ func (siw *ServerInterfaceWrapper) GetPublication(w http.ResponseWriter, r *http
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -11962,21 +11973,21 @@ func (siw *ServerInterfaceWrapper) ChangePublication(w http.ResponseWriter, r *h
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -12030,21 +12041,21 @@ func (siw *ServerInterfaceWrapper) GetPublicFoodOrdering(w http.ResponseWriter, 
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -12064,21 +12075,21 @@ func (siw *ServerInterfaceWrapper) CreateFoodQuote(w http.ResponseWriter, r *htt
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -12098,21 +12109,21 @@ func (siw *ServerInterfaceWrapper) CreateGuestSession(w http.ResponseWriter, r *
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -12132,30 +12143,30 @@ func (siw *ServerInterfaceWrapper) GetPublicMediaImage(w http.ResponseWriter, r 
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "media_id" -------------
+	// ------------- Path parameter "mediaId" -------------
 	var mediaId ComponentsParametersMediaIdYamlea7ce297
 
-	err = runtime.BindStyledParameterWithOptions("simple", "media_id", r.PathValue("media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "mediaId", r.PathValue("mediaId"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mediaId", Err: err})
 		return
 	}
 
@@ -12175,21 +12186,21 @@ func (siw *ServerInterfaceWrapper) GetPublicOffering(w http.ResponseWriter, r *h
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -12209,21 +12220,21 @@ func (siw *ServerInterfaceWrapper) WatchPublicOffering(w http.ResponseWriter, r 
 
 	var err error
 
-	// ------------- Path parameter "merchant_id" -------------
+	// ------------- Path parameter "merchantId" -------------
 	var merchantId MerchantID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "merchant_id", r.PathValue("merchant_id"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "merchantId", r.PathValue("merchantId"), &merchantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchant_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "merchantId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "store_id" -------------
+	// ------------- Path parameter "storeId" -------------
 	var storeId StoreID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_id", r.PathValue("store_id"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeId", r.PathValue("storeId"), &storeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeId", Err: err})
 		return
 	}
 
@@ -12286,12 +12297,12 @@ func (siw *ServerInterfaceWrapper) GetPublicStoreByHandle(w http.ResponseWriter,
 
 	var err error
 
-	// ------------- Path parameter "store_handle" -------------
+	// ------------- Path parameter "storeHandle" -------------
 	var storeHandle string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "store_handle", r.PathValue("store_handle"), &storeHandle, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "storeHandle", r.PathValue("storeHandle"), &storeHandle, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "store_handle", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storeHandle", Err: err})
 		return
 	}
 
@@ -12441,46 +12452,46 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/food/orders", wrapper.AdminListFoodOrders)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.AdminGetFoodOrder)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.AdminGetPublication)
-	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/admin/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.AdminSuspendPublication)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}", wrapper.AdminGetFoodOrder)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/merchants/{merchantId}/stores/{storeId}/publication", wrapper.AdminGetPublication)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/admin/merchants/{merchantId}/stores/{storeId}/publication", wrapper.AdminSuspendPublication)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/admin/stores", wrapper.AdminListStores)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/order-updates/{order_id}", wrapper.WatchGuestFoodOrder)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders", wrapper.PlaceFoodOrder)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/by-reference/{order_reference}", wrapper.GetGuestFoodOrderByReference)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.GetGuestFoodOrder)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/cancellation", wrapper.CancelGuestFoodOrder)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/development-payment", wrapper.ChangeDevelopmentPayment)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes", wrapper.CreateGuestFoodQuote)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/quotes/{quote_id}", wrapper.GetGuestFoodQuote)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores", wrapper.ListStores)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores", wrapper.CreateStore)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}", wrapper.GetStore)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/order-updates", wrapper.WatchMerchantFoodOrders)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering", wrapper.GetFoodOrdering)
-	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/ordering", wrapper.ChangeFoodOrdering)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders", wrapper.ListMerchantFoodOrders)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}", wrapper.GetMerchantFoodOrder)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/decisions", wrapper.DecideFoodOrder)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/fulfilment", wrapper.ProgressFoodFulfilment)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media", wrapper.StartMediaUpload)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}", wrapper.GetMediaAsset)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/completion", wrapper.CompleteMediaUpload)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image", wrapper.GetMerchantMediaImage)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/upload-grant", wrapper.CreateMediaUploadGrant)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.GetOffering)
-	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.WriteOffering)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/offering/revisions/{revision}", wrapper.GetOfferingRevision)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.GetPublication)
-	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchant_id}/stores/{store_id}/publication", wrapper.ChangePublication)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/ordering", wrapper.GetPublicFoodOrdering)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/food/quotes", wrapper.CreateFoodQuote)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/guest-sessions", wrapper.CreateGuestSession)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/media/{media_id}/image", wrapper.GetPublicMediaImage)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering", wrapper.GetPublicOffering)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchant_id}/stores/{store_id}/offering-updates", wrapper.WatchPublicOffering)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/order-updates/{orderId}", wrapper.WatchGuestFoodOrder)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders", wrapper.PlaceFoodOrder)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/by-reference/{orderReference}", wrapper.GetGuestFoodOrderByReference)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}", wrapper.GetGuestFoodOrder)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/cancellation", wrapper.CancelGuestFoodOrder)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/development-payment", wrapper.ChangeDevelopmentPayment)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes", wrapper.CreateGuestFoodQuote)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/quotes/{quoteId}", wrapper.GetGuestFoodQuote)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores", wrapper.ListStores)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores", wrapper.CreateStore)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}", wrapper.GetStore)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/food/order-updates", wrapper.WatchMerchantFoodOrders)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/food/ordering", wrapper.GetFoodOrdering)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/food/ordering", wrapper.ChangeFoodOrdering)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders", wrapper.ListMerchantFoodOrders)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}", wrapper.GetMerchantFoodOrder)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/decisions", wrapper.DecideFoodOrder)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/fulfilment", wrapper.ProgressFoodFulfilment)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/media", wrapper.StartMediaUpload)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}", wrapper.GetMediaAsset)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/completion", wrapper.CompleteMediaUpload)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/image", wrapper.GetMerchantMediaImage)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/upload-grant", wrapper.CreateMediaUploadGrant)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/offering", wrapper.GetOffering)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/offering", wrapper.WriteOffering)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/offering/revisions/{revision}", wrapper.GetOfferingRevision)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/publication", wrapper.GetPublication)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/merchants/{merchantId}/stores/{storeId}/publication", wrapper.ChangePublication)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchantId}/stores/{storeId}/food/ordering", wrapper.GetPublicFoodOrdering)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchantId}/stores/{storeId}/food/quotes", wrapper.CreateFoodQuote)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/public/merchants/{merchantId}/stores/{storeId}/guest-sessions", wrapper.CreateGuestSession)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchantId}/stores/{storeId}/media/{mediaId}/image", wrapper.GetPublicMediaImage)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchantId}/stores/{storeId}/offering", wrapper.GetPublicOffering)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/merchants/{merchantId}/stores/{storeId}/offering-updates", wrapper.WatchPublicOffering)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/stores", wrapper.ListPublicStores)
-	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/stores/{store_handle}", wrapper.GetPublicStoreByHandle)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/public/stores/{storeHandle}", wrapper.GetPublicStoreByHandle)
 	m.HandleFunc("GET "+options.BaseURL+"/health/live", wrapper.GetLiveness)
 
 	return m
@@ -12489,238 +12500,248 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"6f8GAAD//5E3ekr1YQEA",
+	"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",
+	"8LlNcjbo/w0AAP//SPVxnZdrAQA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

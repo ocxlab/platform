@@ -8,6 +8,7 @@ get:
   x-required-scope: order:read
   tags: [Merchant commerce]
   summary: Read an order and its durable progress
+  description: Read the store-scoped order's agreed terms, current revision, and retained operational history.
   responses:
     '200':
       $ref: ../components/responses/food-order.yaml

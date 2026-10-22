@@ -21,8 +21,8 @@ export const actions: Actions = {
     const form = await request.formData();
     const action = String(form.get('action'));
     if (action !== 'succeed' && action !== 'decline' && action !== 'abandon') return fail(400, { error: text('error-common-invalid-request') });
-    const result = await api(guest.token()).POST('/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders/{order_id}/development-payment', {
-      params: { path: { merchant_id: order.merchant_id, store_id: order.store_id, order_id: order.id }, header: { 'Idempotency-Key': String(form.get('key')) } },
+    const result = await api(guest.token()).POST('/api/v1/guest/merchants/{merchantId}/stores/{storeId}/food/orders/{orderId}/development-payment', {
+      params: { path: { merchantId: order.merchant_id, storeId: order.store_id, orderId: order.id }, header: { 'Idempotency-Key': String(form.get('key')) } },
       body: { expected_revision: Number(form.get('revision')), action },
     });
     if (!result.data) return fail(result.response.status, { error: message(result.error) });

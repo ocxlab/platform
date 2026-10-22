@@ -8,6 +8,7 @@ get:
   x-required-scope: offering:read
   tags: [Merchant commerce]
   summary: Redirect to a ready owned draft image
+  description: Verify merchant offering access and redirect to a short-lived signed image URL; the client reads bytes directly from storage.
   responses:
     '307':
       description: Short-lived signed GET location; API does not proxy image bytes.
