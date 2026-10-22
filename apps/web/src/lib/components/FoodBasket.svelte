@@ -171,7 +171,7 @@
           <ActionButton type="button" icon={Pencil} iconOnly label={t('basket-edit')} disabled={busy} onclick={() => open(line.item_id, index)} />
           <ActionButton type="button" icon={Trash2} iconOnly danger label={t('basket-remove')} disabled={busy} onclick={() => { lines.splice(index, 1); expandedNotes = []; }} />
         </div>
-        <div id={`${notePrefix}-${index}`} hidden={!expandedNotes.includes(index)}><textarea aria-label={t('basket-item-note')} dir="auto" maxlength="500" bind:value={line.note} disabled={busy}></textarea></div>
+        <div class="line-note-field" id={`${notePrefix}-${index}`} hidden={!expandedNotes.includes(index)}><textarea aria-label={t('basket-item-note')} dir="auto" maxlength="500" bind:value={line.note} disabled={busy}></textarea></div>
         {#if line.note && !expandedNotes.includes(index)}<p class="note-preview"><bdi dir="auto">{line.note}</bdi></p>{/if}
       </li>
     {/each}
@@ -254,6 +254,8 @@
   .line-note-toggle { justify-self: center; color: #20586f; background: transparent; border: 0; padding: .4rem; min-block-size: 44px; font: inherit; }
   .line-note-toggle:hover, .line-note-toggle[aria-expanded=true] { background: #edf4f7; border-radius: .4rem; }
   .note-preview { margin-block: .35rem 0; font-size: 1rem; color: #526671; }
+  .line-note-field { margin-block: .75rem .25rem; }
+  .line-note-field textarea { display: block; }
   textarea { inline-size: 100%; box-sizing: border-box; min-block-size: 5rem; font: inherit; padding: .6rem; border: 1px solid #9ab2be; border-radius: .4rem; }
   .note-help { font-size: .85rem; }
   .basket :global(section) { margin: 0; padding: 0; border: 0; background: transparent; border-radius: 0; }

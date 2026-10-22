@@ -114,6 +114,11 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   await page.getByRole('button', { name: /Your basket/ }).click();
   const basket = page.getByRole('complementary', { name: 'Your basket' });
   const water = basket.getByRole('listitem').filter({ hasText: 'Water 0.5 l' });
+  await water.getByRole('button', { name: 'Add note', exact: true }).click();
+  const noteBox = await water.getByRole('textbox', { name: 'Add a note for this dish', exact: true }).boundingBox();
+  const itemActions = await water.locator('.line-actions').boundingBox();
+  expect(noteBox!.y - (itemActions!.y + itemActions!.height)).toBeGreaterThanOrEqual(12);
+  await water.getByRole('button', { name: 'Add note', exact: true }).click();
   await water.getByRole('button', { name: 'Increase quantity', exact: true }).click();
   await water.getByRole('button', { name: 'Decrease quantity', exact: true }).click();
   await water.getByRole('button', { name: 'Remove selection', exact: true }).click();

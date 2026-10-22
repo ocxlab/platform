@@ -1,5 +1,13 @@
 # Development status
 
+## Item note spacing
+
+22 October 2026. Expanded basket item notes now have a 12px gap below the
+quantity/note/edit/remove controls and a small bottom margin. Collapsed notes
+add no row height. A browser geometry assertion checks the gap; all six browser
+journeys passed (37.4 seconds). Full `task check` also passed, including 82 frontend
+tests and zero Svelte diagnostics. No API or MCP behavior changed.
+
 ## Multi-item ordering with automatic basket checks
 
 22 October 2026, Europe/Berlin. Customers can now customize dishes in native
