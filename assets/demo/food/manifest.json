@@ -1,0 +1,38 @@
+[
+  {
+    "bytes": 255048,
+    "content_type": "image/jpeg",
+    "file": "doener.jpg",
+    "height": 1254,
+    "item_id": "doener",
+    "object_key": "demo/food/7e4436e661388ad91323922d941795f661c9092a94b79a0c0c2a0b457f3424ee.jpg",
+    "sha256": "7e4436e661388ad91323922d941795f661c9092a94b79a0c0c2a0b457f3424ee",
+    "source_png_sha256": "6dfea53e8987dc4f2974f7a8b9ac44008dd075a39b394dc2c80bdedaf42d45f5",
+    "synthetic_demo": true,
+    "width": 1254
+  },
+  {
+    "bytes": 317159,
+    "content_type": "image/jpeg",
+    "file": "pizza-margherita.jpg",
+    "height": 1254,
+    "item_id": "pizza-margherita",
+    "object_key": "demo/food/a7da5f66300699aac7b170b2287d4bc7a6ebe1c9d4fc4769edd216e010fe7df0.jpg",
+    "sha256": "a7da5f66300699aac7b170b2287d4bc7a6ebe1c9d4fc4769edd216e010fe7df0",
+    "source_png_sha256": "18fcaf5c0a6a5ef6d268d0dae74ecb0248940f29a27f0c2dbb1159bea1c2ada2",
+    "synthetic_demo": true,
+    "width": 1254
+  },
+  {
+    "bytes": 267805,
+    "content_type": "image/jpeg",
+    "file": "falafel.jpg",
+    "height": 1254,
+    "item_id": "falafel",
+    "object_key": "demo/food/25db573449c507b9ceaf0d34afc678c0581bfec704d8a59f824a93b0c6a30841.jpg",
+    "sha256": "25db573449c507b9ceaf0d34afc678c0581bfec704d8a59f824a93b0c6a30841",
+    "source_png_sha256": "ddf782f3ceb57486bb82e9ab38023e2644b947a5156aa42450e41a6c35f53cdb",
+    "synthetic_demo": true,
+    "width": 1254
+  }
+]

@@ -4,6 +4,33 @@ vars:
   COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml
 
 tasks:
+  media:start:
+    desc: Start optional local S3-compatible storage without changing application data
+    cmds:
+      - '{{.COMPOSE}} --profile media up --detach object-store'
+
+  media:seed:
+    desc: Seed and verify private synthetic food photos in local S3 storage
+    cmds:
+      - task: media:start
+      - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/seed-demo-media.sh'
+
+  media:check:
+    desc: Verify local object storage and repeatable photo seeding twice
+    cmds:
+      - task: media:seed
+      - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/seed-demo-media.sh'
+
+  media:prepare:
+    desc: Encode newly generated PNGs from ignored working/demo-media as demo JPEGs
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools go run /workspace/scripts/prepare-demo-media.go'
+
+  media:stop:
+    desc: Stop optional local object storage while retaining its named volume
+    cmds:
+      - '{{.COMPOSE}} --profile media stop object-store'
+
   default:
     desc: List available local commands
     cmds:

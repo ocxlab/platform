@@ -1,0 +1,19 @@
+{
+  "generated_on": "2026-10-22",
+  "mode": "built-in image_gen",
+  "purpose": "Synthetic development fixtures; not actual merchant photographs",
+  "prompts": [
+    {
+      "item_id": "doener",
+      "prompt": "Use case: product-mockup. Asset type: square food photograph for a fictional German restaurant's development menu. Subject: one freshly made Döner kebab in a toasted triangular Turkish bread pocket with visible thin shaved grilled meat, lettuce, red cabbage, tomato and a little white sauce, on a simple white plate. Authentic modest takeaway portion, natural food textures, appetizing but not exaggerated. Soft window light, warm neutral tabletop, camera at 45 degrees, entire food centered with generous crop-safe margins. No people, logos, text, watermark, side dishes or drinks. Photorealistic editorial food photo, not an illustration. This is a synthetic demo asset, not a claim about an actual restaurant's food."
+    },
+    {
+      "item_id": "pizza-margherita",
+      "prompt": "Use case: product-mockup. Asset type: square food photograph for a fictional German restaurant's development menu. Subject: one whole round Margherita pizza, tomato sauce, melted mozzarella and a few basil leaves, lightly blistered thin crust, on a simple white plate. Authentic modest restaurant portion and natural textures, not exaggerated. Soft window light, warm neutral tabletop, camera at 45 degrees, entire pizza centered with generous crop-safe margins. No people, logos, text, watermark, side dishes or drinks. Photorealistic editorial food photo. Synthetic demo asset, not an actual restaurant's product."
+    },
+    {
+      "item_id": "falafel",
+      "prompt": "Use case: product-mockup. Asset type: square food photograph for a fictional German restaurant's development menu. Subject: one falafel sandwich in a toasted Turkish bread pocket, with golden chickpea falafel, visible green herbs inside one broken falafel, lettuce, red cabbage, tomato and a little tahini sauce. No meat. Served on a simple white plate. Authentic modest takeaway portion, natural textures, appetizing but not exaggerated. Soft window light, warm neutral tabletop, camera at 45 degrees, entire sandwich centered with generous crop-safe margins. No people, logos, text, watermark, side dishes or drinks. Photorealistic editorial food photo. Synthetic demo asset, not a dietary or allergen guarantee and not a real restaurant's product."
+    }
+  ]
+}

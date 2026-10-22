@@ -26,6 +26,11 @@ complete ordering product.
 
 ## Start locally
 
+Optional [food-photo/object storage](docs/MEDIA.md) runs with `task media:check`.
+It verifies direct presigned uploads to private local S3-compatible storage;
+photo attachment/display is the next media slice. The [MCP interaction note](docs/MCP-MEDIA-AND-INTERACTIONS.md)
+separates useful basket, image, Apps, caching, and task mechanisms.
+
 Install Docker with Compose and [Task v3](https://taskfile.dev/docs/installation).
 No host Go installation, cloud account, or payment key is required.
 For Svelte hot reload, install Node.js 22.12+ (or Node.js 24) and pnpm 11.20.0.

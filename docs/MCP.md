@@ -101,6 +101,10 @@ is a separate future concern, not the meaning of information disclosure here.
 
 ## Release evidence
 
+See [MCP media and interaction findings](MCP-MEDIA-AND-INTERACTIONS.md) before
+adding basket state, rich menu images, elicitation, Apps, caching, or Tasks.
+Those mechanisms have distinct scopes and client-support requirements.
+
 Checked on 22 October 2026, Europe/Berlin (UTC+02:00):
 
 - [SDK v1.8.0 transport options](https://github.com/modelcontextprotocol/go-sdk/blob/v1.8.0/mcp/streamable.go), `StreamableHTTPOptions`; [protocol metadata validation](https://github.com/modelcontextprotocol/go-sdk/blob/v1.8.0/mcp/shared.go), `validateRequestMeta`.

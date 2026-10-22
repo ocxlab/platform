@@ -1,5 +1,39 @@
 # Development status
 
+## Presigned media foundation and MCP feature assessment
+
+22 October 2026, Europe/Berlin (UTC+02:00). Optional private local object storage
+now runs through the `media` Compose profile using the supplied pinned SILO
+digest, its own named volume, and loopback ports 18900/18901. Three synthetic
+demo food photos (Döner, Margherita, falafel) are retained with exact prompts,
+checksums, and item associations under `assets/demo/food/`; optimized JPEGs total
+840,012 bytes. They are prepared assets, not yet visible on a storefront.
+
+The Go `internal/media` signer uses pinned AWS SDK v2 modules. Upload bytes go
+directly from the client to storage using short-lived presigned URLs bound to
+type, size, key, and SHA-256. No provider upload proxy, storage credentials in
+clients, or custom signature algorithm was added. The storage primitive is not
+yet an authorized media API. Menu attachment, completion verification, image
+validation/derivatives, and UI/MCP presentation are the next media slice.
+
+`task media:check` passed twice-seeded race-enabled SILO tests: direct PUT/GET,
+byte comparison, wrong-checksum/type/key rejection, expired URL denial, private
+object/list access, and accepted/rejected CORS origins. Focused unit/race tests,
+vet, and `task doctor` passed. Full `task check` passed, including real PostgreSQL
+integration, race tests, generation drift, zero Svelte diagnostics, 70 web tests,
+and API/web builds. `task smoke` passed on the rebuilt runtime. No real browser upload or cloud storage
+test ran, and no development menu was changed or reset.
+
+[Media notes](MEDIA.md) document the upload boundary, inspected OpenOM pattern,
+and R2's current free-tier/cost direction without selecting the production cloud.
+[MCP findings](MCP-MEDIA-AND-INTERACTIONS.md) distinguish ordinary image results
+from Apps, application basket handles from transport state, cacheable resource
+reads from arbitrary tool results, and Tasks from restaurant order progress.
+Those richer MCP interactions are not implemented by the seven current tools.
+
+Admin redesign has not started. Notify the founder before it, especially the
+APIs/MCPs areas, so their offered screenshots can inform the design.
+
 ## Focused merchant price edits and draft review
 
 22 October 2026, Europe/Berlin (UTC+02:00). The local merchant MCP now has
