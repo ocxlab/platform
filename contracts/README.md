@@ -222,8 +222,10 @@ understand new lifecycle states.
 Inbox pages contain at most 100 orders (default 50), ordered by placement time
 descending and immutable order ID descending for ties. Pass opaque `next_after`
 unchanged as `after`. A cursor is a position, not a credential. Refresh the first
-page for new arrivals; multi-request pagination is not a snapshot. The UI uses
-explicit refresh, not push notifications or a realtime delivery guarantee.
+page for new arrivals; multi-request pagination is not a snapshot. The UI adds
+optional SSE invalidation hints, not an event-history replay or a realtime delivery
+guarantee. See [live status design](../docs/LIVE-ORDER-UPDATES.md) for the modular
+stream contracts, authorized reads, reconnect behavior, and resource limits.
 
 Fresh development credentials include their audience's order scopes.
 `task dev:order-access` explicitly extends existing active full-merchant and

@@ -97,6 +97,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/order-updates/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        /** Watch change hints for an order owned by this guest */
+        get: operations["WatchGuestFoodOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/guest/merchants/{merchant_id}/stores/{store_id}/food/orders": {
         parameters: {
             query?: never;
@@ -310,6 +332,27 @@ export interface paths {
          * @description Requires store:read.
          */
         get: operations["GetStore"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/merchants/{merchant_id}/stores/{store_id}/food/order-updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        /** Watch change hints for this store's order inbox */
+        get: operations["WatchMerchantFoodOrders"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1036,6 +1079,16 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /** @description UTF-8 server-sent change hints, not an event-history replay or a payment result. Initial connection and matching committed changes emit event invalidate with JSON data {"resource":"food_orders"}. Re-read the authorized JSON resource. Notifications may be coalesced. No event IDs or Last-Event-ID replay are promised; reconnect always requires a fresh read. Heartbeat comments maintain the transport. Streams end within two minutes and clients may reconnect. Authorization is checked before opening, before hints, and at ten-second heartbeats. Revocation ends the stream at the next check; no further hints are emitted after denial. */
+        ComponentsResponsesOrderStreamYamle38b25c6: {
+            headers: {
+                "X-Request-ID": components["headers"]["RequestID"];
+                [name: string]: unknown;
+            };
+            content: {
+                "text/event-stream": string;
+            };
+        };
         /** @description Active quote storage capacity reached. Retry after the indicated delay; capacity may still be occupied. */
         ComponentsResponsesQuoteCapacityYaml4bef3f4e: {
             headers: {
@@ -1249,6 +1302,24 @@ export interface operations {
             401: components["responses"]["ProblemResponse"];
             403: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    WatchGuestFoodOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+                order_id: components["parameters"]["ComponentsParametersOrderIdYaml294fa0a5"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ComponentsResponsesOrderStreamYamle38b25c6"];
             default: components["responses"]["ProblemResponse"];
         };
     };
@@ -1603,6 +1674,23 @@ export interface operations {
             403: components["responses"]["ProblemResponse"];
             404: components["responses"]["ProblemResponse"];
             503: components["responses"]["ProblemResponse"];
+            default: components["responses"]["ProblemResponse"];
+        };
+    };
+    WatchMerchantFoodOrders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Requested merchant; must match the authenticated grant. */
+                merchant_id: components["parameters"]["MerchantID"];
+                store_id: components["parameters"]["StoreID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ComponentsResponsesOrderStreamYamle38b25c6"];
             default: components["responses"]["ProblemResponse"];
         };
     };

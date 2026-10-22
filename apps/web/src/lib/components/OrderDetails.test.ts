@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/svelte';
+import { cleanup, render, screen, within } from '@testing-library/svelte';
 import { afterEach, expect, test } from 'vitest';
 import type { components } from '$lib/api/generated';
 import OrderDetails from './OrderDetails.svelte';
@@ -13,8 +13,24 @@ function order(): components['schemas']['FoodOrder'] {
 test('renders agreed terms and pending progress with a durable history', () => {
   render(OrderDetails, { order: order() });
   expect(screen.getByRole('status')).toHaveTextContent('Awaiting restaurant acceptance');
-  expect(screen.getByRole('listitem')).toHaveTextContent('Placed');
+  expect(within(screen.getByRole('region', { name: 'Order history' })).getByRole('listitem')).toHaveTextContent('Placed');
   expect(screen.getByRole('region', { name: 'Order details' })).toHaveTextContent('7.00');
+});
+
+test('shows readable references and only recorded events with accessible text and timestamps', () => {
+  render(OrderDetails, { order: { ...order(), reference: 'O-000042' } });
+  expect(screen.getByText('O-000042')).toHaveAttribute('dir', 'ltr');
+  const history = screen.getByRole('region', { name: 'Order history' });
+  expect(history.querySelectorAll('li')).toHaveLength(1);
+  expect(history.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+  expect(history.querySelector('time')).toHaveAttribute('datetime', '2026-10-21T12:00:00Z');
+  expect(within(history).queryByText('Ready for pickup')).not.toBeInTheDocument();
+});
+
+test('does not fabricate a timeline when history is absent', () => {
+  render(OrderDetails, { order: { ...order(), history: undefined } });
+  expect(screen.queryByRole('region', { name: 'Order history' })).not.toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'Order details' })).toHaveTextContent('Döner');
 });
 test('shows acceptance without suggesting payment or kitchen progress', () => {
   render(OrderDetails, { order: { ...order(), acceptance: 'accepted', revision: 2 } });

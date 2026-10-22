@@ -3,7 +3,7 @@
   import { money } from '$lib/money';
   import MerchantStoreNav from '$lib/components/MerchantStoreNav.svelte';
   import { merchantStorePath } from '$lib/merchant-paths';
-  import RefreshCw from '@lucide/svelte/icons/refresh-cw';
+  import OrderLiveUpdates from '$lib/components/OrderLiveUpdates.svelte';
   const { t, locale } = useI18n();
   let { data } = $props();
   const root = $derived(merchantStorePath(data.store));
@@ -12,13 +12,14 @@
 <MerchantStoreNav store={data.store} active="orders" />
 <section aria-labelledby="orders-heading">
 <div class="list-heading"><h2 id="orders-heading">{t('orders-title')}</h2>
-<a class="secondary-control" data-sveltekit-reload href={`${root}/orders`}><RefreshCw size={18} aria-hidden="true" />{t('orders-refresh')}</a></div>
+</div>
+<OrderLiveUpdates url={`${root}/orders/updates`} refresh={`${root}/orders`} />
 <p class="muted">{t('orders-inbox-help')}</p>
 {#if !data.orders.items.length}<p>{t('orders-empty')}</p>{:else}
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to focus and scroll the overflowing table.) -->
 <div class="order-table" role="region" aria-label={t('orders-title')} tabindex="0"><table>
   <thead><tr><th scope="col">{t('receipt-reference')}</th><th scope="col">{t('orders-created')}</th><th scope="col" class="amount">{t('orders-total')}</th><th scope="col">{t('orders-status')}</th><th scope="col">{t('admin-payment')}</th><th scope="col">{t('fulfilment-title')}</th></tr></thead>
-  <tbody>{#each data.orders.items as order}<tr>
+  <tbody>{#each data.orders.items as order (order.id)}<tr>
     <th scope="row"><a href={`${root}/orders/${order.id}`}><bdi dir="ltr">{order.reference ?? order.id}</bdi></a></th>
     <td><time datetime={order.created_at}>{dateFormat.format(new Date(order.created_at))}</time></td>
     <td class="amount"><bdi>{money(order.terms.total_minor, locale())}</bdi></td>
@@ -32,8 +33,6 @@
 </section>
 <style>
   .list-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-  .secondary-control { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; box-sizing: border-box; padding: .55rem .7rem; border: 1px solid #708692; border-radius: .3rem; background: #fff; text-decoration: none; }
-  .secondary-control:hover { background: #edf4f7; }
   .order-table { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: start; padding: .8rem .75rem; border-block-end: 1px solid #ccd8de; vertical-align: middle; }

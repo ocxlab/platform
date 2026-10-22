@@ -8,13 +8,14 @@
   import { fulfilmentAction } from '$lib/orders';
   import MerchantStoreNav from '$lib/components/MerchantStoreNav.svelte';
   import { merchantStorePath } from '$lib/merchant-paths';
+  import OrderLiveUpdates from '$lib/components/OrderLiveUpdates.svelte';
   const { t } = useI18n();
   let { data, form } = $props();
   const root = $derived(merchantStorePath(data.store));
 </script>
 <MerchantStoreNav store={data.store} active="orders" />
 <h2>{t('orders-order')}</h2>
-<p><a data-sveltekit-reload href={`${root}/orders/${data.order.id}`}>{t('orders-refresh')}</a></p>
+<OrderLiveUpdates url={`${root}/orders/updates`} refresh={`${root}/orders/${data.order.id}`} />
 {#if form?.error}<Notice text={form.error} error />{/if}
 {#if form?.success}<Notice text={form.success} />{/if}
 <OrderDetails order={data.order} />

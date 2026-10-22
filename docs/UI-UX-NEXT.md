@@ -22,40 +22,29 @@ usable without turning this into a general dashboard redesign.
   future work. Customer storefront and receipt links now use the same readable
   store slug and a human-readable order reference; see the completed batch below.
 
-## Remaining navigation improvements
+## Completed order detail improvements
 
-- Rework order history as a compact event timeline with Lucide icons, clear event
-  labels, actor/time context where available, aligned content, and no default list
-  indentation. Do not use color or icons as the sole description of an event.
+- Customer and merchant order details share a compact confirmed-event timeline
+  with Lucide icons, readable labels, aligned timestamps, logical-direction
+  layout, and no default list indentation. The API does not expose actor context,
+  so the UI does not invent it. Selection, total, and separate operational states
+  appear in a structured summary rather than a run of unrelated paragraphs.
 
 ## Automatic order updates
 
-Manual-only refresh is a gap, not the intended finished customer experience.
-Prioritize customer order status and merchant order inbox/detail views.
+The founder rejected adaptive polling. Customer order status and merchant order
+inbox/detail views now use SSE change hints, followed by ordinary authorized
+reads. The server uses committed PostgreSQL notifications; the UI does not run
+a timer to poll order state. A fresh stream requests a current read, including
+after reconnect. Concurrent hints coalesce into one in-flight read and a trailing
+refresh when needed. A source is closed while hidden and disposed on navigation.
 
-Evaluate adaptive polling first against the existing authorized read APIs: a
-candidate interval is approximately five seconds for a visible active customer
-order, with an immediate refresh on return to the page. This is a design proposal,
-not an industry-mandated interval or a performance result. Avoid overlapping
-requests, back off on errors, and avoid replacing unsaved forms or stealing focus.
-Stop or slow updates only when both order and relevant payment/refund activity no
-longer need watching. A cancelled order can still have financial follow-up.
-
-Use page visibility to avoid waste, but treat the merchant live inbox separately:
-background order alerts need an explicit notification strategy, and a hidden or
-suspended browser tab is not reliable always-on infrastructure. Show connection
-state/last update and retain manual refresh as a fallback. Assess conditional or
-revision-based reads without assuming a 304 response eliminates server/database
-work. Test refresh after acceptance, payment, preparation, readiness, and pickup;
-also stale credentials, offline/reconnect, and interrupted updates.
-
-SSE is a candidate for server-to-browser change notifications as concurrency and
-latency needs justify persistent connections. Notify only authorized audiences;
-refetch authoritative records after a hint/reconnect and respect replay/cursor
-boundaries. WebSockets remain an option where genuine bidirectional streaming is
-needed; ordinary purchase commands can stay on REST. Choose by deployment and
-measured workload, not by which transport sounds newest. No broker, mandatory
-WebSocket runtime, or production cloud is selected here.
+Connection state and manual refresh remain visible. Hidden-tab/background alerts
+need a separate notification strategy; this is not an always-on restaurant
+terminal. See [live status design](LIVE-ORDER-UPDATES.md) for OpenAPI endpoints,
+privacy, revocation, connection limits, and deployment follow-ups. No broker or
+production cloud is selected. Normal authenticated JSON reads serve API and
+future MCP clients without requiring SSE. Actual MCP tools remain future work.
 
 Primary technical references consulted on 22 October 2026:
 
@@ -94,7 +83,7 @@ or preparation work. Preserve that distinction when improving the screen.
 Plan a cohesive, mobile-first UI/UX pass before a merchant pilot: product tiles,
 simple category navigation, a visible cart, clear checkout/status, and a lean
 merchant workspace. Do not postpone operational usability until final decoration.
-Automatic updates are the next focused UI batch; then resume ordering controls
+After the order-detail/live-update batch, resume ordering controls
 (pause/resume and manual/automatic acceptance). Keep native ONIX publication and
 peer discovery as an explicit joined-network milestone, not an indefinite UI
 follow-up or a claim already fulfilled by the local directory.

@@ -183,18 +183,16 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
   await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Accept order', exact: true })).toHaveCount(0);
-  await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(guest.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(guest.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await guest.getByRole('button', { name: 'Cancel order', exact: true }).click();
   await expect(guest.getByText('This order is cancelled.', { exact: false })).toBeVisible();
   await expect(guest.getByRole('button', { name: 'Cancel order', exact: true })).toHaveCount(0);
-  await page.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Cancelled');
   await page.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Order details' })).toContainText('Cancelled');
-  await expect(page.getByRole('region', { name: 'Order details' }).getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('region', { name: 'Order history' }).getByRole('listitem')).toHaveCount(3);
   // Development payment goes through the same authorized API and retained order.
   await guest.goto(storefront);
   await guest.getByLabel('Garlic').check();
@@ -312,6 +310,8 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(guest.getByText('The restaurant declined this order.', { exact: false })).toBeVisible();
   await expect(guest.getByRole('button', { name: 'Cancel order', exact: true })).toHaveCount(0);
   // A new paid order can progress through the actual merchant pickup workflow.
+  await page.goto(`${workspace}/orders`);
+  await expect(page.getByText('Live updates connected', { exact: true })).toBeVisible();
   await guest.goto(storefront);
   await guest.getByRole('button', { name: 'Check selection price' }).click();
   await guest.getByRole('button', { name: 'Place pickup order', exact: true }).click();
@@ -320,28 +320,41 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   const pickupReceipt = guest.url();
   expect(pickupReceipt).not.toBe(declinedReceipt);
   const pickupId = await orderID(pickupReceipt);
+  // Stay on the inbox while a new order arrives: SSE refreshes the existing page.
+  await expect(page.locator(`a[href$="/orders/${pickupId}"]`)).toBeVisible();
   await page.goto(`${workspace}/orders/${pickupId}`);
+  await expect(guest.getByText('Live updates connected', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Accept order', exact: true }).click();
   await expect(page.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start preparation', exact: true })).toHaveCount(0);
-  await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
+  // No manual refresh between merchant acceptance, payment, and kitchen progress.
+  await expect(guest.getByText('Accepted by the restaurant.', { exact: false })).toBeVisible();
   await guest.getByRole('button', { name: 'Pay order', exact: true }).click();
   await guest.getByRole('button', { name: 'Simulate successful payment', exact: true }).click();
   await expect(guest.getByText('Paid in the development simulation.', { exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Refresh status', exact: true }).click();
+  await expect(page.getByText('Paid in the development simulation.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Start preparation', exact: true }).click();
   await expect(page.getByText('The restaurant is preparing your order.', { exact: true })).toBeVisible();
-  await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(guest.getByText('The restaurant is preparing your order.', { exact: true })).toBeVisible();
   await expect(guest.getByRole('button', { name: 'Cancel order', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Mark ready for pickup', exact: true }).click();
   await expect(page.getByText('Your order is ready for pickup.', { exact: true })).toBeVisible();
-  await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(guest.getByText('Your order is ready for pickup.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Record customer pickup', exact: true }).click();
   await expect(page.getByText('The restaurant recorded customer pickup.', { exact: true })).toBeVisible();
-  await guest.getByRole('link', { name: 'Refresh status', exact: true }).click();
   await expect(guest.getByText('The restaurant recorded customer pickup.', { exact: true })).toBeVisible();
+  const timeline = guest.getByRole('region', { name: 'Order history', exact: true });
+  await expect(timeline.getByRole('listitem')).toHaveCount(7);
+  await expect(timeline.locator('svg')).toHaveCount(7);
+  await page.screenshot({ path: 'test-results/merchant-pickup-detail-desktop.png', fullPage: true });
+  await guest.screenshot({ path: 'test-results/customer-pickup-detail-desktop.png', fullPage: true });
+  await guest.locator('.language-picker summary').click();
+  await guest.locator('.language-picker button[value=ar]').click();
+  await guest.setViewportSize({ width: 390, height: 844 });
+  expect(await guest.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await guest.screenshot({ path: 'test-results/customer-pickup-detail-ar-mobile.png', fullPage: true });
+  await guest.locator('.language-picker summary').click();
+  await guest.locator('.language-picker button[value=en]').click();
   await expect(page.getByRole('region', { name: 'Pickup progress' })).toHaveCount(0);
   expect((await admin.content()).includes(fixture.provider_token)).toBe(false);
   await guest.goto('/admin'); await expect(guest.getByLabel('Temporary provider credential')).toBeVisible();

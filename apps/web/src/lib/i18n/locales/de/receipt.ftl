@@ -1,5 +1,5 @@
 receipt-title = Abholbestellung aufgegeben
-receipt-intro = Prüfen Sie Ihre vereinbarte Auswahl und die Antwort des Restaurants. Diese Entwicklungsbestellung wurde weder berechnet noch an die Küche gesendet.
+receipt-intro = Verfolgen Sie Ihre Abholbestellung, prüfen Sie die vereinbarte Auswahl und sehen Sie die neuesten Meldungen des Restaurants.
 receipt-details = Bestelldetails
 receipt-selection = Ihre vereinbarte Auswahl
 receipt-progress = Erfüllung: Abholung · Zahlung: nicht begonnen · Zubereitung: nicht begonnen

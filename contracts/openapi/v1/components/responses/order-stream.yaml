@@ -1,0 +1,15 @@
+description: >-
+  UTF-8 server-sent change hints, not an event-history replay or a payment result.
+  Initial connection and matching committed changes emit event invalidate with JSON
+  data {"resource":"food_orders"}. Re-read the authorized JSON resource.
+  Notifications may be coalesced. No event IDs or Last-Event-ID replay are promised;
+  reconnect always requires a fresh read. Heartbeat comments maintain the transport.
+  Streams end within two minutes and clients may reconnect. Authorization is checked
+  before opening, before hints, and at ten-second heartbeats. Revocation ends the
+  stream at the next check; no further hints are emitted after denial.
+headers:
+  X-Request-ID:
+    $ref: ../headers/request-id.yaml
+content:
+  text/event-stream:
+    schema: { type: string }

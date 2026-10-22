@@ -6,13 +6,14 @@
   import ActionButton from '$lib/components/ActionButton.svelte';
   import X from '@lucide/svelte/icons/x';
   import CreditCard from '@lucide/svelte/icons/credit-card';
+  import OrderLiveUpdates from '$lib/components/OrderLiveUpdates.svelte';
   import { canCancelOrder, developmentActions } from '$lib/orders';
   let { data, form } = $props();
 </script>
 <h1>{t('receipt-title')}</h1>
 <p>{t('receipt-intro')}</p>
 {#if form?.error}<Notice text={form.error} error />{/if}
-<p><a class="refresh-control" data-sveltekit-reload href={data.receipt}>{t('orders-refresh')}</a></p>
+<OrderLiveUpdates url={`${data.receipt}/updates`} refresh={data.receipt} />
 <OrderDetails order={data.order} />
 {#if developmentActions(data.order, data.developmentPayments).length}
 <section aria-label={t('payment-development')}>

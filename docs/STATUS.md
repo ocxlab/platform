@@ -1,5 +1,42 @@
 # Development status
 
+## Order detail timelines and SSE updates
+
+22 October 2026, Europe/Berlin (UTC+02:00). Customer pickup receipts and merchant
+order details now share a
+structured order summary and a confirmed-event timeline with Lucide icons,
+timestamps, and logical-direction styling. Receipt introduction text no longer
+claims that a progressing order has never reached payment or preparation.
+
+The founder rejected adaptive polling. Optional, OpenAPI-defined SSE endpoints
+now complement ordinary authorized order reads. PostgreSQL event-insert
+notifications signal committed changes through one listener per API process;
+no separate broker or periodic order-state poll is added. The same-origin web
+proxy retains bearer credentials server-side. The merchant inbox and merchant/
+customer detail screens subscribe while visible, coalesce refreshes, and retain
+manual refresh. Reconnection requests current state, not event-stream replay.
+See [live status design](LIVE-ORDER-UPDATES.md) for API semantics, privacy,
+resource boundaries, and hosting follow-ups. No MCP server is implemented.
+
+Verification: `task check` passed, including generated-contract drift, Go checks,
+real PostgreSQL integration, 70 web unit tests, and zero Svelte diagnostics.
+After a final bounded authentication-timeout adjustment, `task fmt`, `task vet`,
+`task test:race`, and `task test:integration` passed again. All four built-app
+browser tests and all four Vite browser tests passed. The pickup journey verifies
+cross-session updates without manual refresh, including a new inbox arrival and
+all seven recorded history entries. Desktop and narrow Arabic screenshots were
+inspected. `task smoke` passed and updated the local API to migration 11 without
+resetting development data; native Vite remains on port 18181.
+
+Initial checks exposed a ServeMux conflict with readable-order lookup, an overly
+strict EventSource test type, and a test that left Arabic selected before expecting
+an English login label. These were corrected and the affected checks rerun;
+the guest stream uses the distinct `/food/order-updates/{order_id}` path.
+This batch does not change real payment adapters, the cart, or native ONIX
+integration. Mutation tests and production load/failover tests are not claimed.
+Next: pause/resume ordering and manual/automatic acceptance, followed by the
+planned cart and cohesive ordering UI. The broader UI/UX pass remains necessary.
+
 ## Readable customer links and a usable merchant order table
 
 22 October 2026, Europe/Berlin (UTC+02:00). Customer storefronts now use

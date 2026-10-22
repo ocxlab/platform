@@ -1,0 +1,14 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+get:
+  operationId: WatchMerchantFoodOrders
+  summary: Watch change hints for this store's order inbox
+  tags: [Merchant commerce]
+  x-access: merchant
+  x-required-scope: order:read
+  responses:
+    '200':
+      $ref: ../components/responses/order-stream.yaml
+    default:
+      $ref: ../components/responses/problem.yaml

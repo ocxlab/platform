@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
+	"ocp.local/platform/internal/orderupdates"
 	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/problems"
 )
@@ -26,9 +27,12 @@ type Server struct {
 	db                  *sql.DB
 	models              *offering.Registry
 	developmentPayments bool
+	updates             *orderupdates.Hub
 }
 
 type Option func(*Server)
+
+func WithOrderUpdates(hub *orderupdates.Hub) Option { return func(s *Server) { s.updates = hub } }
 
 // Disabled by default. Enable only in explicit local/test composition.
 func WithDevelopmentPayments() Option { return func(s *Server) { s.developmentPayments = true } }
@@ -56,7 +60,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	scopes := map[string]string{}
 	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:cancel": true, "order:manage": true, "order:inspect": true}
 	public := map[string]bool{"GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true, "GetPublicStoreByHandle": true}
-	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true, "ChangeDevelopmentPayment": true, "GetGuestFoodOrderByReference": true}
+	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true, "ChangeDevelopmentPayment": true, "GetGuestFoodOrderByReference": true, "WatchGuestFoodOrder": true}
 	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true, "AdminListStores": true, "AdminListFoodOrders": true}
 	for _, path := range spec.Paths.Map() {
 		for _, operation := range path.Operations() {
@@ -122,15 +126,19 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Request-ID", uuid.NewString())
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-		r = r.WithContext(ctx)
 		w.Header().Set("Cache-Control", "no-store")
 		route, pathParams, err := router.FindRoute(r)
 		if err != nil {
 			problem(w, 404, "not_found", "API operation not found.", nil)
 			return
 		}
+		timeout := 10 * time.Second
+		if route.Operation.OperationID == "WatchGuestFoodOrder" || route.Operation.OperationID == "WatchMerchantFoodOrders" {
+			timeout = 2 * time.Minute
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
+		r = r.WithContext(ctx)
 		if !public[route.Operation.OperationID] {
 			header := r.Header.Get("Authorization")
 			if !strings.HasPrefix(header, "Bearer ") {
@@ -144,7 +152,9 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 			if provider[route.Operation.OperationID] {
 				authenticate = persistence.AuthenticateProvider
 			}
-			principal, err := authenticate(r.Context(), db, strings.TrimPrefix(header, "Bearer "))
+			authContext, authCancel := context.WithTimeout(r.Context(), 5*time.Second)
+			principal, err := authenticate(authContext, db, strings.TrimPrefix(header, "Bearer "))
+			authCancel()
 			if errors.Is(err, persistence.ErrUnauthenticated) {
 				problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
 				return

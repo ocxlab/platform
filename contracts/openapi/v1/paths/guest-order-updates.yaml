@@ -1,0 +1,17 @@
+parameters:
+  - $ref: ../components/parameters/merchant-id.yaml
+  - $ref: ../components/parameters/store-id.yaml
+  - $ref: ../components/parameters/order-id.yaml
+get:
+  operationId: WatchGuestFoodOrder
+  summary: Watch change hints for an order owned by this guest
+  tags: [Customer commerce]
+  security:
+    - GuestBearerAuth: []
+  x-access: guest
+  x-required-scope: order:read
+  responses:
+    '200':
+      $ref: ../components/responses/order-stream.yaml
+    default:
+      $ref: ../components/responses/problem.yaml
