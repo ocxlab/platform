@@ -62,10 +62,12 @@ the latter must return 400, not report a storage outage.
 
 ## sqlc retains application transactions
 
-The adoption now covers 16 queries grouped under
+The adoption now covers 33 queries grouped under
 `services/provider/internal/persistence/queries/`: store creation, lookup and
 pagination; offering head locking, append and lookup; publication reads, visibility
-updates, audit and catalog snapshots; and durable effect insertion/deduplication.
+updates, audit and catalog snapshots; durable effect insertion/deduplication;
+Food ordering settings and their audit; quote retrieval and order placement;
+order reads, locking and event history; and development-payment persistence.
 The config reads all Goose migrations in ascending order. sqlc generates a private `sqlgen` package;
 it does not own migrations or introduce an ORM, new connection pool or cloud service.
 
@@ -86,12 +88,53 @@ internal negative count sentinel for non-Food offerings; the handwritten mapper
 preserves the API's null count. Nonnegative counts still describe empty/new or
 Food menus. Runtime tests cover these mappings, including publication withdrawal.
 
-Adoption remains incremental: purchase/payment transitions, grants, replay-table
-selection, worker lease functions, and other persistence paths still use handwritten
-SQL. Generated code reduces parameter and row-scan mismatches; it does not decide
+The order queries retain separate `FOR SHARE OF s` and `FOR UPDATE OF s`
+statements on the mutable operational row. Payment state is read only after that
+lock is acquired; it is not folded into a potentially stale pre-lock join. Guest
+reads keep an explicit guest predicate, while authorized merchant reads use a
+nullable guest filter. Events, payment changes and replay responses still commit
+or roll back together. An integration regression deliberately rejects the final
+payment event, checks that payment attempts and order progress rolled back, then
+retries the same key and checks exactly one committed transition.
+
+The replaced inline SQL, parameter ordering and row-scanning loops are removed
+from handwritten callers. No whole source file became obsolete: those files
+still own transactions, domain validation, error mapping or record conversion.
+Keep these callers and the `queries/*.sql` inputs; only generated output is ignored.
+
+Adoption remains incremental: order pagination, quote creation/pruning, media,
+grants, replay-table selection, worker lease functions, and other persistence paths
+still use handwritten SQL. Generated code reduces parameter and row-scan mismatches; it does not decide
 whether a query is authorized or a business transition is correct. The
 [database workflow](DATABASE-WORKFLOW.md) explains how reviewed Goose migrations,
 pgschema drafts, Squawk, and sqlc fit together.
+
+### Remaining handwritten SQL inventory
+
+The 23 October 2026 source audit found 66 SQL execution call sites in the
+provider's application/runtime code outside generated packages. This is a
+call-site count, not a count of distinct SQL strings or a coverage percentage.
+Dynamic choices include separate admin listings, REST/MCP grant operations,
+public-offering lock modes, and three replay tables. Shared clock and advisory
+lock statements also occur at several sites.
+
+| Area | Call sites | Remaining operations |
+| --- | ---: | --- |
+| Shopping | 12 | Catalog reads/writes, stock, checkout sessions and orders |
+| Lodging | 13 | Properties, units, sessions, occupancy checks, bookings and allocations |
+| Food | 7 | Public-offering reads/locks, quote creation/pruning and order pagination |
+| Authentication and guest access | 16 | Grant lookup/provisioning, guest sessions, tenant context and runtime-role checks |
+| Media | 4 | Asset reads, quotas, reservations and completion |
+| Idempotency | 6 | Replay advisory locks, lookups and inserts in public and internal commerce |
+| Discovery and administration | 5 | Network catalog acceptance/search, public-store resolution and admin listings |
+| Workers and shared payment | 3 | Effect claim/completion functions and pay-later obligations |
+
+Scope: `services/provider/internal/`, excluding generated code, tests and six
+local development-setup calls in `devsetup/restaurant.go`. The SSE listener's
+separate pgx `LISTEN` command is also excluded. Executable bootstraps and SQL
+inside Goose migrations/functions are not application-query call sites in this
+inventory. These counts describe adoption work, not defects; tenant setup and
+notification plumbing may reasonably stay handwritten.
 
 ## Go linting focuses on correctness
 

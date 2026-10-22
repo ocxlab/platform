@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/payment"
+	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 type OrderRevisionConflict struct{ Current int64 }
@@ -61,36 +62,32 @@ func parseOrderCursor(cursor string) (time.Time, uuid.UUID, error) {
 // future payment/kitchen transition must use this same per-order serialization.
 func readFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.UUID, lock bool) (FoodOrder, error) {
 	var order FoodOrder
-	var body []byte
-	query := `SELECT o.body,s.revision,s.acceptance,s.resolution,o.display_number,s.fulfilment_progress FROM commerce.food_orders o
- JOIN commerce.food_order_operations s ON (s.merchant_id,s.store_id,s.order_id)=(o.merchant_id,o.store_id,o.id)
- WHERE o.merchant_id=$1 AND o.store_id=$2 AND o.id=$3 AND ($4::uuid IS NULL OR o.guest_id=$4)`
+	queries := sqlgen.New(tx)
+	args := sqlgen.ReadFoodOrderParams{MerchantID: p.MerchantID, StoreID: store, ID: id, GuestID: uuid.NullUUID{UUID: p.ID, Valid: p.Guest}}
+	var row sqlgen.ReadFoodOrderRow
+	var err error
 	if lock {
-		query += ` FOR UPDATE OF s`
+		var locked sqlgen.LockFoodOrderRow
+		locked, err = queries.LockFoodOrder(ctx, sqlgen.LockFoodOrderParams(args))
+		row = sqlgen.ReadFoodOrderRow(locked)
 	} else {
-		query += ` FOR SHARE OF s`
+		row, err = queries.ReadFoodOrder(ctx, args)
 	}
-	var guest *uuid.UUID
-	if p.Guest {
-		guest = &p.ID
-	}
-	var revision int64
-	var number int64
-	var acceptance, resolution string
-	var progress string
-	err := tx.QueryRowContext(ctx, query, p.MerchantID, store, id, guest).Scan(&body, &revision, &acceptance, &resolution, &number, &progress)
 	if errors.Is(err, sql.ErrNoRows) {
 		return order, ErrNotFound
 	}
 	if err != nil {
 		return order, err
 	}
-	if err = json.Unmarshal(body, &order); err != nil {
+	if !row.DisplayNumber.Valid {
+		return order, errors.New("food order has no display number")
+	}
+	if err = json.Unmarshal(row.Body, &order); err != nil {
 		return order, err
 	}
-	order.Revision, order.Acceptance, order.Resolution = revision, acceptance, resolution
-	order.FulfilmentProgress = progress
-	order.Reference = orderReference(number)
+	order.Revision, order.Acceptance, order.Resolution = row.Revision, row.Acceptance, row.Resolution
+	order.FulfilmentProgress = row.FulfilmentProgress
+	order.Reference = orderReference(row.DisplayNumber.Int64)
 	// Read financial state only after acquiring the order lock. A join evaluated
 	// before waiting for that lock can otherwise retain an older payment snapshot.
 	operation, err := paymentOperation(ctx, tx, order)
@@ -101,20 +98,15 @@ func readFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.
 	if operation.Attempts > 0 {
 		order.PaymentProvider = "development"
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT sequence,event,created_at FROM commerce.food_order_events WHERE merchant_id=$1 AND store_id=$2 AND order_id=$3 ORDER BY sequence`, p.MerchantID, store, id)
+	events, err := queries.ListFoodOrderEvents(ctx, sqlgen.ListFoodOrderEventsParams{MerchantID: p.MerchantID, StoreID: store, OrderID: id})
 	if err != nil {
 		return order, err
 	}
-	defer rows.Close()
-	order.History = make([]FoodOrderEvent, 0)
-	for rows.Next() {
-		var event FoodOrderEvent
-		if err = rows.Scan(&event.Sequence, &event.Event, &event.CreatedAt); err != nil {
-			return order, err
-		}
-		order.History = append(order.History, event)
+	order.History = make([]FoodOrderEvent, 0, len(events))
+	for _, event := range events {
+		order.History = append(order.History, FoodOrderEvent{event.Sequence, event.Event, event.CreatedAt})
 	}
-	return order, rows.Err()
+	return order, nil
 }
 
 func GetFoodOrder(ctx context.Context, db *sql.DB, p Principal, store, id uuid.UUID) (FoodOrder, error) {

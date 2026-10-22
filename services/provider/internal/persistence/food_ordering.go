@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 var ErrOrderingPaused = errors.New("new food ordering paused")
@@ -27,19 +28,21 @@ func foodOrdering(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, lo
 }
 
 func readFoodOrdering(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, lock, public bool) (FoodOrdering, error) {
-	var state FoodOrdering
-	query := `SELECT ordering_revision,accepting_orders,acceptance_mode,ordering_actor_id FROM commerce.stores WHERE merchant_id=$1 AND id=$2`
-	if public {
-		query += ` AND published_revision IS NOT NULL AND NOT publication_suspended`
-	}
+	queries := sqlgen.New(tx)
+	args := sqlgen.GetFoodOrderingParams{MerchantID: merchant, ID: store, PublicOnly: public}
+	var row sqlgen.GetFoodOrderingRow
+	var err error
 	if lock {
-		query += ` FOR UPDATE`
+		var locked sqlgen.LockFoodOrderingRow
+		locked, err = queries.LockFoodOrdering(ctx, sqlgen.LockFoodOrderingParams(args))
+		row = sqlgen.GetFoodOrderingRow(locked)
+	} else {
+		row, err = queries.GetFoodOrdering(ctx, args)
 	}
-	err := tx.QueryRowContext(ctx, query, merchant, store).Scan(&state.Revision, &state.AcceptingOrders, &state.AcceptanceMode, &state.actor)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = ErrNotFound
 	}
-	return state, err
+	return FoodOrdering{Revision: row.OrderingRevision, AcceptingOrders: row.AcceptingOrders, AcceptanceMode: row.AcceptanceMode, actor: row.OrderingActorID}, err
 }
 
 func GetFoodOrdering(ctx context.Context, db *sql.DB, merchant, store uuid.UUID, public bool) (FoodOrdering, error) {
@@ -71,10 +74,11 @@ func ChangeFoodOrdering(ctx context.Context, tx *sql.Tx, actor Principal, store 
 	state.Revision++
 	state.AcceptingOrders = accepting
 	state.AcceptanceMode = mode
-	_, err = tx.ExecContext(ctx, `UPDATE commerce.stores SET ordering_revision=$3,accepting_orders=$4,acceptance_mode=$5,ordering_actor_id=$6 WHERE merchant_id=$1 AND id=$2`, actor.MerchantID, store, state.Revision, accepting, mode, actor.ID)
+	queries := sqlgen.New(tx)
+	err = queries.UpdateFoodOrdering(ctx, sqlgen.UpdateFoodOrderingParams{MerchantID: actor.MerchantID, ID: store, OrderingRevision: state.Revision, AcceptingOrders: accepting, AcceptanceMode: mode, OrderingActorID: uuid.NullUUID{UUID: actor.ID, Valid: true}})
 	if err != nil {
 		return state, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_ordering_audit(merchant_id,store_id,revision,accepting_orders,acceptance_mode,actor_id,request_id) VALUES($1,$2,$3,$4,$5,$6,$7)`, actor.MerchantID, store, state.Revision, accepting, mode, actor.ID, requestID)
+	err = queries.InsertFoodOrderingAudit(ctx, sqlgen.InsertFoodOrderingAuditParams{MerchantID: actor.MerchantID, StoreID: store, Revision: state.Revision, AcceptingOrders: accepting, AcceptanceMode: mode, ActorID: actor.ID, RequestID: requestID})
 	return state, err
 }

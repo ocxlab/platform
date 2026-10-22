@@ -84,6 +84,42 @@ func TestDevelopmentPaymentWorkflow(t *testing.T) {
 	}
 }
 
+func TestDevelopmentPaymentEventFailureRollsBack(t *testing.T) {
+	f, _, private, guest, token, order := placedOrderFixture(t)
+	path := guest + "/food/orders/" + order.ID.String()
+	f.request(t, "POST", private+"/food/orders/"+order.ID.String()+"/decisions", f.token, "payment-rollback-accept-001", `{"expected_revision":1,"decision":"accept"}`, 201)
+	// Reject the final event after the payment row and order revision were written.
+	_, err := f.admin.Exec(`ALTER TABLE commerce.food_order_events ADD CONSTRAINT reject_payment_event CHECK (event <> 'payment_started')`)
+	must(t, err)
+	body := `{"expected_revision":2,"action":"start"}`
+	f.request(t, "POST", path+"/development-payment", token, "payment-rollback-start-001", body, 503)
+	var current persistence.FoodOrder
+	must(t, json.Unmarshal(f.request(t, "GET", path, token, "", "", 200), &current))
+	if current.Payment != "not_started" || current.PaymentProvider != "" || current.Revision != 2 || len(current.History) != 2 {
+		t.Fatalf("failed event left partial payment or order progress: %+v", current)
+	}
+	var count int
+	must(t, f.admin.QueryRow(`SELECT count(*) FROM payment.development_operations WHERE order_id=$1`, order.ID).Scan(&count))
+	if count != 0 {
+		t.Fatal("failed event retained payment attempts")
+	}
+	_, err = f.admin.Exec(`ALTER TABLE commerce.food_order_events DROP CONSTRAINT reject_payment_event`)
+	must(t, err)
+	first := f.request(t, "POST", path+"/development-payment", token, "payment-rollback-start-001", body, 201)
+	if string(first) != string(f.request(t, "POST", path+"/development-payment", token, "payment-rollback-start-001", body, 201)) {
+		t.Fatal("successful payment retry changed replay")
+	}
+	must(t, json.Unmarshal(f.request(t, "GET", path, token, "", "", 200), &current))
+	if current.Payment != "awaiting_customer" || current.Revision != 3 || len(current.History) != 3 {
+		t.Fatalf("retry did not commit exactly one transition: %+v", current)
+	}
+	var attempts int
+	must(t, f.admin.QueryRow(`SELECT attempts FROM payment.development_operations WHERE order_id=$1`, order.ID).Scan(&attempts))
+	if attempts != 1 {
+		t.Fatalf("retry duplicated attempts: %d", attempts)
+	}
+}
+
 func TestDevelopmentPaymentAccessAndDefaultDisabled(t *testing.T) {
 	f, _, private, guest, token, order := placedOrderFixture(t)
 	path := guest + "/food/orders/" + order.ID.String() + "/development-payment"

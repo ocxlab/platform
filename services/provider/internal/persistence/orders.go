@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/offering/food"
+	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 var ErrQuoteExpired = errors.New("quote expired")
@@ -52,31 +53,30 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	if !ordering.AcceptingOrders {
 		return order, ErrOrderingPaused
 	}
-	var body []byte
-	var expires time.Time
-	err = tx.QueryRowContext(ctx, `SELECT body,expires_at FROM commerce.food_quotes WHERE merchant_id=$1 AND store_id=$2 AND id=$3 AND guest_id=$4`, guest.MerchantID, guest.StoreID, quoteID, guest.ID).Scan(&body, &expires)
+	queries := sqlgen.New(tx)
+	quote, err := queries.GetGuestFoodQuote(ctx, sqlgen.GetGuestFoodQuoteParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, ID: quoteID, GuestID: uuid.NullUUID{UUID: guest.ID, Valid: true}})
 	if errors.Is(err, sql.ErrNoRows) {
 		return order, ErrNotFound
 	}
 	if err != nil {
 		return order, err
 	}
-	var exists bool
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT FROM commerce.food_orders WHERE merchant_id=$1 AND quote_id=$2)`, guest.MerchantID, quoteID).Scan(&exists); err != nil {
+	exists, err := queries.FoodQuoteUsed(ctx, sqlgen.FoodQuoteUsedParams{MerchantID: guest.MerchantID, QuoteID: quoteID})
+	if err != nil {
 		return order, err
 	}
 	if exists {
 		return order, ErrQuoteUsed
 	}
-	var now time.Time
-	if err = tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
+	now, err := queries.DatabaseTime(ctx)
+	if err != nil {
 		return order, err
 	}
-	if !expires.After(now) {
+	if !quote.ExpiresAt.After(now) {
 		return order, ErrQuoteExpired
 	}
 	var terms FoodQuote
-	if err = json.Unmarshal(body, &terms); err != nil {
+	if err = json.Unmarshal(quote.Body, &terms); err != nil {
 		return order, err
 	}
 	if current.Model != terms.Model || current.Model != food.Model {
@@ -96,22 +96,24 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 		return order, err
 	}
 	order = FoodOrder{ID: uuid.New(), MerchantID: guest.MerchantID, StoreID: guest.StoreID, Contract: "ocp.food.order.v1", Terms: terms, Fulfilment: "pickup", Acceptance: "pending", Payment: "not_started", FulfilmentProgress: "not_started", Resolution: "open", CreatedAt: now}
-	body, err = json.Marshal(order)
+	body, err := json.Marshal(order)
 	if err != nil {
 		return order, err
 	}
-	var number int64
-	err = tx.QueryRowContext(ctx, `INSERT INTO commerce.food_orders(merchant_id,store_id,id,guest_id,quote_id,body,created_at) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING display_number`, guest.MerchantID, guest.StoreID, order.ID, guest.ID, quoteID, string(body), now).Scan(&number)
+	number, err := queries.InsertFoodOrder(ctx, sqlgen.InsertFoodOrderParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, ID: order.ID, GuestID: guest.ID, QuoteID: quoteID, Body: body, CreatedAt: now})
 	if err != nil {
 		return order, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_order_operations(merchant_id,store_id,order_id) VALUES($1,$2,$3)`, guest.MerchantID, guest.StoreID, order.ID)
+	if !number.Valid {
+		return order, errors.New("food order has no display number")
+	}
+	err = queries.InsertFoodOrderOperations(ctx, sqlgen.InsertFoodOrderOperationsParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, OrderID: order.ID})
 	if err != nil {
 		return order, err
 	}
 	order.Revision = 1
-	order.Reference = orderReference(number)
-	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_order_events(merchant_id,store_id,order_id,sequence,event,actor_id,request_id) VALUES($1,$2,$3,1,'placed',$4,$5)`, guest.MerchantID, guest.StoreID, order.ID, guest.ID, requestID)
+	order.Reference = orderReference(number.Int64)
+	_, err = queries.InsertFoodOrderEvent(ctx, sqlgen.InsertFoodOrderEventParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, OrderID: order.ID, Sequence: 1, Event: "placed", ActorID: guest.ID, RequestID: requestID})
 	if err != nil {
 		return order, err
 	}
@@ -121,11 +123,11 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 		if !ordering.actor.Valid {
 			return order, errors.New("automatic policy has no merchant actor")
 		}
-		_, err = tx.ExecContext(ctx, `UPDATE commerce.food_order_operations SET acceptance='accepted',revision=2 WHERE merchant_id=$1 AND store_id=$2 AND order_id=$3`, guest.MerchantID, guest.StoreID, order.ID)
+		err = queries.UpdateFoodOrderOperations(ctx, sqlgen.UpdateFoodOrderOperationsParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, OrderID: order.ID, Revision: 2, Acceptance: "accepted", Resolution: order.Resolution, FulfilmentProgress: order.FulfilmentProgress})
 		if err != nil {
 			return order, err
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_order_events(merchant_id,store_id,order_id,sequence,event,actor_id,request_id) VALUES($1,$2,$3,2,'accepted',$4,$5)`, guest.MerchantID, guest.StoreID, order.ID, ordering.actor.UUID, requestID)
+		_, err = queries.InsertFoodOrderEvent(ctx, sqlgen.InsertFoodOrderEventParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, OrderID: order.ID, Sequence: 2, Event: "accepted", ActorID: ordering.actor.UUID, RequestID: requestID})
 		order.Acceptance = "accepted"
 		order.Revision = 2
 	}
@@ -154,7 +156,7 @@ func getGuestFoodOrder(ctx context.Context, db *sql.DB, guest Principal, id uuid
 		if parseErr != nil || number < 1 || orderReference(number) != reference {
 			return FoodOrder{}, ErrNotFound
 		}
-		err = tx.QueryRowContext(ctx, `SELECT id FROM commerce.food_orders WHERE merchant_id=$1 AND store_id=$2 AND guest_id=$3 AND display_number=$4`, guest.MerchantID, guest.StoreID, guest.ID, number).Scan(&id)
+		id, err = sqlgen.New(tx).GetGuestFoodOrderID(ctx, sqlgen.GetGuestFoodOrderIDParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, GuestID: guest.ID, DisplayNumber: sql.NullInt64{Int64: number, Valid: true}})
 		if errors.Is(err, sql.ErrNoRows) {
 			return FoodOrder{}, ErrNotFound
 		}
@@ -178,8 +180,7 @@ func GetGuestFoodQuote(ctx context.Context, db *sql.DB, guest Principal, id uuid
 	if err = checkGuest(ctx, tx, guest); err != nil {
 		return FoodQuote{}, err
 	}
-	var body []byte
-	err = tx.QueryRowContext(ctx, `SELECT body FROM commerce.food_quotes WHERE merchant_id=$1 AND store_id=$2 AND id=$3 AND guest_id=$4`, guest.MerchantID, guest.StoreID, id, guest.ID).Scan(&body)
+	row, err := sqlgen.New(tx).GetGuestFoodQuote(ctx, sqlgen.GetGuestFoodQuoteParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, ID: id, GuestID: uuid.NullUUID{UUID: guest.ID, Valid: true}})
 	if errors.Is(err, sql.ErrNoRows) {
 		return FoodQuote{}, ErrNotFound
 	}
@@ -187,7 +188,7 @@ func GetGuestFoodQuote(ctx context.Context, db *sql.DB, guest Principal, id uuid
 		return FoodQuote{}, err
 	}
 	var quote FoodQuote
-	if err = json.Unmarshal(body, &quote); err != nil {
+	if err = json.Unmarshal(row.Body, &quote); err != nil {
 		return quote, err
 	}
 	return quote, tx.Commit()

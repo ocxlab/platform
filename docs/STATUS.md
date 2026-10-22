@@ -1,5 +1,36 @@
 # Development status
 
+## Food order persistence uses typed queries
+
+23 October 2026. sqlc adoption increased from 16 to 33 named queries. New source
+files separate Food ordering settings/audit, order persistence/history, and
+development-payment records. Placement, guest quote/reference lookup, operational
+read/write locks, event append, and payment upsert now use generated methods on
+the existing tenant transaction. Domain decisions and agreed-price validation
+remain handwritten. No schema migration, new dependency or API change was needed.
+
+Replaced inline SQL and scan loops were removed. No whole source file became
+obsolete: retained files still contain active domain, transaction and mapping
+logic. Generated output remains ignored and recreated by Task/Docker. Remaining
+handwritten SQL includes quote creation/pruning, order pagination, media, grants,
+replay-table selection and worker lease functions; this is not a wholesale
+conversion. See [quality tooling](QUALITY-TOOLING.md).
+
+A new PostgreSQL regression rejects the final payment event after the payment
+row and order revision have been written. It verifies rollback of both records,
+then retries the same idempotency key and checks a single attempt/event. Existing
+tests also cover guest/tenant isolation, visibility, automatic merchant acceptance,
+agreed terms, history, replay and payment/cancellation races.
+
+Verification passed: full `task check`, including deterministic generation and
+source-only tracking guards, Spectral, ten migration-workflow tests, zero Go lint
+issues, vet/race, PostgreSQL integration (89.063 seconds), 94 frontend tests,
+zero Svelte diagnostics and API/web image builds. The source audit found 66
+remaining handwritten application/runtime SQL call sites, with scope and area
+counts in the tooling guide. Development data was not reset. No new browser,
+mutation, Schemathesis, smoke or external interoperability run is claimed for
+this query-layer refactor. No independent review was performed for this batch.
+
 ## Migration review workflow and typed SQL expansion
 
 23 October 2026. The approved workflow is implemented: Goose remains the

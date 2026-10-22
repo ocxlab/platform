@@ -8,15 +8,15 @@ import (
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/payment"
+	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 func paymentOperation(ctx context.Context, tx *sql.Tx, order FoodOrder) (payment.Operation, error) {
-	operation := payment.Operation{State: "not_started"}
-	err := tx.QueryRowContext(ctx, `SELECT state,attempts FROM payment.development_operations WHERE merchant_id=$1 AND store_id=$2 AND order_id=$3`, order.MerchantID, order.StoreID, order.ID).Scan(&operation.State, &operation.Attempts)
+	row, err := sqlgen.New(tx).GetDevelopmentPayment(ctx, sqlgen.GetDevelopmentPaymentParams{MerchantID: order.MerchantID, StoreID: order.StoreID, OrderID: order.ID})
 	if errors.Is(err, sql.ErrNoRows) {
 		return payment.Operation{State: "not_started"}, nil
 	}
-	return operation, err
+	return payment.Operation{State: row.State, Attempts: int(row.Attempts)}, err
 }
 
 func savePayment(ctx context.Context, tx *sql.Tx, order FoodOrder, operation payment.Operation) error {
@@ -24,9 +24,8 @@ func savePayment(ctx context.Context, tx *sql.Tx, order FoodOrder, operation pay
 	if err := terms.Validate(); err != nil {
 		return err
 	}
-	_, err := tx.ExecContext(ctx, `INSERT INTO payment.development_operations(merchant_id,store_id,order_id,state,attempts,amount_minor,currency)
- VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(merchant_id,store_id,order_id) DO UPDATE SET state=EXCLUDED.state,attempts=EXCLUDED.attempts`, terms.Subject.MerchantID, terms.Subject.StoreID, terms.Subject.ID, operation.State, operation.Attempts, terms.AmountMinor, terms.Currency)
-	return err
+	// Attempts are bounded by the payment state machine before persistence.
+	return sqlgen.New(tx).SaveDevelopmentPayment(ctx, sqlgen.SaveDevelopmentPaymentParams{MerchantID: terms.Subject.MerchantID, StoreID: terms.Subject.StoreID, OrderID: terms.Subject.ID, State: operation.State, Attempts: int32(operation.Attempts), AmountMinor: terms.AmountMinor, Currency: terms.Currency})
 }
 
 // The same order lock serializes payment simulation, cancellation, and merchant
