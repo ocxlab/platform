@@ -14,6 +14,7 @@ func TestMerchantToolSignalsAreBounded(t *testing.T) {
 		{"inspect_menu", ""}, {"inspect_menu", "revision_conflict"},
 		{"set_item_availability", "unavailable"}, {"private-client-supplied-tool-name", "raw-private-error"},
 		{"inspect_menu_item", ""}, {"inspect_item_extras", "not_found"},
+		{"update_item_prices", "revision_conflict"}, {"review_menu_changes", ""},
 	} {
 		ctx, finish := o.StartMerchantTool(context.Background(), tc.name)
 		if ctx == nil {
@@ -22,7 +23,7 @@ func TestMerchantToolSignalsAreBounded(t *testing.T) {
 		finish(tc.code)
 	}
 	spans := exporter.GetSpans()
-	if len(spans) != 6 {
+	if len(spans) != 8 {
 		t.Fatal(len(spans))
 	}
 	if attrs(spans[1].Attributes)["ocp.outcome"] != "rejected" || attrs(spans[3].Attributes)["ocp.mcp.tool"] != "_OTHER" {
@@ -30,6 +31,9 @@ func TestMerchantToolSignalsAreBounded(t *testing.T) {
 	}
 	if attrs(spans[4].Attributes)["ocp.mcp.tool"] != "inspect_menu_item" || attrs(spans[5].Attributes)["ocp.mcp.tool"] != "inspect_item_extras" {
 		t.Fatal("detail tools missing from bounded labels")
+	}
+	if attrs(spans[6].Attributes)["ocp.mcp.tool"] != "update_item_prices" || attrs(spans[7].Attributes)["ocp.mcp.tool"] != "review_menu_changes" {
+		t.Fatal("edit/review tools missing from bounded labels")
 	}
 	var data metricdata.ResourceMetrics
 	if err := reader.Collect(context.Background(), &data); err != nil {

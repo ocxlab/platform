@@ -100,7 +100,7 @@ func TestMerchantMCP(t *testing.T) {
 		} `json:"tools"`
 	}
 	must(t, json.Unmarshal(listed.Result, &tools))
-	if len(tools.Tools) != 5 {
+	if len(tools.Tools) != 7 {
 		t.Fatalf("tools=%s", listed.Result)
 	}
 	t.Run("released_sdk_client", func(t *testing.T) {
@@ -110,7 +110,7 @@ func TestMerchantMCP(t *testing.T) {
 		defer session.Close()
 		listed, err := session.ListTools(ctx, nil)
 		must(t, err)
-		if len(listed.Tools) != 5 {
+		if len(listed.Tools) != 7 {
 			t.Fatal("SDK tool discovery")
 		}
 		result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "find_my_stores", Arguments: map[string]any{}})
@@ -270,6 +270,121 @@ func TestMerchantMCP(t *testing.T) {
 	if publication.Revision != nil {
 		t.Fatal("agent published a draft")
 	}
+	t.Run("focused_prices_and_review", func(t *testing.T) {
+		args := map[string]any{"store": store.Handle, "item": firstItem, "expected_revision": 2, "request_key": "mcp-price-update-0001", "changes": []any{
+			map[string]any{"variant": "regular", "price_minor": 750},
+			map[string]any{"group": "sauce", "option": "garlic", "price_minor": 100},
+		}}
+		changed := call("update_item_prices", args)
+		if !strings.Contains(string(changed), `"draft_revision":3`) || strings.Contains(string(changed), `"isError":true`) {
+			t.Fatalf("prices=%s", changed)
+		}
+		if replayed := call("update_item_prices", args); !strings.Contains(string(replayed), `"replayed":true`) {
+			t.Fatalf("retry=%s", replayed)
+		}
+		args["changes"].([]any)[0].(map[string]any)["price_minor"] = 800
+		assertCode(call("update_item_prices", args), "idempotency_conflict")
+		args["request_key"] = "mcp-price-stale-0001"
+		assertCode(call("update_item_prices", args), "revision_conflict")
+		args["expected_revision"] = 3
+		args["request_key"] = "mcp-price-partial-0001"
+		args["changes"].([]any)[1].(map[string]any)["option"] = "missing"
+		assertCode(call("update_item_prices", args), "not_found")
+		args["changes"].([]any)[1] = map[string]any{"variant": "regular", "price_minor": 800}
+		assertCode(call("update_item_prices", args), "invalid_request")
+		args["changes"] = []any{map[string]any{"variant": "regular", "price_minor": -1}}
+		assertCode(call("update_item_prices", args), "invalid_request")
+		args["changes"] = []any{map[string]any{"variant": "regular", "price_minor": 0.5}}
+		// The SDK rejects fractional minor units before invoking application code.
+		client := &http.Client{Transport: mcpBearerTransport{token: token, base: server.Client().Transport}, Timeout: 10 * time.Second}
+		session, err := mcp.NewClient(&mcp.Implementation{Name: "price-validation"}, nil).Connect(ctx, &mcp.StreamableClientTransport{Endpoint: server.URL + "/mcp/merchant", HTTPClient: client, MaxRetries: -1, DisableStandaloneSSE: true}, nil)
+		must(t, err)
+		defer session.Close()
+		fraction, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "update_item_prices", Arguments: args})
+		if err == nil && !fraction.IsError {
+			t.Fatal("fractional money accepted")
+		}
+		r, err := persistence.GetOffering(ctx, f.app, p.MerchantID, store.ID, 0)
+		must(t, err)
+		if r.Revision != 3 {
+			t.Fatal("failed batch created a revision")
+		}
+		var document map[string]any
+		must(t, json.Unmarshal(r.Document, &document))
+		want := menu(t)
+		dish := want["items"].([]any)[0].(map[string]any)
+		dish["available"] = false
+		dish["variants"].([]any)[0].(map[string]any)["price_minor"] = float64(750)
+		dish["option_groups"].([]any)[0].(map[string]any)["options"].([]any)[0].(map[string]any)["price_minor"] = float64(100)
+		a, _ := json.Marshal(document)
+		b, _ := json.Marshal(want)
+		if string(a) != string(b) {
+			t.Fatalf("price edit lost menu fields: %s want=%s", a, b)
+		}
+		review := call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 1, "to_revision": 3})
+		var result struct {
+			Structured struct {
+				Total   int `json:"total_changes"`
+				Changes []struct {
+					Path   string `json:"path"`
+					Before any    `json:"before"`
+					After  any    `json:"after"`
+				} `json:"changes"`
+			} `json:"structuredContent"`
+		}
+		must(t, json.Unmarshal(review, &result))
+		if result.Structured.Total != 3 || len(result.Structured.Changes) != 3 || result.Structured.Changes[0].Path != "/items/0/available" {
+			t.Fatalf("review=%s", review)
+		}
+		assertCode(call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 3, "to_revision": 1}), "invalid_request")
+		assertCode(call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 1, "to_revision": 3, "offset": 4}), "invalid_request")
+		assertCode(call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 1, "to_revision": 999}), "not_found")
+		empty := call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 3, "to_revision": 3})
+		if !strings.Contains(string(empty), `"changes":[]`) {
+			t.Fatalf("empty=%s", empty)
+		}
+		publication, err := persistence.GetPublication(ctx, f.app, p.MerchantID, store.ID)
+		must(t, err)
+		if publication.Revision != nil || publication.Generation != 0 {
+			t.Fatal("editing/review published menu")
+		}
+		// REST changes are visible to the same review operation.
+		seed, err := persistence.GetOffering(ctx, f.app, demo.MerchantID, demo.ID, 1)
+		must(t, err)
+		var many map[string]any
+		must(t, json.Unmarshal(seed.Document, &many))
+		f.request(t, "PUT", path, f.token, "mcp-review-menu-00001", offeringBody(t, 3, many, "ocp.food.menu"), 201)
+		for _, raw := range many["items"].([]any) {
+			item := raw.(map[string]any)
+			item["name"] = item["name"].(string) + " revised"
+		}
+		f.request(t, "PUT", path, f.token, "mcp-review-menu-00002", offeringBody(t, 4, many, "ocp.food.menu"), 201)
+		reviewArgs := map[string]any{"store": store.Handle, "from_revision": 4, "to_revision": 5}
+		firstPage := call("review_menu_changes", reviewArgs)
+		var page struct {
+			Structured struct {
+				Changes []json.RawMessage `json:"changes"`
+				Next    *int              `json:"next_offset"`
+				Total   int               `json:"total_changes"`
+			} `json:"structuredContent"`
+		}
+		must(t, json.Unmarshal(firstPage, &page))
+		if len(page.Structured.Changes) != 20 || page.Structured.Next == nil || *page.Structured.Next != 20 || page.Structured.Total != 48 {
+			t.Fatalf("unbounded/incomplete review: %s", firstPage)
+		}
+		// A newer head cannot change the retained comparison or its pages.
+		many["items"].([]any)[0].(map[string]any)["available"] = false
+		f.request(t, "PUT", path, f.token, "mcp-review-menu-00003", offeringBody(t, 5, many, "ocp.food.menu"), 201)
+		for offset, count := range map[int]int{20: 20, 40: 8, 48: 0} {
+			reviewArgs["offset"] = offset
+			raw := call("review_menu_changes", reviewArgs)
+			page.Structured.Next = nil
+			must(t, json.Unmarshal(raw, &page))
+			if len(page.Structured.Changes) != count || page.Structured.Total != 48 || (offset >= 40 && page.Structured.Next != nil) {
+				t.Fatalf("bad continuation: %s", raw)
+			}
+		}
+	})
 	other, otherToken, err := persistence.Provision(ctx, f.admin, "Other", []string{"store:write"}, time.Now().Add(time.Hour))
 	must(t, err)
 	var otherStore persistence.Store
@@ -277,6 +392,8 @@ func TestMerchantMCP(t *testing.T) {
 	assertCode(call("inspect_menu", map[string]any{"store": otherStore.Handle}), "not_found")
 	assertCode(call("inspect_menu_item", map[string]any{"store": otherStore.Handle, "item": firstItem}), "not_found")
 	assertCode(call("inspect_item_extras", map[string]any{"store": otherStore.Handle, "item": firstItem, "revision": 1, "groups": []string{"sauce"}}), "not_found")
+	assertCode(call("review_menu_changes", map[string]any{"store": otherStore.Handle, "from_revision": 1, "to_revision": 3}), "not_found")
+	assertCode(call("update_item_prices", map[string]any{"store": otherStore.Handle, "item": firstItem, "expected_revision": 1, "request_key": "foreign-price-00001", "changes": []any{map[string]any{"variant": "regular", "price_minor": 1}}}), "not_found")
 	// Revocation applies even to a previously successful request key.
 	_, err = f.admin.ExecContext(ctx, `UPDATE auth.grants SET revoked=true WHERE id=$1`, p.ID)
 	must(t, err)

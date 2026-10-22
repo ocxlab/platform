@@ -1,7 +1,7 @@
 # Merchant tool contract
 
-The first merchant MCP slice helps owners find a managed store, inspect its menu,
-and mark an item unavailable in a private draft. It is an intention-oriented
+The merchant MCP helps owners find a managed store, inspect its menu, change
+availability and prices in a private draft, and review retained changes. It is an intention-oriented
 interface, not an export of every REST operation. Publication remains a separate
 merchant workspace action, so an agent's draft edit cannot change the live menu.
 
@@ -18,6 +18,8 @@ resource server. See [setup and boundaries](../../../../docs/MCP.md).
 | `inspect_menu_item` | `offering:read` | `store`, exact `item`; optional `revision` | One dish's availability, all variant IDs/names/prices, and extras-group IDs/names/limits/counts, not option lists |
 | `inspect_item_extras` | `offering:read` | `store`, exact `item`, positive `revision`, one to three distinct `groups` IDs | The selected groups with choice limits and all option IDs/names/surcharges, preserving requested group order |
 | `set_item_availability` | `offering:read`, `offering:write` | `store`, exact `item` ID, boolean `available`, positive `expected_revision`, `request_key` | Saved draft revision, item availability, replay flag, and next action; no full menu echo |
+| `update_item_prices` | `offering:read`, `offering:write` | `store`, exact `item`, positive `expected_revision`, `request_key`, and 1–20 distinct `changes` | Base and saved draft revisions, replay flag, and next action; no menu echo |
+| `review_menu_changes` | `offering:read` | `store`, positive `from_revision` and `to_revision` at or after it; optional `offset` | Up to 20 before/after field changes, total count, explicit revision pair, and optional `next_offset` |
 
 Scopes are checked in discovery and invocation. Every HTTP request authenticates
 the grant again, including expiry and revocation. Store handles select records;
@@ -27,6 +29,8 @@ in force. Provider-admin and guest credentials are not merchant credentials.
 The schema-authoring source is the typed inputs in
 [`agenttools`](../../../../services/provider/internal/agenttools/merchant.go)
 and its [menu detail inputs](../../../../services/provider/internal/agenttools/menu_details.go).
+Focused edits and comparison inputs are in
+[`menu_edits.go`](../../../../services/provider/internal/agenttools/menu_edits.go).
 The pinned SDK derives and validates JSON Schemas, exposed by `tools/list`.
 The extras input uses a narrow schema refinement to advertise a non-null array;
 field definitions and descriptions still derive from its typed input.
@@ -66,6 +70,37 @@ three, with no duplicates), including zero-price options. It requires the item
 read's positive revision and fails as a whole if any selected group is missing.
 No partial success or silent omission is implied. This batches related details
 without echoing every other dish; see the [design and remaining coverage](../../../../docs/MCP-TOOL-DESIGN.md).
+
+### Dish prices and draft comparison
+
+`update_item_prices` batches full size prices and extra surcharges for one dish.
+Each change has an integer `price_minor` from 0 to 1,000,000,000 and either
+`variant`, or `group` plus `option`, never both. Zero explicitly makes a size or
+extra free. Select exact IDs from the detail tools. Duplicate targets, mixed
+selectors, missing targets, fractional/negative amounts, and oversized batches
+are rejected. The entire batch is one validated Offering write: it advances
+one revision or changes nothing. Other fields and other dishes are preserved.
+Its expected-base and retry-key behavior is the same as availability edits.
+
+`review_menu_changes` compares immutable revisions, including edits made through
+REST/UI. Each change gives an RFC 6901 JSON Pointer `path` and its `before` and/or
+`after` leaf value. A missing side means an added/deleted field, not JSON null.
+Dish-level changes also include `before_item` and/or `after_item` with ID and
+name, so clients can identify the affected dishes without retrieving menu pages.
+Empty arrays/objects are leaves; large nested additions are split into leaf
+changes. Pointers are sorted lexically, and array indices belong to those
+revisions, not durable item IDs. Reordering can therefore produce several
+positional differences; this is an exact field comparison, not a semantic
+reordering detector or a JSON Patch document. The two item contexts can differ
+when dishes move. Object key order is ignored.
+
+Continue with the same revision pair and `next_offset`; no changes yields
+`changes: []`. Reviewing a new draft against its base shows only that edit;
+reviewing against an earlier revision shows the accumulated changes. Review all
+pages before judging the complete difference. No review call records human
+approval, changes publication, or certifies readiness. The merchant workspace
+remains the publication surface, with its existing explicit revision and
+publication-generation checks.
 
 ## Errors and evidence
 

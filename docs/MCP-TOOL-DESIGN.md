@@ -22,6 +22,8 @@ The current merchant endpoint supports this progression:
 | Understand one dish | `inspect_menu_item` | All sizes and full prices; availability; extras-group names, selection limits, and option counts |
 | Inspect relevant extras | `inspect_item_extras` | Options and surcharges for one to three selected groups of that dish |
 | Mark a dish available or unavailable | `set_item_availability` | A focused private-draft change with a revision and replay flag |
+| Correct size prices or extra surcharges | `update_item_prices` | One atomic private-draft edit for up to 20 distinct prices on a dish, with base/saved revisions and replay flag |
+| Review the difference before publishing | `review_menu_changes` | Up to 20 exact field changes per page between explicit retained revisions, with before/after values |
 
 This is progressive disclosure of **information**, not progressive loading of
 tool definitions. A client may go straight to an item when it already has its
@@ -44,6 +46,16 @@ new draft between calls. The 200-item model bound limits the source document;
 each item has at most 30 variants and 20 groups, with at most 30 options per
 group. The extras batch therefore returns at most 90 options. This is an initial
 bound to evaluate, not a claim of optimal granularity for every menu.
+
+Price changes batch related size/extra corrections without replacing an entire
+menu in tool arguments. Missing or duplicate targets reject the whole edit;
+zero-priced extras remain explicit. Draft review can compare UI and MCP edits
+alike, so agents do not need to remember what they previously changed. Its
+JSON Pointer locations describe exact revision-local fields, not durable item
+identity. Reordered arrays can generate positional differences. The current
+review is mechanical and paginated; it is not human approval, a semantic
+change summary, or a publication capability. Publishing still happens in the
+merchant workspace.
 
 ## Balance context size against calls
 

@@ -86,7 +86,7 @@ credentials out of source control; none are needed for the current checks.
 The provider has [OpenTelemetry request instrumentation](docs/OBSERVABILITY.md)
 with optional OTLP/HTTP export. It needs no additional monitoring infrastructure
 for ordinary local development. The [local merchant MCP](docs/MCP.md) exposes
-five intent-based tools over Streamable HTTP with separate development grants.
+seven intent-based tools over Streamable HTTP with separate development grants.
 Customer tools, production OAuth, and the MCPs administration tab remain next.
 
 | Task | Purpose |

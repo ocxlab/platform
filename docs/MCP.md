@@ -1,8 +1,8 @@
 # Local merchant MCP
 
 Owners can use an MCP client to find their stores, search menu summaries,
-inspect a dish's sizes and selected extras, and change availability in a private
-draft. The adapter shares the Offering
+inspect a dish's sizes and selected extras, change availability or prices in a private
+draft, and review exact changes between retained revisions. The adapter shares the Offering
 write operation with REST; it does not forward arbitrary API calls or let an
 agent publish a menu. The [tool contract](../contracts/mcp/v1/merchant/README.md)
 records inputs, permissions, retries, compact outputs, and errors.
@@ -13,7 +13,7 @@ Run `task dev`, then `task dev:stores` to find an existing store handle. Obtain 
 one-hour development MCP credential with `task dev:mcp-credential STORE=store-2`
 (substitute your handle). This prints the token explicitly for local use, not to
 ordinary API logs. It covers that store's owning merchant, including their other
-stores, and only the five current tools. It is not a UI login or REST credential.
+stores, and only the seven current tools. It is not a UI login or REST credential.
 
 Connect your client to `http://127.0.0.1:18180/mcp/merchant`, select Streamable
 HTTP, and supply `Authorization: Bearer <token>`. The Compose stack enables
@@ -85,8 +85,9 @@ match REST paths or compress unrelated actions into a generic dispatcher.
 Here progressive disclosure means **information**: store overview, matching dish
 summaries, one dish's sizes/prices and extras-group summaries, then selected
 groups' options if needed. This is not a requirement for progressive loading of
-tool definitions. Five tools now cover that read path and draft availability;
-menu creation/import, other corrections, publication review, and account workflows
+tool definitions. Seven tools now cover that read path, draft availability,
+batched dish prices, and field-change review. Menu creation/import, other corrections,
+approval/publication tools, and account workflows
 remain unfinished.
 
 Measure the complete workflow cost—tool schemas, arguments, result size, and

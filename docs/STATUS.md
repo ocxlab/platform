@@ -1,5 +1,32 @@
 # Development status
 
+## Focused merchant price edits and draft review
+
+22 October 2026, Europe/Berlin (UTC+02:00). The local merchant MCP now has
+seven tools. `update_item_prices` changes up to 20 distinct size prices or extra
+surcharges on one dish in one private revision. `review_menu_changes` compares
+two retained revisions in pages of 20 field changes, including dish IDs/names
+and before/after values. REST/UI edits are included in the comparison. These
+use the existing Offering operation and grant policy, not a second menu store
+or arbitrary API dispatcher. Publication remains an explicit workspace action;
+comparison does not record human approval or change the live menu.
+
+Full `task check` passed, including PostgreSQL integration, Go race/vet,
+contract-generation drift, Svelte diagnostics, 70 web tests, and the API build.
+Focused race tests, vet, and the real HTTP/SQL MCP test were repeated after
+the final review-context refinement. They cover price preservation, free extras,
+atomic rejection of missing/duplicate targets, fractional/negative price denial,
+stale revisions, retries, tenant scope, and stable 48-item comparison pagination
+after a newer draft is saved. `task smoke` passed on the rebuilt API. Inspector
+2.12.0 strict discovery passed for seven tools without warnings and executed a
+read-only comparison. Development menus were not changed or reset; mutations
+ran in disposable test databases. No model, browser suite, or load test ran.
+
+Menu creation/import, other corrections, approval/publication tools, customer and
+account tools, production OAuth, embedded chat, and admin implementation remain.
+Before starting the admin redesign, especially APIs/MCPs, notify the founder
+so their reference screenshots can guide it. No admin screen changed here.
+
 ## Progressive merchant menu information
 
 22 October 2026, Europe/Berlin (UTC+02:00). The merchant MCP now has five tools:
