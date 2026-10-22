@@ -142,6 +142,20 @@ func TestManagedStoreDraftSummary(t *testing.T) {
 	f.request(t, "GET", path+"/offering", f.token, "", "", 403)
 }
 
+// The typed SQL projection must preserve null for non-Food models, rather than
+// interpreting them as empty menus. This tests storage mapping, not model support.
+func TestManagedStoreNonFoodSummary(t *testing.T) {
+	f := setup(t)
+	store := preparedStore(t, f)
+	_, err := f.admin.Exec(`UPDATE commerce.offering_revisions SET model_id='ocp.shopping.catalog' WHERE merchant_id=$1 AND store_id=$2`, f.principal.MerchantID, store.ID)
+	must(t, err)
+	page, err := persistence.ListStores(context.Background(), f.app, f.principal.MerchantID, nil, 10, nil)
+	must(t, err)
+	if len(page.Items) != 1 || page.Items[0].MenuItemCount != nil || page.Items[0].DraftRevision != 1 {
+		t.Fatalf("non-Food offering must retain a null menu count: %+v", page)
+	}
+}
+
 func TestGeneratedStoreListClient(t *testing.T) {
 	f := setup(t)
 	client, err := httpapi.NewClientWithResponses(f.server.URL)

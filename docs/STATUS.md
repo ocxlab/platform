@@ -1,11 +1,43 @@
 # Development status
 
+## Migration review workflow and typed SQL expansion
+
+23 October 2026. The approved workflow is implemented: Goose remains the
+executor; pinned Squawk 2.70.0 checks new migration Up SQL, and pgschema 1.13.3
+produces reviewed drafts. See [database changes](DATABASE-WORKFLOW.md).
+`task db:schema` and `task db:draft` replay actual Goose history into a dedicated,
+unexposed, disposable database. Historical hashes protect the existing 18 files;
+new migrations are linted with Goose-compatible transaction boundaries. Draft
+inputs/outputs remain ignored, separate from reviewed deployment SQL. Schema and
+history guards preserve edits and prevent accidental scope changes.
+
+sqlc now owns 16 query definitions, up from three, split into store, offering,
+publication, and durable-effect files. Existing tenant transactions, explicit
+merchant predicates, store locks, revision checks, publication audits, and atomic
+work insertion remain in place. Nullable JSON and non-Food summary mappings are
+explicit; an added PostgreSQL regression checks that non-Food menu counts remain
+null. Generated Go remains ignored and is rebuilt by Task and Docker. Other
+persistence paths remain handwritten; this is incremental adoption, not a claim
+that generation implements authorization or domain behavior.
+
+Verification passed: full `task check` (Spectral, deterministic generation,
+source-only tracking, formatting, zero Go lint issues, vet/race, PostgreSQL
+integration in 91.147 seconds, frontend suite, zero Svelte diagnostics, and
+API/web image builds); `task smoke`; and the expanded ten-test migration suite.
+Migration checks cover Up/Down extraction, transaction-aware concurrent-index
+linting, RLS/destructive/syntax failures, history changes, edit/scope guards,
+no-change planning, adding a column while retaining an existing row, and an actual
+concurrent-index Goose application/replay. The export/draft Task commands also
+passed an unchanged-schema acceptance check. The prior Schemathesis, mutation,
+browser, and external interoperability suites were not rerun for this refactor.
+Development data was not reset. No new business schema migration was needed.
+
 ## Quality tooling verified
 
 23 October 2026. Pinned Docker tooling now includes Schemathesis, sqlc and
-golangci-lint; see [the usage guide](QUALITY-TOOLING.md). SQL generation is applied
-to three publication queries, not the entire persistence layer. SQL checks and
-the focused Go lint gate passed. The final bounded Schemathesis run
+golangci-lint; see [the usage guide](QUALITY-TOOLING.md). SQL generation initially
+covered three publication queries; the expansion above supersedes that count.
+SQL checks and the focused Go lint gate passed. The final bounded Schemathesis run
 validated 258 responses; five fixed-input read operations have explicitly
 inapplicable negative generation. Earlier runs found a NUL-containing store name
 returning 503. Contract-first `PlainText` constraints and a JSON storage backstop
@@ -23,10 +55,10 @@ and all data/cache volumes were preserved; see [cleanup](REPOSITORY-CLEANUP.md).
 The separate migration-tool evaluation is now complete in sibling
 `ocp-lab/experiments/migration_tooling/README.md`: 18 migration Up sections,
 20 independent probes, and 60 generated-plan applications on disposable PostgreSQL
-18.6. Recommendation awaiting founder discussion: retain Goose, add Squawk,
-and use pgschema for reviewed drafts with explicit handling of unsupported security
-and data changes. No product migration workflow or sqlc input was changed;
-sqlc expansion, merchant/customer Food MCP, and admin redesign remain paused.
+18.6. The founder subsequently approved retaining Goose, adding Squawk, and
+using pgschema for reviewed drafts, now implemented above. sqlc's schema input
+remains the reviewed Goose history. Merchant/customer Food MCP expansion and
+admin redesign remain later batches.
 OAuth/account payments and later pre-authenticated chat are follow-up
 requirements, not capabilities implemented by this tooling change.
 

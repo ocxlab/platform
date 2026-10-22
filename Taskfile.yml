@@ -6,6 +6,46 @@ vars:
   DOMAINS_COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml --file deploy/local/network.compose.yaml --file deploy/local/domains.compose.yaml
 
 tasks:
+  migrations:build:
+    desc: Build pinned Goose, Squawk and pgschema review tooling
+    run: once
+    cmds:
+      - '{{.COMPOSE}} build migration-tools'
+
+  db:lint:
+    desc: Check historical migration hashes and strictly lint new Goose Up SQL
+    deps: [migrations:build]
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps migration-tools lint'
+
+  db:schema:
+    desc: Export a SCHEMA from clean Goose replay into ignored working/migrations/NAME
+    deps: [migrations:build]
+    env:
+      REVIEW_SCHEMA: '{{.SCHEMA | default "commerce"}}'
+      REVIEW_NAME: '{{.NAME | default "schema"}}'
+    cmds:
+      - '{{.COMPOSE}} up --detach --wait migration-db'
+      - '{{.COMPOSE}} run --rm --no-deps -e REVIEW_SCHEMA -e REVIEW_NAME migration-tools export'
+
+  db:draft:
+    desc: Draft SQL from working/migrations/NAME/desired.sql against clean Goose history (SCHEMA, NAME)
+    deps: [migrations:build]
+    env:
+      REVIEW_SCHEMA: '{{.SCHEMA | default "commerce"}}'
+      REVIEW_NAME: '{{.NAME | default "schema"}}'
+    cmds:
+      - '{{.COMPOSE}} up --detach --wait migration-db'
+      - '{{.COMPOSE}} run --rm --no-deps -e REVIEW_SCHEMA -e REVIEW_NAME migration-tools draft'
+
+  test:migrations:
+    desc: Test lint gates and actual Goose/pgschema round trips on isolated PostgreSQL
+    deps: [migrations:build]
+    cmds:
+      - defer: '{{.COMPOSE}} stop migration-db'
+      - '{{.COMPOSE}} up --detach --wait migration-db'
+      - '{{.COMPOSE}} run --rm --no-deps --entrypoint python migration-tools -m unittest discover -s scripts/migrations -p "test_*.py" -v'
+
   test:contracts:
     desc: Exercise selected REST contracts with Schemathesis against disposable PostgreSQL
     cmds:
@@ -308,6 +348,8 @@ tasks:
       - task: contracts:check
       - task: contracts:lint
       - task: sql:check
+      - task: db:lint
+      - task: test:migrations
       - task: lint:go
       - task: vet
       - task: test:race

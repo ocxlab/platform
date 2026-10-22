@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/offering"
+	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 var ErrNotFound = errors.New("resource not found")
@@ -114,8 +115,8 @@ func Mutate(ctx context.Context, db *sql.DB, principal Principal, operation, res
 
 func CreateStore(ctx context.Context, tx *sql.Tx, merchant uuid.UUID, name string) (Store, error) {
 	store := Store{ID: uuid.New(), MerchantID: merchant, DisplayName: name}
-	err := tx.QueryRowContext(ctx, `INSERT INTO commerce.stores(merchant_id,id,display_name)
-  VALUES ($1,$2,$3) RETURNING created_at,'store-'||display_number`, merchant, store.ID, name).Scan(&store.CreatedAt, &store.Handle)
+	row, err := sqlgen.New(tx).CreateStore(ctx, sqlgen.CreateStoreParams{MerchantID: merchant, ID: store.ID, DisplayName: name})
+	store.CreatedAt, store.Handle = row.CreatedAt, row.Handle
 	return store, err
 }
 
@@ -125,20 +126,19 @@ func GetStore(ctx context.Context, db *sql.DB, merchant, id uuid.UUID) (Store, e
 		return Store{}, err
 	}
 	defer tx.Rollback()
-	var store Store
-	err = tx.QueryRowContext(ctx, `SELECT id,merchant_id,display_name,created_at,'store-'||display_number FROM commerce.stores WHERE merchant_id=$1 AND id=$2`, merchant, id).Scan(&store.ID, &store.MerchantID, &store.DisplayName, &store.CreatedAt, &store.Handle)
+	row, err := sqlgen.New(tx).GetStore(ctx, sqlgen.GetStoreParams{MerchantID: merchant, ID: id})
 	if errors.Is(err, sql.ErrNoRows) {
 		return Store{}, ErrNotFound
 	}
 	if err != nil {
 		return Store{}, err
 	}
-	return store, tx.Commit()
+	return Store{ID: row.ID, MerchantID: row.MerchantID, DisplayName: row.DisplayName, CreatedAt: row.CreatedAt, Handle: row.Handle}, tx.Commit()
 }
 
 func AppendOffering(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, base int64, model offering.Model, document json.RawMessage) (Revision, error) {
-	var head int64
-	err := tx.QueryRowContext(ctx, `SELECT offering_revision FROM commerce.stores WHERE merchant_id=$1 AND id=$2 FOR UPDATE`, merchant, store).Scan(&head)
+	queries := sqlgen.New(tx)
+	head, err := queries.LockOfferingHead(ctx, sqlgen.LockOfferingHeadParams{MerchantID: merchant, ID: store})
 	if errors.Is(err, sql.ErrNoRows) {
 		return Revision{}, ErrNotFound
 	}
@@ -152,12 +152,11 @@ func AppendOffering(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, 
 		return Revision{}, err
 	}
 	revision := Revision{MerchantID: merchant, StoreID: store, Revision: head + 1, Model: model, Document: document, State: "draft"}
-	err = tx.QueryRowContext(ctx, `INSERT INTO commerce.offering_revisions(merchant_id,store_id,revision,model_id,model_version,document)
- VALUES ($1,$2,$3,$4,$5,$6) RETURNING created_at`, merchant, store, revision.Revision, model.ID, model.Version, string(document)).Scan(&revision.CreatedAt)
+	revision.CreatedAt, err = queries.InsertOfferingRevision(ctx, sqlgen.InsertOfferingRevisionParams{MerchantID: merchant, StoreID: store, Revision: revision.Revision, ModelID: model.ID, ModelVersion: model.Version, Document: document})
 	if err != nil {
 		return Revision{}, err
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE commerce.stores SET offering_revision=$3 WHERE merchant_id=$1 AND id=$2`, merchant, store, revision.Revision)
+	err = queries.UpdateOfferingHead(ctx, sqlgen.UpdateOfferingHeadParams{MerchantID: merchant, ID: store, OfferingRevision: revision.Revision})
 	return revision, err
 }
 
@@ -167,16 +166,12 @@ func GetOffering(ctx context.Context, db *sql.DB, merchant, store uuid.UUID, rev
 		return Revision{}, err
 	}
 	defer tx.Rollback()
-	var result Revision
-	result.State = "draft"
-	err = tx.QueryRowContext(ctx, `SELECT r.merchant_id,r.store_id,r.revision,r.model_id,r.model_version,r.document,r.created_at
- FROM commerce.offering_revisions r JOIN commerce.stores s ON (r.merchant_id,r.store_id)=(s.merchant_id,s.id)
- WHERE r.merchant_id=$1 AND r.store_id=$2 AND r.revision=CASE WHEN $3::bigint=0 THEN s.offering_revision ELSE $3::bigint END`, merchant, store, revision).Scan(&result.MerchantID, &result.StoreID, &result.Revision, &result.Model.ID, &result.Model.Version, &result.Document, &result.CreatedAt)
+	row, err := sqlgen.New(tx).GetOffering(ctx, sqlgen.GetOfferingParams{MerchantID: merchant, StoreID: store, RequestedRevision: revision})
 	if errors.Is(err, sql.ErrNoRows) {
 		return Revision{}, ErrNotFound
 	}
 	if err != nil {
 		return Revision{}, err
 	}
-	return result, tx.Commit()
+	return Revision{MerchantID: row.MerchantID, StoreID: row.StoreID, Revision: row.Revision, Model: offering.Model{ID: row.ModelID, Version: row.ModelVersion}, Document: row.Document, CreatedAt: row.CreatedAt, State: "draft"}, tx.Commit()
 }

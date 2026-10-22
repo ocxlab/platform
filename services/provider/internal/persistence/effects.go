@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/offering/food"
+	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 type Effect struct {
@@ -48,10 +49,10 @@ func EnqueueEffect(ctx context.Context, tx *sql.Tx, e Effect) (uuid.UUID, error)
 		return uuid.Nil, errors.New("invalid catalog intent")
 	}
 	e.Payload, _ = json.Marshal(intent)
-	var id uuid.UUID
-	err := tx.QueryRowContext(ctx, `INSERT INTO runtime.effects(id,merchant_id,store_id,domain,kind,subject_id,effect_key,payload) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(merchant_id,store_id,domain,kind,effect_key) DO NOTHING RETURNING id`, uuid.New(), e.MerchantID, e.StoreID, e.Domain, e.Kind, e.SubjectID, e.Key, string(e.Payload)).Scan(&id)
+	queries := sqlgen.New(tx)
+	id, err := queries.InsertEffect(ctx, sqlgen.InsertEffectParams{ID: uuid.New(), MerchantID: e.MerchantID, StoreID: e.StoreID, Domain: string(e.Domain), Kind: e.Kind, SubjectID: e.SubjectID, EffectKey: e.Key, Payload: e.Payload})
 	if errors.Is(err, sql.ErrNoRows) {
-		err = tx.QueryRowContext(ctx, `SELECT id FROM runtime.effects WHERE merchant_id=$1 AND store_id=$2 AND domain=$3 AND kind=$4 AND effect_key=$5 AND subject_id=$6 AND payload=$7::jsonb`, e.MerchantID, e.StoreID, e.Domain, e.Kind, e.Key, e.SubjectID, string(e.Payload)).Scan(&id)
+		id, err = queries.GetMatchingEffect(ctx, sqlgen.GetMatchingEffectParams{MerchantID: e.MerchantID, StoreID: e.StoreID, Domain: string(e.Domain), Kind: e.Kind, EffectKey: e.Key, SubjectID: e.SubjectID, Payload: e.Payload})
 	}
 	return id, err
 }

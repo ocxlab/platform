@@ -10,3 +10,10 @@ sql:
         sql_package: database/sql
         emit_empty_slices: true
         omit_unused_structs: true
+        overrides:
+          - db_type: jsonb
+            nullable: true
+            go_type:
+              import: encoding/json
+              type: RawMessage
+              pointer: true

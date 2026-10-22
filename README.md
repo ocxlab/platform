@@ -138,6 +138,12 @@ and `task lint:go` runs the focused Go lint gate. SQL and lint checks also run
 inside `task check`. See [the cleanup proposal](docs/REPOSITORY-CLEANUP.md) for
 the four approved empty remnants removed from the old layout; no source files were deleted.
 
+For database changes, see [the migration review workflow](docs/DATABASE-WORKFLOW.md).
+`task db:schema SCHEMA=commerce NAME=my-change` exports a clean Goose baseline;
+after editing it, `task db:draft SCHEMA=commerce NAME=my-change` produces a
+pgschema draft for review. `task db:lint` and `task test:migrations` are included
+in `task check`. Drafting uses a separate disposable database, not development data.
+
 Run integration, contract exploration and browser tasks serially: they share a disposable test database.
 Keep web checks and mutation runs separate from `test:browser:dev`, because those
 tools regenerate the Docker development SvelteKit graph.

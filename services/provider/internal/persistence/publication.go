@@ -89,32 +89,37 @@ func ChangePublication(ctx context.Context, tx *sql.Tx, actor Principal, store u
 		if actor.Provider {
 			return p, errors.New("merchant principal required")
 		}
-		var projected any
+		var projected *json.RawMessage
+		var publishedRevision sql.NullInt64
 		if revision != nil {
-			var model offering.Model
-			var doc json.RawMessage
-			err = tx.QueryRowContext(ctx, `SELECT model_id,model_version,document FROM commerce.offering_revisions WHERE merchant_id=$1 AND store_id=$2 AND revision=$3`, actor.MerchantID, store, *revision).Scan(&model.ID, &model.Version, &doc)
+			row, readErr := sqlgen.New(tx).GetPublicationSource(ctx, sqlgen.GetPublicationSourceParams{MerchantID: actor.MerchantID, StoreID: store, Revision: *revision})
+			err = readErr
 			if errors.Is(err, sql.ErrNoRows) {
 				return p, ErrNotFound
 			}
 			if err != nil {
 				return p, err
 			}
-			public, err := project(model, doc)
+			public, err := project(offering.Model{ID: row.ModelID, Version: row.ModelVersion}, row.Document)
 			if err != nil {
 				return p, err
 			}
-			projected = string(public)
+			projected = &public
+			publishedRevision = sql.NullInt64{Int64: *revision, Valid: true}
 			action = "publish"
 		}
 		p.Revision = revision
-		_, err = tx.ExecContext(ctx, `UPDATE commerce.stores SET published_revision=$3,public_document=$4,publication_generation=publication_generation+1 WHERE merchant_id=$1 AND id=$2`, actor.MerchantID, store, revision, projected)
+		err = sqlgen.New(tx).UpdatePublishedOffering(ctx, sqlgen.UpdatePublishedOfferingParams{MerchantID: actor.MerchantID, StoreID: store, Revision: publishedRevision, Document: projected})
 	}
 	if err != nil {
 		return p, err
 	}
 	p.Generation++
-	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.publication_audit(merchant_id,store_id,generation,actor_id,actor_kind,action,reason,revision,suspended,request_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, actor.MerchantID, store, p.Generation, actor.ID, kind, action, reason, p.Revision, p.Suspended, requestID)
+	var auditRevision sql.NullInt64
+	if p.Revision != nil {
+		auditRevision = sql.NullInt64{Int64: *p.Revision, Valid: true}
+	}
+	err = sqlgen.New(tx).InsertPublicationAudit(ctx, sqlgen.InsertPublicationAuditParams{MerchantID: actor.MerchantID, StoreID: store, Generation: p.Generation, ActorID: actor.ID, ActorKind: kind, Action: action, Reason: reason, Revision: auditRevision, Suspended: p.Suspended, RequestID: requestID})
 	if err != nil {
 		return p, err
 	}
@@ -123,12 +128,12 @@ func ChangePublication(ctx context.Context, tx *sql.Tx, actor Principal, store u
 		modelRevision = previousRevision
 	}
 	if modelRevision != nil {
-		var model offering.Model
-		var displayName string
-		var public json.RawMessage
-		if err = tx.QueryRowContext(ctx, `SELECT r.model_id,r.model_version,s.display_name,coalesce(s.public_document,'null'::jsonb) FROM commerce.offering_revisions r JOIN commerce.stores s ON (s.merchant_id,s.id)=(r.merchant_id,r.store_id) WHERE r.merchant_id=$1 AND r.store_id=$2 AND r.revision=$3`, actor.MerchantID, store, *modelRevision).Scan(&model.ID, &model.Version, &displayName, &public); err != nil {
+		row, err := sqlgen.New(tx).GetCatalogSnapshot(ctx, sqlgen.GetCatalogSnapshotParams{MerchantID: actor.MerchantID, StoreID: store, Revision: *modelRevision})
+		if err != nil {
 			return p, err
 		}
+		model := offering.Model{ID: row.ModelID, Version: row.ModelVersion}
+		public := row.Document
 		var domain capability.Domain
 		switch model.ID {
 		case "ocp.food.menu":
@@ -144,11 +149,13 @@ func ChangePublication(ctx context.Context, tx *sql.Tx, actor Principal, store u
 		if !visible {
 			public = json.RawMessage(`null`)
 		}
-		payload, marshalErr := json.Marshal(CatalogIntent{Action: action, Visible: visible, Generation: p.Generation, Revision: modelRevision, Model: model, DisplayName: displayName, Document: public})
+		payload, marshalErr := json.Marshal(CatalogIntent{Action: action, Visible: visible, Generation: p.Generation, Revision: modelRevision, Model: model, DisplayName: row.DisplayName, Document: public})
 		if marshalErr != nil {
 			return p, marshalErr
 		}
-		_, err = EnqueueEffect(ctx, tx, Effect{MerchantID: actor.MerchantID, StoreID: store, Domain: domain, Kind: "catalog.publish", SubjectID: store, Key: fmt.Sprint(p.Generation), Payload: payload})
+		if _, err = EnqueueEffect(ctx, tx, Effect{MerchantID: actor.MerchantID, StoreID: store, Domain: domain, Kind: "catalog.publish", SubjectID: store, Key: fmt.Sprint(p.Generation), Payload: payload}); err != nil {
+			return p, err
+		}
 	}
 	return p, err
 }

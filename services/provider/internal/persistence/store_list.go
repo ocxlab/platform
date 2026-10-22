@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 type ManagedStore struct {
@@ -43,31 +44,26 @@ func ListStores(ctx context.Context, db *sql.DB, merchant uuid.UUID, after *uuid
 		return page, err
 	}
 	defer tx.Rollback()
-	rows, err := tx.QueryContext(ctx, `SELECT s.id,s.merchant_id,s.display_name,s.created_at,
- s.offering_revision,
- CASE WHEN s.offering_revision=0 THEN 0
- WHEN r.model_id='ocp.food.menu' AND r.model_version='1.0.0'
- AND jsonb_typeof(r.document->'items')='array' THEN jsonb_array_length(r.document->'items')
- ELSE NULL END,
- COALESCE(r.created_at,s.created_at),'store-'||s.display_number
- FROM commerce.stores s LEFT JOIN commerce.offering_revisions r
- ON r.merchant_id=s.merchant_id AND r.store_id=s.id AND r.revision=s.offering_revision
- WHERE s.merchant_id=$1 AND ($2::uuid IS NULL OR s.id>$2)
- AND ($4::bigint IS NULL OR s.display_number=$4)
- ORDER BY s.id LIMIT $3`, merchant, after, limit+1, number)
+	params := sqlgen.ListManagedStoresParams{MerchantID: merchant, PageLimit: int32(limit + 1)}
+	if after != nil {
+		params.AfterID = uuid.NullUUID{UUID: *after, Valid: true}
+	}
+	if number != nil {
+		params.DisplayNumber = sql.NullInt64{Int64: *number, Valid: true}
+	}
+	rows, err := sqlgen.New(tx).ListManagedStores(ctx, params)
 	if err != nil {
 		return page, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var store ManagedStore
-		if err = rows.Scan(&store.ID, &store.MerchantID, &store.DisplayName, &store.CreatedAt, &store.DraftRevision, &store.MenuItemCount, &store.UpdatedAt, &store.Handle); err != nil {
-			return page, err
+	for _, row := range rows {
+		store := ManagedStore{Store: Store{ID: row.ID, MerchantID: row.MerchantID, DisplayName: row.DisplayName, CreatedAt: row.CreatedAt, Handle: row.Handle}, DraftRevision: row.OfferingRevision, UpdatedAt: row.UpdatedAt}
+		// Counts cannot be negative. -1 represents a non-Food offering internally;
+		// preserve the API's null count instead of treating it as an empty menu.
+		if row.MenuItemCount >= 0 {
+			count := row.MenuItemCount
+			store.MenuItemCount = &count
 		}
 		page.Items = append(page.Items, store)
-	}
-	if err = rows.Err(); err != nil {
-		return page, err
 	}
 	if len(page.Items) > limit {
 		page.Items = page.Items[:limit]

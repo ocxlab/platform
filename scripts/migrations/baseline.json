@@ -1,0 +1,20 @@
+{
+  "00001_foundation.sql": "305c3fca6f73376de910b6bc8d81d9712b64d37c0a64cb33c57740b7415fe0e0",
+  "00002_publication.sql": "f213af7ffaec9cae482c6e03b060a6054d803ace2482e318140bac55f4b304b0",
+  "00003_guest_orders.sql": "5f6cb6f405b65322baa084499fc54808adda0590ab4daff8d5241064439f34f0",
+  "00004_order_operations.sql": "fe033c628259ca6eb2bf7ab3bb64b1ec407aa7b1481e32b261ae5dff5a4cd8ef",
+  "00005_public_store_directory.sql": "bf2d6b400a5599cfcd0e96c2553b9ac020c85e1c76049eb7851cdef63598a0d0",
+  "00006_readable_references.sql": "805afec52509225ecee60134f885f3645e59f925b9e664f62921de44fd782521",
+  "00007_development_payments.sql": "f44294aa465ab859c134f6bafc8057ea38457ef2bf6b1f8b9480f8a7207835fc",
+  "00008_pickup_progress.sql": "6d6576a5a550ffebc96de494676aeaece46eff6438859db2dbd87f457e6ffea4",
+  "00009_admin_directory.sql": "48452f19f0b620532a5b323ea69b7357780b5ca6d94dc2b962c54d717f6255c2",
+  "00010_public_store_handle.sql": "bf906b38d33a592d0112ab240e8707367c4159e2f0fc893cef3741369b7740d6",
+  "00011_order_notifications.sql": "a3193e7fb6b3559ddf729e56506511776eb182c33ed963d7618171c24fdc5b2c",
+  "00012_food_ordering.sql": "18e45ca49a8f2e39bcfc5a7097903481114016ed1355c909d0de7fd134421cd1",
+  "00013_merchant_resource_grants.sql": "7fd29c8e56ff21c071f1498a50c846160d8f7e2a4cfbd29c7a674427e2ab3d8e",
+  "00014_media.sql": "2ede91b809bc01f38cf17efadd0df9a4c6debda5bfca19abc9767391f371fb3c",
+  "00015_offering_notifications.sql": "c4280939b575e16b182bfd58ad9a9a274841405edce783d74b2bf0ab2c249d7e",
+  "00016_durable_work.sql": "575889ef8ab1488a131f11055d669945905e998905b624e61dd41cd6c8b1a934",
+  "00017_discovery_catalogs.sql": "65381807bb2b61a0dba27df9dcf1c1e9dea6f15c038a7aab426fbbe0aa84194e",
+  "00018_internal_domains.sql": "b85ae6a688c163a579cc70a84eaa81092a98b53b1cba0c10dc24f545ce85b7dd"
+}

@@ -62,10 +62,11 @@ the latter must return 400, not report a storage outage.
 
 ## sqlc retains application transactions
 
-The initial adoption is deliberately small: publication reads, the locking read
-and provider suspension update live in
-`services/provider/internal/persistence/queries/publication.sql`. The config reads
-all Goose migrations in ascending order. sqlc generates a private `sqlgen` package;
+The adoption now covers 16 queries grouped under
+`services/provider/internal/persistence/queries/`: store creation, lookup and
+pagination; offering head locking, append and lookup; publication reads, visibility
+updates, audit and catalog snapshots; and durable effect insertion/deduplication.
+The config reads all Goose migrations in ascending order. sqlc generates a private `sqlgen` package;
 it does not own migrations or introduce an ORM, new connection pool or cloud service.
 
 Handwritten persistence code calls `sqlgen.New(tx)` with its existing tenant-scoped
@@ -79,8 +80,18 @@ it themselves. `sqlc vet` here is the local parser/check command; no remote
 analysis or database-backed EXPLAIN rules have been configured. PostgreSQL tests
 remain necessary to establish runtime locking and isolation behavior.
 
-This trial supports incremental adoption when modifying queries. It does not
-justify rewriting the entire persistence layer in one tooling change.
+Nullable JSON uses a configured standard-library `*json.RawMessage` mapping, not
+an additional generated-code runtime dependency. The store-list query uses an
+internal negative count sentinel for non-Food offerings; the handwritten mapper
+preserves the API's null count. Nonnegative counts still describe empty/new or
+Food menus. Runtime tests cover these mappings, including publication withdrawal.
+
+Adoption remains incremental: purchase/payment transitions, grants, replay-table
+selection, worker lease functions, and other persistence paths still use handwritten
+SQL. Generated code reduces parameter and row-scan mismatches; it does not decide
+whether a query is authorized or a business transition is correct. The
+[database workflow](DATABASE-WORKFLOW.md) explains how reviewed Goose migrations,
+pgschema drafts, Squawk, and sqlc fit together.
 
 ## Go linting focuses on correctness
 
@@ -107,5 +118,6 @@ and executed outcomes are documented above and in `STATUS.md`.
 - [sqlc configuration](https://docs.sqlc.dev/en/latest/reference/config.html): version 2 SQL inputs and Go generation.
 - [sqlc migrations](https://docs.sqlc.dev/en/v1.31.1/howto/ddl.html): migration directory interpretation.
 - [sqlc transactions](https://docs.sqlc.dev/en/v1.31.1/howto/transactions.html): generated queries with transactions.
+- [sqlc type overrides](https://docs.sqlc.dev/en/v1.31.1/howto/overrides.html): nullable mappings and pointer types.
 - [golangci-lint configuration](https://golangci-lint.run/docs/configuration/file/): explicit linters and exclusions.
 - [Linter settings](https://golangci-lint.run/docs/linters/configuration/): errcheck function exclusions and staticcheck checks.
