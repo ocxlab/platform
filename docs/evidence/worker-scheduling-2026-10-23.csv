@@ -1,0 +1,3 @@
+date,mode,idle_seconds,idle_claim_calls,idle_schedule_calls,burst_items,burst_completion_ms,burst_claim_calls,burst_schedule_calls
+2026-10-23,ticker-reference,3.200,3,0,12,5652.040,6,0
+2026-10-23,notification,3.202,0,0,12,23.033,7,1

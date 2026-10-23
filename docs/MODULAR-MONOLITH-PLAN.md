@@ -1,6 +1,6 @@
 # Modular monolith and notification-driven work
 
-23 October 2026. Status: batches 1–2 verified; batches 3–4 pending. This plan turns the engineering,
+23 October 2026. Status: batches 1–3 verified; batch 4 pending. This plan turns the engineering,
 protocol, and Astra design reviews into bounded implementation batches. Review
 record: sibling `ocp-lab/runs/notification-driven-work-review.md`.
 
@@ -84,27 +84,31 @@ not complete its observability, measurement, and remaining failure-test work.
 
 ## Batch 3: Observability and failure tests
 
-- [ ] Extend existing OTel instrumentation for wake/reconnect events, empty drains,
+- [x] Extend existing OTel instrumentation for wake/reconnect events, empty drains,
   claim/handler outcomes, pending-work age, delayed retries, lease recovery, and
   terminal failures. Keep metric labels low-cardinality and free of tenant IDs,
   order IDs, secrets, or notification bodies. Do not add a monitoring deployment.
-- [ ] Test commit versus rollback, work before listener startup, reconnect gaps,
+- [x] Test commit versus rollback, work before listener startup, reconnect gaps,
   missed/coalesced signals, and a backlog larger than one batch.
-- [ ] Test scheduled retries without another insert, dead-worker lease expiry,
+- [x] Test scheduled retries without another insert, dead-worker lease expiry,
   stale completion rejection, retry exhaustion, and bounded graceful shutdown.
-- [ ] Test two workers against the same database: one live claimant, safe recovery,
+- [x] Test two workers against the same database: one live claimant, safe recovery,
   and stable identities for repeat external attempts. Do not claim exactly-once
   external effects from exclusive claims.
-- [ ] Preserve tenant/domain isolation and test wake-payload privacy. Reuse current
+- [x] Preserve tenant/domain isolation and test wake-payload privacy. Reuse current
   SSE authorization/reconnect tests; do not redesign SSE in this batch.
-- [ ] Exercise catalog delivery after worker outage and preserve generation ordering
+- [x] Exercise catalog delivery after worker outage and preserve generation ordering
   using the existing local receiver/network harness; distinguish synthetic receiver
   coverage from native ONIX or independent interoperability.
-- [ ] Observe idle query cadence and a bounded burst locally before/after. Record
+- [x] Observe idle query cadence and a bounded burst locally before/after. Record
   actual results and limitations, not production capacity or cloud-cost estimates.
 
 Exit: failure/recovery behavior is evidenced and query/latency observations are
 recorded. Timers and safety scans are explicit, not a claim of zero polling.
+
+Results and metric interpretation: [Worker evidence](WORKER-EVIDENCE.md). The
+reference cadence probe uses today's Store with the old ticker, not an archived
+binary. Recovery tests include the existing batch 2 coverage rerun in regression.
 
 ## Batch 4: Regression, review, and handoff
 
@@ -144,3 +148,6 @@ squashing, a UI redesign, or a generic workflow engine. After this cleanup, resu
 the pending API/MCP work (including Core account management and intent-oriented
 Food tools), then provider administration, followed by the planned Beckn/ONIX work.
 Existing catalog/network behavior must remain working throughout.
+
+Frontend state-management ideas involving XState/TanStack are deferred for a
+separate user discussion; this worker plan does not adopt them or change the UI.

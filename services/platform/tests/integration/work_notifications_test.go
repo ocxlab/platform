@@ -249,3 +249,104 @@ func TestWorkEarlierDeadlineInterruptsWaitAndExhaustedLeaseTerminates(t *testing
 		return state == "failed" && code == "exhausted"
 	})
 }
+
+type silentWorkWake struct{}
+
+func (silentWorkWake) Run(ctx context.Context, _ chan<- work.WakeSignal) error {
+	<-ctx.Done()
+	return nil
+}
+
+func TestWorkSafetyRecoversWithoutAnyListenerHint(t *testing.T) {
+	f := setup(t)
+	store := preparedStore(t, f)
+	id := enqueueWork(t, f, store, "missed-hint")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	w := work.Worker{Store: work.SQLStore{DB: f.app}, Wake: silentWorkWake{}, SafetyInterval: 100 * time.Millisecond, Domains: []capability.Domain{capability.Food}, Concurrency: 2, Handlers: map[string]work.Handler{"food/catalog.publish": func(context.Context, workmodel.Effect) error { return nil }}}
+	go func() { done <- w.Run(ctx) }()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case err := <-done:
+			must(t, err)
+		case <-time.After(6 * time.Second):
+			t.Error("safety worker did not stop")
+		}
+	})
+	eventuallyWork(t, func() bool {
+		var state string
+		must(t, f.admin.QueryRow(`SELECT state FROM runtime.effects WHERE id=$1`, id).Scan(&state))
+		return state == "completed"
+	})
+}
+
+func TestWorkGracefulShutdownPersistsUnfinishedRetry(t *testing.T) {
+	f := setup(t)
+	store := preparedStore(t, f)
+	id := enqueueWork(t, f, store, "cancel-attempt")
+	started := make(chan struct{})
+	stop := startWork(t, f, func(ctx context.Context, e workmodel.Effect) error { close(started); <-ctx.Done(); return ctx.Err() })
+	select {
+	case <-started:
+	case <-time.After(6 * time.Second):
+		t.Fatal("handler never started")
+	}
+	stop()
+	eventuallyWork(t, func() bool {
+		var state string
+		var leased bool
+		must(t, f.admin.QueryRow(`SELECT state,lease_token IS NOT NULL FROM runtime.effects WHERE id=$1`, id).Scan(&state, &leased))
+		return state == "pending" && !leased
+	})
+	var attempts int
+	must(t, f.admin.QueryRow(`SELECT attempts FROM runtime.effects WHERE id=$1`, id).Scan(&attempts))
+	if attempts != 1 {
+		t.Fatal("shutdown claimed again")
+	}
+}
+
+func TestWorkListenerIgnoresUnknownPayload(t *testing.T) {
+	f := setup(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	wake := work.PostgresWake{DSN: workDSN(t, f), Domains: []capability.Domain{capability.Food}}
+	signals := make(chan work.WakeSignal, 1)
+	done := make(chan error, 1)
+	go func() { done <- wake.Run(ctx, signals) }()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case err := <-done:
+			must(t, err)
+		case <-time.After(3 * time.Second):
+			t.Error("listener did not stop")
+		}
+	})
+	select {
+	case signal := <-signals:
+		if signal != work.Listening {
+			t.Fatal("missing ready signal")
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("listener did not start")
+	}
+	_, err := f.admin.Exec(`SELECT pg_notify('ocp_work_changed','private-payload')`)
+	must(t, err)
+	select {
+	case <-signals:
+		t.Fatal("unknown payload woke worker")
+	case <-time.After(150 * time.Millisecond):
+	}
+	_, err = f.admin.Exec(`SELECT pg_notify('ocp_work_changed','food')`)
+	must(t, err)
+	select {
+	case signal := <-signals:
+		if signal != work.Changed {
+			t.Fatal("wrong wake")
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("valid domain ignored")
+	}
+}

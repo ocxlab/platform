@@ -62,7 +62,7 @@ the latter must return 400, not report a storage outage.
 
 ## sqlc retains application transactions
 
-Application query adoption now covers 104 named statements in seven owner-specific
+Application query adoption now covers 105 named statements in seven owner-specific
 `persistence/queries/` directories beneath their owners. Six live under
 `internal/`; internal UCP transport lives under `cmd/api/transport/ucpinternal/`.
 Related concerns have separate
@@ -73,7 +73,7 @@ checkout admission, quotes, orders, and development-payment records.
 
 | Query owner | Named statements |
 | --- | ---: |
-| Core | 46 |
+| Core | 47 |
 | Food | 25 |
 | Shopping | 12 |
 | Lodging | 13 |

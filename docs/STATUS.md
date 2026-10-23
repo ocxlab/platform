@@ -1,5 +1,45 @@
 # Development status
 
+## Worker observability and recovery evidence
+
+23 October 2026. Batch 3 adds bounded OTel signals for listener activity, scheduling,
+claims, retries, handler outcomes, and optional domain-scoped backlog/age snapshots.
+Snapshots are enabled only with telemetry export, run at most once per minute on
+a drain, and have a two-second timeout; they are not required for delivery. Labels
+exclude tenant/order IDs, errors, and notification payloads. Replica gauges have a
+technical instance identity and must not be summed across workers. See
+[worker evidence](WORKER-EVIDENCE.md) for overlapping states and freshness limits.
+
+Migration 20 retains enqueue timestamps for new work and adds a restricted snapshot
+function. Existing rows begin their measured age at upgrade; original enqueue time
+cannot be reconstructed. The pgschema draft was reviewed and corrected for omitted
+ownership. Squawk and all eighteen baseline migration hashes passed. The inventory
+now covers 105 named SQL inputs, 32 tables, 17 functions, and eleven access exceptions.
+
+Full `task check` passed: generation/Spectral, migration tooling, lint/vet/race,
+PostgreSQL integration (69.591 seconds), 94 frontend tests, zero Svelte diagnostics,
+and API/web builds. Separate-process tests passed (25.234 seconds), including an
+actual worker killed after a synthetic receiver accepted its request; replay used
+the same catalog identity. Pinned UCP schema checks passed in that suite.
+
+The native ONIX test initially failed readiness because its harness had not supplied
+the worker's new wake source. After correcting the harness, `task test:network`
+passed (8.442 seconds), covering publication, update, crawl/search, withdrawal,
+current quotes, stale generations, and wrong provider binding. This is a local,
+statically enrolled network, not independent interoperability or public trust proof.
+
+One local cadence observation recorded three idle claim calls in about 3.2 seconds
+for the old ticker reference and zero for the notification scheduler. Twelve no-op
+deliveries completed in 5,652.040 ms versus 23.033 ms. These are single observations,
+not capacity, cloud-cost, or real external-service measurements; methodology and raw
+values are in the evidence note. No production payment/kitchen workflow, broker,
+frontend state library, browser polling, or SSE redesign was introduced.
+
+Final engineering/protocol implementation review and targeted mutation testing
+remain batch 4. Generated code remains ignored, and development data was preserved.
+The combined development API smoke check passed. Disposable test and native-network
+services are stopped; retained development and synthetic-network data were not deleted.
+
 ## Notification-driven catalog worker
 
 23 October 2026. Batch 2 replaces the worker's one-second ticker with a dedicated

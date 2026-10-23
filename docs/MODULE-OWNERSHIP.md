@@ -10,8 +10,8 @@ notification-driven worker change.
 
 The executable inventory is
 [`ownership.json`](../services/platform/tests/architecture/ownership.json).
-It declares logical owners for 32 tables and 16 functions and eleven query-specific
-foreign-access exceptions across the 104 named SQL inputs. PostgreSQL schema names are historical
+It declares logical owners for 32 tables and 17 functions and eleven query-specific
+foreign-access exceptions across the 105 named SQL inputs. PostgreSQL schema names are historical
 storage names, not service boundaries.
 
 | Owner | Owned records | Current application seam |

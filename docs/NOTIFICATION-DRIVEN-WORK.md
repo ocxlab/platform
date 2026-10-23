@@ -94,7 +94,9 @@ historical-hash checks passed. Migration replay tests now choose their test migr
 version from the existing history instead of reserving version 19.
 
 Full regression and runtime results are recorded in [development status](STATUS.md).
-Observability extensions, idle/burst measurements, and final engineering/protocol
-implementation review remain later batches of the [plan](MODULAR-MONOLITH-PLAN.md).
+Batch 3 adds optional backlog snapshots, worker telemetry, remaining recovery tests,
+and bounded idle/burst observations; see [worker evidence](WORKER-EVIDENCE.md).
+Final engineering/protocol implementation review and targeted mutation testing
+remain batch 4 of the [plan](MODULAR-MONOLITH-PLAN.md).
 This change does not implement production payment or kitchen work, alter Beckn
 checkout, select hosting, or establish a cloud-cost saving.

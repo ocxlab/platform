@@ -98,7 +98,10 @@ func main() {
 			slog.Error("invalid publisher configuration")
 			os.Exit(1)
 		}
-		worker := work.Worker{Store: work.SQLStore{DB: db}, Wake: work.PostgresWake{DSN: os.Getenv("OCP_DATABASE_URL"), Domains: enabled.Enabled()}, SafetyInterval: *workSafety, Domains: enabled.Enabled(), Handlers: map[string]work.Handler{"food/catalog.publish": publisher.Deliver}, Concurrency: 2, Observer: signals.Observer}
+		worker := work.Worker{Store: work.SQLStore{DB: db}, Wake: work.PostgresWake{DSN: os.Getenv("OCP_DATABASE_URL"), Domains: enabled.Enabled(), Observer: signals.Observer}, SafetyInterval: *workSafety, Domains: enabled.Enabled(), Handlers: map[string]work.Handler{"food/catalog.publish": publisher.Deliver}, Concurrency: 2, Observer: signals.Observer}
+		if config.Exporter != "none" {
+			worker.Stats = work.SQLStore{DB: db}
+		}
 		workerCtx, stopWorker := context.WithCancel(ctx)
 		defer stopWorker()
 		workerDone := make(chan error, 1)

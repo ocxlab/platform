@@ -28,6 +28,11 @@ type Observer struct {
 	toolActive     metric.Int64UpDownCounter
 	effects        metric.Int64Counter
 	effectDuration metric.Float64Histogram
+	workEvents     metric.Int64Counter
+	workClaimed    metric.Int64Counter
+	workRetry      metric.Float64Histogram
+	workBacklog    metric.Int64Gauge
+	workAge        metric.Float64Gauge
 }
 
 func NewObserver(tp trace.TracerProvider, mp metric.MeterProvider, logger *slog.Logger) (*Observer, error) {
@@ -65,7 +70,27 @@ func NewObserver(tp trace.TracerProvider, mp metric.MeterProvider, logger *slog.
 	if err != nil {
 		return nil, err
 	}
-	return &Observer{tracer: tp.Tracer("ocp.local/platform/provider"), duration: duration, requests: requests, active: active, logger: logger, toolCalls: toolCalls, toolDuration: toolDuration, toolActive: toolActive, effects: effects, effectDuration: effectDuration}, nil
+	workEvents, err := meter.Int64Counter("ocp.work.scheduler.events")
+	if err != nil {
+		return nil, err
+	}
+	workClaimed, err := meter.Int64Counter("ocp.work.claimed")
+	if err != nil {
+		return nil, err
+	}
+	workRetry, err := meter.Float64Histogram("ocp.work.retry.delay", metric.WithUnit("s"))
+	if err != nil {
+		return nil, err
+	}
+	workBacklog, err := meter.Int64Gauge("ocp.work.backlog", metric.WithUnit("{effect}"))
+	if err != nil {
+		return nil, err
+	}
+	workAge, err := meter.Float64Gauge("ocp.work.pending.age", metric.WithUnit("s"))
+	if err != nil {
+		return nil, err
+	}
+	return &Observer{tracer: tp.Tracer("ocp.local/platform/provider"), duration: duration, requests: requests, active: active, logger: logger, toolCalls: toolCalls, toolDuration: toolDuration, toolActive: toolActive, effects: effects, effectDuration: effectDuration, workEvents: workEvents, workClaimed: workClaimed, workRetry: workRetry, workBacklog: workBacklog, workAge: workAge}, nil
 }
 
 // HTTP receives only a route template and operation name from our contract

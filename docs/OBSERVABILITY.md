@@ -45,6 +45,13 @@ implementation of every OTel environment configuration option.
 | `ocp.mcp.tool.calls` | Merchant tool invocation attempts | Fixed surface, allowlisted tool, outcome, and allowlisted error code |
 | `ocp.mcp.tool.duration` | Merchant tool invocation duration, seconds | Same bounded tool dimensions |
 | `ocp.mcp.tool.active` | Merchant tool invocations currently in progress | Fixed surface and allowlisted tool |
+| `ocp.work.attempts` | Finished catalog-work attempts | Installed domain/kind and bounded outcome |
+| `ocp.work.attempt.duration` | Handler plus completion bookkeeping, seconds | Same work dimensions |
+| `ocp.work.scheduler.events` | Listener, wake, drain, failure, and shutdown events | Closed event vocabulary |
+| `ocp.work.claimed` | Claimed effects | Whether this is a repeated attempt |
+| `ocp.work.retry.delay` | Persisted retry delay, seconds | No dimensions |
+| `ocp.work.backlog` | Sampled pending, delayed, leased, expired, and failed totals | Domain and bounded state |
+| `ocp.work.pending.age` | Oldest pending effect's age, seconds | Domain |
 
 `ocp.*` names are application-specific; they are not represented as standard MCP
 conventions. Unknown paths share `unmatched`, and unknown methods share `_OTHER`.
@@ -88,6 +95,15 @@ No collector, Grafana LGTM stack, telemetry database, or administration endpoint
 was added. The [management plan](OBSERVABILITY-AND-MCP-OPERATIONS.md) defines the
 future MCPs tab and bounded retained summaries. Operational telemetry is not the
 business/security audit or merchant commercial analytics.
+
+The catalog worker also emits attempt spans and scheduler signals. Database
+snapshots run only when export is enabled, on a drain at most once per minute,
+with a two-second timeout. They expose aggregates, not effect records. Repeated
+claims include retries and recovered leases; they are not an exact recovery count.
+Backlog gauges overlap (`delayed` within `pending`, `expired` within `leased`) and
+must not be summed across replicas. Snapshot failures leave stale values; long
+safety intervals also reduce freshness. See [worker evidence](WORKER-EVIDENCE.md)
+for age migration semantics, tests, and local measurements.
 
 The OTel API, SDK, and HTTP exporters are pinned to `v1.47.0` in `go.mod` and
 `go.sum`. Their downloaded module LICENSE files identify Apache License 2.0.

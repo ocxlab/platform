@@ -113,6 +113,13 @@ tasks:
       - '{{.COMPOSE}} up --detach --wait test-db'
       - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable -e OCP_TEST_API_BINARY=/tmp/ocp-api -e OCP_TEST_UCP_SOURCE=true tools sh -ec ''go build -o /tmp/ocp-api ./cmd/api; go test -race -count=1 ./tests/integration -run "TestInternal|TestDomainProcess|TestWorkerProcess|TestServiceProcess" -v'''
 
+  test:work-observations:
+    desc: Observe local worker idle cadence and a bounded burst against the old ticker cadence
+    deps: [generate:go]
+    cmds:
+      - '{{.COMPOSE}} up --detach --wait test-db'
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable -e OCP_TEST_WORK_OBSERVATIONS=true tools go test -race -count=1 -run TestWorkSchedulingObservations -v ./tests/integration'
+
   services:dev:
     desc: Start optional separate core and Food API processes on ports 18182 and 18183
     cmds:

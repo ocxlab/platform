@@ -12,7 +12,17 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
+
+func TestRuntimeResourceSeparatesReplicaStreams(t *testing.T) {
+	first, second := runtimeResource(), runtimeResource()
+	a, ok := first.Set().Value(attribute.Key("service.instance.id"))
+	b, other := second.Set().Value(attribute.Key("service.instance.id"))
+	if !ok || !other || a.AsString() == "" || a.AsString() == b.AsString() {
+		t.Fatal("replicas share a telemetry stream identity")
+	}
+}
 
 func TestConfigValidatesSafeDefaultsAndInvalidValues(t *testing.T) {
 	config, err := ConfigFromEnv(func(string) string { return "" })

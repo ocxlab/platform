@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"ocp.local/platform/internal/core/capability"
+	"ocp.local/platform/internal/infra/telemetry"
 )
 
 type WakeSignal string
@@ -22,14 +23,17 @@ type WakeSource interface {
 }
 
 type PostgresWake struct {
-	DSN     string
-	Domains []capability.Domain
+	DSN      string
+	Domains  []capability.Domain
+	Observer *telemetry.Observer
 }
 
-func signalWake(out chan<- WakeSignal, signal WakeSignal) {
+func signalWake(out chan<- WakeSignal, signal WakeSignal) bool {
 	select {
 	case out <- signal:
+		return true
 	default:
+		return false
 	}
 }
 
@@ -53,10 +57,12 @@ func (p PostgresWake) Run(ctx context.Context, out chan<- WakeSignal) error {
 }
 
 func (p PostgresWake) listen(ctx context.Context, out chan<- WakeSignal) bool {
+	p.Observer.WorkEvent(ctx, "listen_attempt")
 	connect, cancel := context.WithTimeout(ctx, 5*time.Second)
 	config, err := pgx.ParseConfig(p.DSN)
 	if err != nil {
 		cancel()
+		p.Observer.WorkEvent(ctx, "listen_failure")
 		return false
 	}
 	config.RuntimeParams["application_name"] = "ocp-work-wake"
@@ -73,19 +79,34 @@ func (p PostgresWake) listen(ctx context.Context, out chan<- WakeSignal) bool {
 		}()
 	}
 	if err != nil {
+		p.Observer.WorkEvent(ctx, "listen_failure")
 		return false
 	}
-	signalWake(out, Listening)
+	p.Observer.WorkEvent(ctx, "listening")
+	if !signalWake(out, Listening) {
+		p.Observer.WorkEvent(ctx, "coalesced")
+	}
 	for {
 		notification, err := conn.WaitForNotification(ctx)
 		if err != nil {
+			if ctx.Err() == nil {
+				p.Observer.WorkEvent(ctx, "disconnected")
+			}
 			return true
 		}
+		matched := false
 		for _, domain := range p.Domains {
 			if notification.Payload == string(domain) {
-				signalWake(out, Changed)
+				matched = true
+				p.Observer.WorkEvent(ctx, "notification")
+				if !signalWake(out, Changed) {
+					p.Observer.WorkEvent(ctx, "coalesced")
+				}
 				break
 			}
+		}
+		if !matched {
+			p.Observer.WorkEvent(ctx, "ignored_notification")
 		}
 	}
 }

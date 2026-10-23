@@ -19,3 +19,7 @@ SELECT runtime.finish_effect($1,$2,$3,$4,sqlc.arg(retry_seconds)::bigint::intege
 
 -- name: NextEffectDelay :one
 SELECT runtime.next_effect_delay(ARRAY(SELECT jsonb_array_elements_text(sqlc.arg(domains_json)::jsonb)))::double precision AS seconds;
+
+-- name: WorkSnapshot :many
+SELECT domain::text,state::text,amount::bigint,oldest_seconds::double precision
+FROM runtime.work_snapshot(ARRAY(SELECT jsonb_array_elements_text(sqlc.arg(domains_json)::jsonb)));

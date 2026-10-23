@@ -22,6 +22,7 @@ type Worker struct {
 	Handlers       map[string]Handler
 	Concurrency    int
 	Observer       *telemetry.Observer
+	Stats          StatsSource
 }
 
 func (w Worker) validate() error {
@@ -49,10 +50,15 @@ func (w Worker) Once(ctx context.Context) (int, error) {
 	}
 	effects, err := w.Store.Claim(ctx, w.Domains, w.Concurrency, 30*time.Second)
 	if err != nil {
+		w.Observer.WorkEvent(ctx, "claim_failure")
 		return 0, err
+	}
+	if len(effects) == 0 {
+		w.Observer.WorkEvent(ctx, "empty_claim")
 	}
 	results := make(chan error, len(effects))
 	for _, effect := range effects {
+		w.Observer.WorkClaim(ctx, effect.Attempts > 1)
 		go func(e workmodel.Effect) {
 			attemptCtx := ctx
 			finishSignal := func(string) {}
@@ -83,9 +89,15 @@ func (w Worker) Once(ctx context.Context) (int, error) {
 			outcome := "completed"
 			if attempt != nil {
 				outcome = "retry"
+				if e.Attempts >= 20 || retry == 0 {
+					outcome = "failed"
+				}
 			}
 			if err != nil {
 				outcome = "lease_or_storage_failure"
+			}
+			if outcome == "retry" {
+				w.Observer.WorkRetry(finish, retry)
 			}
 			finishSignal(outcome)
 			results <- err

@@ -23,3 +23,11 @@ type Effect struct {
 	Attempts   int
 	LeaseUntil time.Time
 }
+
+// Stats contains domain aggregates only; it never exposes private work records.
+type Stats struct {
+	Domain        capability.Domain
+	State         string
+	Count         int64
+	OldestSeconds float64
+}

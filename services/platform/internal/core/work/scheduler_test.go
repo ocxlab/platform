@@ -4,22 +4,25 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/core/capability"
 	"ocp.local/platform/internal/core/workmodel"
+	"ocp.local/platform/internal/infra/telemetry"
 )
 
 type fakeStore struct {
-	mu         sync.Mutex
-	claims     int
-	schedules  int
-	remaining  int
-	delay      *time.Duration
-	finish     func(context.Context, workmodel.Effect, bool, time.Duration) (bool, error)
-	claimError error
+	mu            sync.Mutex
+	claims        int
+	schedules     int
+	remaining     int
+	delay         *time.Duration
+	finish        func(context.Context, workmodel.Effect, bool, time.Duration) (bool, error)
+	claimError    error
+	scheduleError error
 }
 
 func (s *fakeStore) Claim(ctx context.Context, domains []capability.Domain, batch int, lease time.Duration) ([]workmodel.Effect, error) {
@@ -46,7 +49,7 @@ func (s *fakeStore) NextDelay(context.Context, []capability.Domain) (*time.Durat
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.schedules++
-	return s.delay, nil
+	return s.delay, s.scheduleError
 }
 func (s *fakeStore) counts() (int, int) {
 	s.mu.Lock()
@@ -223,5 +226,94 @@ func TestSchedulerRecoversStoreError(t *testing.T) {
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatal(err)
+	}
+}
+
+type stoppedWake struct{}
+
+func (stoppedWake) Run(context.Context, chan<- WakeSignal) error { return errors.New("stopped") }
+func TestUnexpectedWakeExitStopsWorker(t *testing.T) {
+	w := testWorker(&fakeStore{}, stoppedWake{})
+	if err := w.Run(context.Background()); err == nil {
+		t.Fatal("wake exit hidden")
+	}
+}
+func TestWakeCancellationInterruptsReconnectBackoff(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- (PostgresWake{DSN: "not a valid DSN"}).Run(ctx, make(chan WakeSignal, 1)) }()
+	time.Sleep(20 * time.Millisecond)
+	cancel()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(400 * time.Millisecond):
+		t.Fatal("backoff blocked cancellation")
+	}
+}
+func TestSchedulerRecoversScheduleError(t *testing.T) {
+	store := &fakeStore{scheduleError: errors.New("temporary schedule failure")}
+	wake := fakeWake{make(chan WakeSignal, 1)}
+	wake.input <- Listening
+	w := testWorker(store, wake)
+	w.SafetyInterval = 100 * time.Millisecond
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- w.Run(ctx) }()
+	waitFor(t, func() bool { _, s := store.counts(); return s >= 1 })
+	store.mu.Lock()
+	store.scheduleError = nil
+	store.mu.Unlock()
+	waitFor(t, func() bool { _, s := store.counts(); return s >= 2 })
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+}
+
+type failingStats struct{ calls atomic.Int32 }
+
+func (s *failingStats) Snapshot(context.Context, []capability.Domain) ([]workmodel.Stats, error) {
+	s.calls.Add(1)
+	return nil, errors.New("private-storage-error")
+}
+func TestStatsFailureIsOptionalAndRateLimited(t *testing.T) {
+	runtime, err := telemetry.New(context.Background(), telemetry.Config{Exporter: "none"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := runtime.Shutdown(context.Background()); err != nil {
+			t.Error(err)
+		}
+	}()
+	stats := &failingStats{}
+	store := &fakeStore{remaining: 1}
+	wake := fakeWake{make(chan WakeSignal, 1)}
+	wake.input <- Listening
+	w := testWorker(store, wake)
+	w.SafetyInterval = 100 * time.Millisecond
+	w.Observer = runtime.Observer
+	w.Stats = stats
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- w.Run(ctx) }()
+	waitFor(t, func() bool { _, s := store.counts(); return s >= 3 })
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if stats.calls.Load() != 1 {
+		t.Fatalf("snapshot queried per drain: %d", stats.calls.Load())
+	}
+	store.mu.Lock()
+	remaining := store.remaining
+	store.mu.Unlock()
+	if remaining != 0 {
+		t.Fatal("snapshot failure blocked durable work")
 	}
 }

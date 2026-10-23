@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -58,11 +59,17 @@ type Runtime struct {
 	metrics  *metric.MeterProvider
 }
 
+func runtimeResource() *resource.Resource {
+	// Technical replica identity, never a merchant/customer identifier. Without
+	// this, multiple workers would export indistinguishable backlog gauge streams.
+	return resource.NewSchemaless(attribute.String("service.name", "ocp-provider"), attribute.String("service.instance.id", uuid.NewString()))
+}
+
 func New(ctx context.Context, c Config, logger *slog.Logger) (*Runtime, error) {
 	if err := c.validate(); err != nil {
 		return nil, err
 	}
-	res := resource.NewSchemaless(attribute.String("service.name", "ocp-provider"))
+	res := runtimeResource()
 	traceOptions := []trace.TracerProviderOption{trace.WithResource(res), trace.WithSampler(trace.NeverSample())}
 	metricOptions := []metric.Option{metric.WithResource(res), metric.WithCardinalityLimit(1000)}
 	if c.Exporter == "otlp-http" {

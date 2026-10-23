@@ -50,11 +50,14 @@ func (w Worker) Run(ctx context.Context) error {
 	timer := time.NewTimer(safety)
 	defer timer.Stop()
 	lastDrain := time.Time{}
+	lastStats := time.Time{}
+	defer w.Observer.WorkEvent(context.WithoutCancel(ctx), "shutdown")
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case err := <-listenerDone:
+			w.Observer.WorkEvent(ctx, "wake_stopped")
 			listenerStopped = true
 			if ctx.Err() != nil {
 				return nil
@@ -64,7 +67,9 @@ func (w Worker) Run(ctx context.Context) error {
 			}
 			return err
 		case <-wakes:
+			w.Observer.WorkEvent(ctx, "drain_wake")
 		case <-timer.C:
+			w.Observer.WorkEvent(ctx, "drain_timer")
 		}
 		// Coalesce notification storms without issuing a query per hint.
 		if delay := time.Until(lastDrain.Add(minDrainInterval)); delay > 0 {
@@ -80,6 +85,10 @@ func (w Worker) Run(ctx context.Context) error {
 			return nil
 		}
 		lastDrain = time.Now()
+		if w.Stats != nil && w.Observer != nil && time.Since(lastStats) >= time.Minute {
+			lastStats = time.Now()
+			w.recordStats(ctx)
+		}
 		// Never monopolize a worker loop with an unlimited backlog.
 		var drainErr error
 		for range 8 {
@@ -104,6 +113,7 @@ func (w Worker) Run(ctx context.Context) error {
 			return nil
 		}
 		if err != nil {
+			w.Observer.WorkEvent(ctx, "schedule_failure")
 			timer.Reset(min(safety, 5*time.Second))
 			continue
 		}
