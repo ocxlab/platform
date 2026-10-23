@@ -1,5 +1,46 @@
 # Development status
 
+## Notification-driven catalog worker
+
+23 October 2026. Batch 2 replaces the worker's one-second ticker with a dedicated
+PostgreSQL listener, coalesced Go wake hints, retry/lease timers, and a configurable
+one-minute safety scan. Durable intent remains transactional in PostgreSQL; the
+notification contains only a domain name. Startup and reconnect establish LISTEN
+before the normal scan. Draining, concurrency, reconnect backoff, and shutdown
+cleanup are bounded. No broker, browser polling, or additional runtime deployment
+was added; existing SSE is unchanged.
+
+The worker now depends on small Store/WakeSource contracts and an owned effect
+model. Migration 19 adds transactional wake signaling and a restricted,
+domain-scoped next-deadline function. The inventory now covers 104 named SQL inputs,
+32 tables, 16 functions, and the same eleven foreign-access exceptions. The
+pgschema draft was reviewed: it omitted function ownership, which the final
+migration assigns explicitly. All eighteen historical migrations are unchanged.
+Migration-workflow fixtures now calculate the next migration version dynamically.
+
+Focused race tests passed for scheduler coalescing, listener-before-scan behavior,
+safety/deadline recovery, bounded backlog draining, cancellation-safe cleanup,
+commit/rollback signaling, schedule ACLs, retries without another insert,
+dead-peer leases, exhausted attempts, earlier deadlines, two workers, reconnect
+gaps, and upgrade of existing intent. The full PostgreSQL integration run passed
+in 60.243 seconds. Separate-process tests passed in 24.355 seconds, including an
+actual worker process killed after a synthetic receiver accepted its request;
+restart retained the catalog identity and completed the intent. Pinned UCP source
+schema checks passed in that suite; this is not a new conformance certification.
+The combined development API smoke check passed, migration 19 is applied, and
+development data was preserved. Disposable test databases are stopped.
+
+Full `task check` passed: generation/reproducibility guards, Spectral, migration
+draft/replay tooling tests, Squawk, unchanged historical hashes, zero Go lint
+issues, vet/race, PostgreSQL integration, 94 frontend tests, zero Svelte diagnostics,
+and API/web image builds. Generated artifacts remain untracked.
+
+Implementation details and remaining work: [Notification-driven catalog work](NOTIFICATION-DRIVEN-WORK.md).
+Observability extensions and idle/burst measurements remain batch 3; final
+engineering/protocol implementation review and targeted mutation work remain
+batch 4. No new native ONIX, browser, mutation, or independent-review run is
+claimed here. Production payment and kitchen work are not added by this scheduler.
+
 ## Module ownership safeguards
 
 23 October 2026. Batch 1 of the modular-monolith plan is verified. The
@@ -28,8 +69,8 @@ and deployment composition are unchanged; development data was not reset.
 No new smoke, native ONIX, browser, mutation, or independent reviewer run is claimed.
 The final engineering/protocol implementation reviews remain in batch 4.
 
-Batch 2 is next: notification-driven catalog scheduling with durable retry/lease
-timers and a safety scan. The worker still uses its one-second ticker today.
+Batch 2 subsequently implements notification-driven catalog scheduling with
+durable retry/lease timers and a safety scan, as recorded above.
 OpenAPI remains the HTTP contract; AsyncAPI adoption is deferred in favor of
 reusable message schemas when message changes are implemented.
 
@@ -40,9 +81,9 @@ explicit ownership and boundary guards, Go-channel wake hints, PostgreSQL-backed
 notification-driven durable work with retry/lease timers and a recovery scan,
 observability, failure tests, and final regression/technical review. Existing SSE
 is retained; no mandatory Watermill, Redis, or additional deployment is planned.
-The plan is not an implementation completion claim. The current catalog worker
-still uses its one-second ticker; ownership safeguards are now recorded above,
-while scheduling changes remain to be executed. Subsequent API/MCP, administration, and Beckn work remain
+The plan is not an implementation completion claim. Batches 1–2 are now recorded
+above; observability, measurements, and final implementation review remain pending.
+Subsequent API/MCP, administration, and Beckn work remain
 queued rather than silently replaced by infrastructure work.
 
 ## Commands grouped by purpose

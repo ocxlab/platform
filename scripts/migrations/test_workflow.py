@@ -76,6 +76,10 @@ class LintTests(unittest.TestCase):
 
 
 class RoundTripTests(unittest.TestCase):
+    def next_migration(self, folder, name):
+        version = max(int(path.name.split('_', 1)[0]) for path in folder.glob('*.sql')) + 1
+        return folder / f'{version:05d}_{name}.sql'
+
     def test_clean_replay_noop_and_generated_column(self):
         with w.replay() as (base, planner), tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
@@ -106,7 +110,7 @@ class RoundTripTests(unittest.TestCase):
                 # Review adds explicit scope/timeouts and Goose metadata.
                 reviewed = folder / 'reviewed'
                 shutil.copytree(w.MIGRATIONS, reviewed)
-                migration = reviewed / '00019_review.sql'
+                migration = self.next_migration(reviewed, 'review')
                 migration.write_text("-- +goose Up\nSET LOCAL lock_timeout='2s';\nSET LOCAL statement_timeout='2min';\nSET LOCAL search_path=commerce,pg_catalog,public;\n" + draft)
                 w.run(['migration-replay', str(reviewed)], env={**w.os.environ,
                     'MIGRATION_REPLAY_URL': f'postgres://{w.USER}:{w.PASSWORD}@{w.HOST}/{base}?sslmode=disable'})
@@ -129,7 +133,7 @@ class RoundTripTests(unittest.TestCase):
             self.assertIn('CONCURRENTLY', draft)
             reviewed = folder / 'reviewed'
             shutil.copytree(w.MIGRATIONS, reviewed)
-            (reviewed / '00019_index.sql').write_text('-- +goose NO TRANSACTION\n-- +goose Up\n' +
+            self.next_migration(reviewed, 'index').write_text('-- +goose NO TRANSACTION\n-- +goose Up\n' +
                 "SET lock_timeout='2s';\nSET statement_timeout='2min';\nSET search_path=commerce,pg_catalog,public;\n" + draft)
             env = {**w.os.environ, 'MIGRATION_REPLAY_URL':
                    f'postgres://{w.USER}:{w.PASSWORD}@{w.HOST}/{base}?sslmode=disable'}

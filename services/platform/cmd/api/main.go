@@ -30,6 +30,7 @@ func main() {
 	listen := flag.String("listen", ":8080", "HTTP listen address")
 	role := flag.String("role", "public", "Process role: public, internal, or worker")
 	service := flag.String("service", "", "Service composition: combined, core, food, shopping, or lodging")
+	workSafety := flag.Duration("work-recovery-interval", time.Minute, "Durable worker safety scan interval (100ms–1h)")
 	check := flag.Bool("healthcheck", false, "check the local API process and exit")
 	flag.Parse()
 	process, err := runtimeconfig.Resolve(*service, *role, os.Getenv("OCP_ENABLED_DOMAINS"))
@@ -97,18 +98,36 @@ func main() {
 			slog.Error("invalid publisher configuration")
 			os.Exit(1)
 		}
-		worker := work.Worker{DB: db, Domains: enabled.Enabled(), Handlers: map[string]work.Handler{"food/catalog.publish": publisher.Deliver}, Concurrency: 2, Observer: signals.Observer}
-		result := make(chan error, 1)
-		go func() { result <- worker.Run(ctx) }()
+		worker := work.Worker{Store: work.SQLStore{DB: db}, Wake: work.PostgresWake{DSN: os.Getenv("OCP_DATABASE_URL"), Domains: enabled.Enabled()}, SafetyInterval: *workSafety, Domains: enabled.Enabled(), Handlers: map[string]work.Handler{"food/catalog.publish": publisher.Deliver}, Concurrency: 2, Observer: signals.Observer}
+		workerCtx, stopWorker := context.WithCancel(ctx)
+		defer stopWorker()
+		workerDone := make(chan error, 1)
+		go func() { workerDone <- worker.Run(workerCtx) }()
 		mux := http.NewServeMux()
 		mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"status":"live"}`))
 		})
-		go func() { result <- serve(ctx, *listen, mux) }()
+		healthDone := make(chan error, 1)
+		go func() { healthDone <- serve(workerCtx, *listen, mux) }()
 		select {
-		case err = <-result:
+		case err = <-workerDone:
+			stopWorker()
+		case err = <-healthDone:
+			stopWorker()
+			select {
+			case workerErr := <-workerDone:
+				err = errors.Join(err, workerErr)
+			case <-time.After(15 * time.Second):
+				slog.Warn("worker cleanup timed out")
+			}
 		case <-ctx.Done():
+			select {
+			case workerErr := <-workerDone:
+				err = errors.Join(err, workerErr)
+			case <-time.After(15 * time.Second):
+				slog.Warn("worker cleanup timed out")
+			}
 		}
 		if err != nil {
 			slog.Error("worker stopped")

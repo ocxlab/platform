@@ -22,6 +22,7 @@
     "commerce.admin_stores": "core", "commerce.admin_orders": "core",
     "commerce.notify_food_order_change": "food", "commerce.notify_public_offering_change": "core",
     "runtime.claim_effects": "core", "runtime.finish_effect": "core",
+    "runtime.notify_work_change": "core", "runtime.next_effect_delay": "core",
     "discovery.accept_catalog": "discovery", "commerce_internal.lookup_grant": "core"
   },
   "exceptions": [

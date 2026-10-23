@@ -319,7 +319,7 @@ func serve(ctx context.Context) error {
 			return err
 		}
 		publisher := networkcatalog.Publisher{Endpoint: "http://onix-" + p.Name + ":8080/catalog/publish", Bindings: map[uuid.UUID]networkcatalog.Binding{p.Binding.StoreID: p.Binding}, PrivateKey: ed25519.PrivateKey(private)}
-		worker := work.Worker{DB: app, Domains: []capability.Domain{capability.Food}, Handlers: map[string]work.Handler{"food/catalog.publish": publisher.Deliver}, Concurrency: 2}
+		worker := work.Worker{Store: work.SQLStore{DB: app}, Domains: []capability.Domain{capability.Food}, Handlers: map[string]work.Handler{"food/catalog.publish": publisher.Deliver}, Concurrency: 2}
 		go func() { result <- worker.Run(ctx) }()
 	}
 	for _, server := range servers {

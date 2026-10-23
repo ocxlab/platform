@@ -13,22 +13,10 @@ import (
 	"ocp.local/platform/internal/core/capability"
 	"ocp.local/platform/internal/core/offering"
 	"ocp.local/platform/internal/core/persistence/sqlgen"
+	"ocp.local/platform/internal/core/workmodel"
 )
 
-type Effect struct {
-	ID         uuid.UUID
-	MerchantID uuid.UUID
-	StoreID    uuid.UUID
-	Domain     capability.Domain
-	Kind       string
-	SubjectID  uuid.UUID
-	Key        string
-	Payload    json.RawMessage
-	Token      uuid.UUID
-	Generation int64
-	Attempts   int
-	LeaseUntil time.Time
-}
+type Effect = workmodel.Effect
 
 // SupportedEffect is extended only alongside an owned handler and its contract.
 func SupportedEffect(domain capability.Domain, kind string) bool {

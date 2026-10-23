@@ -1,6 +1,6 @@
 # Modular monolith and notification-driven work
 
-23 October 2026. Status: batch 1 verified; batches 2–4 pending. This plan turns the engineering,
+23 October 2026. Status: batches 1–2 verified; batches 3–4 pending. This plan turns the engineering,
 protocol, and Astra design reviews into bounded implementation batches. Review
 record: sibling `ocp-lab/runs/notification-driven-work-review.md`.
 
@@ -54,22 +54,22 @@ unchanged. Do not split databases or introduce remote calls.
 
 ## Batch 2: Notification-driven durable worker
 
-- [ ] Separate durable enqueue/claim/finish/scheduling operations from a small
+- [x] Separate durable enqueue/claim/finish/scheduling operations from a small
   wake-source adapter; inject time/wake dependencies where useful for tests.
-- [ ] Add a new Goose migration for transactional wake signaling. Preserve the
+- [x] Add a new Goose migration for transactional wake signaling. Preserve the
   historical migrations; use the established schema/draft/lint workflow.
   Payloads contain only a minimal wake/domain hint, not private commerce records.
-- [ ] Add a dedicated PostgreSQL listener, bounded coalescing Go wake channel,
+- [x] Add a dedicated PostgreSQL listener, bounded coalescing Go wake channel,
   reconnect handling, and cancellation. Establish LISTEN before scanning after
   startup and reconnection.
-- [ ] Replace the one-second idle ticker with bounded draining on startup/wake,
+- [x] Replace the one-second idle ticker with bounded draining on startup/wake,
   earliest-due retry/lease timers, and an infrequent configurable safety scan.
   Query the schedule through sqlc, with domain-scoped privileged access as needed;
   ordinary callers must not gain cross-tenant data access.
-- [ ] Cover changes to the next due time, coalesced signals, peer claims, dead-peer
+- [x] Cover changes to the next due time, coalesced signals, peer claims, dead-peer
   lease expiry, exhausted attempts, listener failure, and an always-busy backlog.
   Avoid past-due timer spin and unbounded notification-triggered queries.
-- [ ] Preserve stable effect IDs, bounded concurrency, retry limits, lease fencing,
+- [x] Preserve stable effect IDs, bounded concurrency, retry limits, lease fencing,
   and external calls outside SQL transactions. Stop claiming during shutdown and
   allow bounded cleanup; unfinished leases remain recoverable.
 
@@ -77,6 +77,10 @@ Exit: normal idle operation no longer issues a one-second claim query. Committed
 work remains recoverable without receiving its original notification. Existing
 `food/catalog.publish` is the only effect kind in this batch; payment/kitchen
 workflows are not implemented by generalizing the worker.
+
+Implementation and focused evidence: [Notification-driven catalog work](NOTIFICATION-DRIVEN-WORK.md).
+The batch 2 tests already exercise several batch 3 recovery scenarios; that does
+not complete its observability, measurement, and remaining failure-test work.
 
 ## Batch 3: Observability and failure tests
 

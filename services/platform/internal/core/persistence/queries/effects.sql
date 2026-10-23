@@ -16,3 +16,6 @@ FROM runtime.claim_effects(ARRAY(SELECT jsonb_array_elements_text(sqlc.arg(domai
 
 -- name: FinishEffect :one
 SELECT runtime.finish_effect($1,$2,$3,$4,sqlc.arg(retry_seconds)::bigint::integer)::boolean AS done;
+
+-- name: NextEffectDelay :one
+SELECT runtime.next_effect_delay(ARRAY(SELECT jsonb_array_elements_text(sqlc.arg(domains_json)::jsonb)))::double precision AS seconds;

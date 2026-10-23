@@ -3,14 +3,15 @@
 23 October 2026. This inventory describes the current implementation, not seven
 independent databases. Keeping modules in one process is inexpensive; extracting
 one later requires preserving the decisions currently protected by shared SQL
-transactions. This batch changes guards and documentation, not runtime behavior.
+transactions. The inventory accompanies the ownership guards and the subsequent
+notification-driven worker change.
 
 ## Data ownership
 
 The executable inventory is
 [`ownership.json`](../services/platform/tests/architecture/ownership.json).
-It declares logical owners for 32 tables and 14 functions and eleven query-specific
-foreign-access exceptions across the 103 named SQL inputs. PostgreSQL schema names are historical
+It declares logical owners for 32 tables and 16 functions and eleven query-specific
+foreign-access exceptions across the 104 named SQL inputs. PostgreSQL schema names are historical
 storage names, not service boundaries.
 
 | Owner | Owned records | Current application seam |
@@ -84,8 +85,10 @@ Existing `sessionkit.Domain`, `payment.Terms`/`Subject`, and authorized Core
 application operations are useful local seams. They are not all extraction-ready:
 `sessionkit.Domain` and `RecordPayLater` accept SQL transactions; Food uses Core
 principals/results; Discovery delivery consumes Core's persisted `Effect` type.
-No new empty interface is added by this guard-only batch. Batch 2 will introduce
-the worker store/wake seam where scheduling actually changes. A future remote
+The notification-driven worker now uses small `Store` and `WakeSource` interfaces
+and the owned `workmodel.Effect` type. The persistence alias preserves existing
+callers without a duplicate implementation; Discovery's catalog payload still
+depends on Core persistence types. A future remote
 interface should carry authorized business inputs, stable operation identity, and
 an outcome—not SQL transactions or generated persistence rows. Keep the existing
 transaction participants local until their replacement preserves atomic intent.
