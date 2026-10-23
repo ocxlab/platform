@@ -54,9 +54,9 @@ func TestToolDiscoveryAndSchema(t *testing.T) {
 		scopes []string
 		count  int
 	}{
-		{"none", nil, 0}, {"store", []string{"store:read"}, 1}, {"menu", []string{"offering:read"}, 4},
+		{"none", nil, 0}, {"store", []string{"store:read"}, 1}, {"menu", []string{"offering:read"}, 5},
 		{"write_without_read", []string{"offering:write"}, 0},
-		{"full", []string{"store:read", "offering:read", "offering:write"}, 7},
+		{"full", []string{"store:read", "offering:read", "offering:write"}, 9},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
@@ -82,6 +82,33 @@ func TestToolDiscoveryAndSchema(t *testing.T) {
 			for _, tool := range tools.Tools {
 				if tool.InputSchema == nil || tool.Description == "" {
 					t.Fatal("missing contract")
+				}
+				if tool.Name == "save_meal_offer" {
+					wire, err := json.Marshal(tool.InputSchema)
+					if err != nil {
+						t.Fatal(err)
+					}
+					var schema struct {
+						Properties map[string]struct {
+							Properties map[string]struct {
+								Type               any
+								MinItems, MaxItems int
+								UniqueItems        bool
+							}
+						}
+					}
+					if err := json.Unmarshal(wire, &schema); err != nil {
+						t.Fatal(err)
+					}
+					for _, field := range []string{"main_item_ids", "addon_choices"} {
+						array := schema.Properties["offer"].Properties[field]
+						if array.Type != "array" || array.MinItems != 1 || array.MaxItems != 200 || !array.UniqueItems {
+							t.Fatalf("invalid offer schema: %s", wire)
+						}
+					}
+					if schema.Properties["offer"].Properties["translations"].Type != "object" {
+						t.Fatal("translations must reject null")
+					}
 				}
 				if tool.Name == "inspect_item_extras" || tool.Name == "update_item_prices" {
 					field := "groups"

@@ -9,8 +9,10 @@ records inputs, permissions, retries, compact outputs, and errors.
 
 Extras inspection preserves default choices and size-dependent surcharge overrides.
 Focused price edits can change a base surcharge or a named size override without
-replacing the rest of the menu. Meal-offer tools and broader setup/order/account
-intentions remain in the [continuation plan](API-MCP-CONTINUATION.md).
+replacing the rest of the menu. Meal offers have a compact overview/detail read
+and a focused create/update tool, including eligibility, add-on choices, and
+upgrade surcharges. Broader setup/order/account intentions remain in the
+[continuation plan](API-MCP-CONTINUATION.md).
 
 ## Try it locally
 
@@ -18,7 +20,7 @@ Run `task dev`, then `task dev:stores` to find an existing store handle. Obtain 
 one-hour development MCP credential with `task dev:mcp-credential STORE=store-2`
 (substitute your handle). This prints the token explicitly for local use, not to
 ordinary API logs. It covers that store's owning merchant, including their other
-stores, and only the seven current tools. It is not a UI login or REST credential.
+stores, and only the nine current tools. It is not a UI login or REST credential.
 
 Connect your client to `http://127.0.0.1:18180/mcp/merchant`, select Streamable
 HTTP, and supply `Authorization: Bearer <token>`. The Compose stack enables
@@ -90,10 +92,10 @@ match REST paths or compress unrelated actions into a generic dispatcher.
 Here progressive disclosure means **information**: store overview, matching dish
 summaries, one dish's sizes/prices and extras-group summaries, then selected
 groups' options if needed. This is not a requirement for progressive loading of
-tool definitions. Seven tools now cover that read path, draft availability,
-batched dish prices, and field-change review. Menu creation/import, other corrections,
-approval/publication tools, and account workflows
-remain unfinished.
+tool definitions. Nine tools now cover that read path, draft availability,
+batched dish prices, meal-offer inspection/configuration, and field-change review.
+Menu creation/import, other corrections, approval/publication tools, and account
+workflows remain unfinished.
 
 Measure the complete workflow cost—tool schemas, arguments, result size, and
 extra round trips—rather than treating three tools or short responses as proof

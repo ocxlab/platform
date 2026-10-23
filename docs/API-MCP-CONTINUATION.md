@@ -35,6 +35,12 @@ These are logical surfaces, not new mandatory services. Food tools stay in Food;
 account capabilities stay in Core. Reassess endpoint grouping when another commerce
 domain gains tools; do not add empty Shopping/Lodging MCPs now.
 
+The first increment now preserves size-dependent extras and defaults. Meal-offer
+support adds bounded summaries/details and focused create/update commands using
+the same Food model validation and Offering write as REST. Offer deletion, broader
+menu setup, order handling, customer tools, and account tools remain subsequent
+work; completing these two merchant tools does not complete the API/MCP phase.
+
 ## Verification and boundaries
 
 Keep OpenAPI modular, generated artifacts ignored, stable safe error codes, tenant

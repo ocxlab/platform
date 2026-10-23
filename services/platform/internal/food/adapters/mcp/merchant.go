@@ -279,6 +279,7 @@ func (s Merchant) server(p persistence.Principal) *mcp.Server {
 	}
 	s.addMenuDetailTools(server, p)
 	s.addMenuEditTools(server, p)
+	s.addMealOfferTools(server, p)
 	if p.AuthorizesMerchant(p.MerchantID, "offering:read", "offering:write") {
 		mcp.AddTool(server, &mcp.Tool{Name: "set_item_availability", Description: "Save one item's availability in a private menu draft. Requires a reviewed revision and retry key; preserves all other menu fields. Does not change the published menu until the merchant publishes it.", Annotations: &mcp.ToolAnnotations{IdempotentHint: true, DestructiveHint: &closed, OpenWorldHint: &closed}}, func(ctx context.Context, _ *mcp.CallToolRequest, in availabilityInput) (*mcp.CallToolResult, map[string]any, error) {
 			if !p.AuthorizesMerchant(p.MerchantID, "offering:read", "offering:write") {

@@ -278,7 +278,7 @@ tasks:
       - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/mutation-work.sh'
 
   test:mutation:mcp:
-    desc: Mutate merchant price edits and retained diffs in an isolated source copy
+    desc: Mutate merchant price/meal edits, meal reads, and retained diffs in an isolated source copy
     deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/mutation-mcp.sh'

@@ -1,5 +1,36 @@
 # Development status
 
+## API/MCP continuation: meal offers
+
+23 October 2026. Merchant Food MCP now exposes nine tools. The two additions
+are `inspect_meal_offers` (compact summaries or paginated offer details) and
+`save_meal_offer` (explicit creation or focused update of one offer). Configuration
+covers main-dish eligibility, add-on item/variant choices, localized names, and
+upgrade surcharges including zero. Omitted translations remain unchanged; an
+explicit object replaces them. Saves use the existing shared Food validator and
+Offering write, not an alternative agent-only pricing or persistence path.
+
+The HTTP/PostgreSQL MCP tests passed (6.427 seconds), including SDK discovery,
+offer creation/update, replay after newer edits, stable retained reads, stale
+revision and changed-key rejection, invalid references/modifier rules, restricted
+scopes, tenant isolation, unchanged menu items, and no publication. The expanded
+Gremlins task killed 139 exercised mutations with zero survivors and 38 uncovered
+schema/HTTP/database-path expressions; see [scope and limits](MUTATION-TESTING.md).
+Full `task check` passed: source-only generation checks, Spectral, sqlc,
+migration-tooling/Squawk checks, zero Go lint issues, vet and race tests,
+PostgreSQL integration (96.631 seconds), 94 frontend tests, zero Svelte
+diagnostics, and API/web builds. `task smoke` passed its liveness,
+database-backed credential-rejection, and SQL checks; those are not end-to-end
+commerce/network/payment readiness. The local API was rebuilt/restarted without
+resetting development data. Disposable test databases are stopped. Generated
+outputs remain ignored and untracked.
+
+No new REST model, database migration, frontend dependency, live payment, or
+external model call is introduced. Offer deletion and broader merchant/customer
+and Core account workflows remain in the [continuation plan](API-MCP-CONTINUATION.md).
+Public OAuth and the retained model-driven evaluation are still pending. This
+increment has not had a new external-client Inspector, browser, or dual-agent review.
+
 ## MCP evaluation acceptance criterion
 
 23 October 2026. The [continuation plan](API-MCP-CONTINUATION.md#retained-mcp-evaluation-before-handoff)

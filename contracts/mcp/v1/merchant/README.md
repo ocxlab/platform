@@ -1,8 +1,9 @@
 # Merchant tool contract
 
 The merchant MCP helps owners find a managed store, inspect its menu, change
-availability and prices in a private draft, and review retained changes. It is an intention-oriented
-interface, not an export of every REST operation. Publication remains a separate
+availability, prices, and meal offers in a private draft, and review retained
+changes. It is an intention-oriented interface, not an export of every REST
+operation. Publication remains a separate
 merchant workspace action, so an agent's draft edit cannot change the live menu.
 
 The endpoint is `/mcp/merchant`. Its local implementation uses the released Go
@@ -20,6 +21,8 @@ resource server. See [setup and boundaries](../../../../docs/MCP.md).
 | `set_item_availability` | `offering:read`, `offering:write` | `store`, exact `item` ID, boolean `available`, positive `expected_revision`, `request_key` | Saved draft revision, item availability, replay flag, and next action; no full menu echo |
 | `update_item_prices` | `offering:read`, `offering:write` | `store`, exact `item`, positive `expected_revision`, `request_key`, and 1–20 distinct `changes` | Base and saved draft revisions, replay flag, and next action; no menu echo |
 | `review_menu_changes` | `offering:read` | `store`, positive `from_revision` and `to_revision` at or after it; optional `offset` | Up to 20 before/after field changes, total count, explicit revision pair, and optional `next_offset` |
+| `inspect_meal_offers` | `offering:read` | `store`; optional exact main `item` filter or exact `offer` detail selector; `revision` and `offset` | Up to 20 offer summaries, or one offer's terms and up to 20 named add-on choices with draft availability; optional `next_offset` |
+| `save_meal_offer` | `offering:read`, `offering:write` | `store`, positive `expected_revision`, `request_key`, complete `offer`; explicit `create: true` for a new ID | Base and saved draft revisions, offer ID, replay flag, and review instruction; no menu echo |
 
 Scopes are checked in discovery and invocation. Every HTTP request authenticates
 the grant again, including expiry and revocation. Store handles select records;
@@ -31,6 +34,8 @@ The schema-authoring source is the typed inputs in
 and its [menu detail inputs](../../../../services/platform/internal/food/adapters/mcp/menu_details.go).
 Focused edits and comparison inputs are in
 [`menu_edits.go`](../../../../services/platform/internal/food/adapters/mcp/menu_edits.go).
+Meal-offer inputs and projections are in
+[`meal_offers.go`](../../../../services/platform/internal/food/adapters/mcp/meal_offers.go).
 The pinned SDK derives and validates JSON Schemas, exposed by `tools/list`.
 The extras input uses a narrow schema refinement to advertise a non-null array;
 field definitions and descriptions still derive from its typed input.
@@ -113,6 +118,35 @@ pages before judging the complete difference. No review call records human
 approval, changes publication, or certifies readiness. The merchant workspace
 remains the publication surface, with its existing explicit revision and
 publication-generation checks.
+
+### Meal offers
+
+Use `inspect_meal_offers` for a store overview or filter summaries by an exact
+main dish `item` ID. An unknown item fails rather than suggesting that it has no
+offers. Summaries contain counts, not eligibility or add-on lists. To inspect an
+offer, send its exact `offer` ID and positive immutable `revision`, without
+`item`. The response contains the offer's name, translations, main dish IDs,
+surcharge, add-on count, and at most 20 add-on choices with item/variant names
+and draft availability. A positive offset also requires a revision. Keep all
+selectors and that revision unchanged for continuation; unavailable choices are
+reported, not silently removed. These are draft configuration reads, not quotes.
+
+`save_meal_offer` edits one existing offer by default. Creating a new offer
+requires `create: true` and an unused ID in the inspected revision. Send the
+complete offer terms: `id`, `name`, `main_item_ids`, `surcharge_minor`, and
+`addon_choices` containing `item_id`/`variant_id` pairs. Both lists contain 1–200
+unique entries. Omitted `translations` preserve existing localized names; an
+explicit object replaces them, including `{}` to clear them. Null is rejected.
+The shared Food validator enforces supported locales, text/price constraints,
+valid references, and the menu's maximum of 50 offers.
+
+An offer adds its surcharge to each eligible main unit and includes one selected
+add-on per unit; the add-on's standalone price is not also charged. Add-ons cannot
+require modifiers, be customized separately, or recursively apply another deal.
+An unavailable add-on may remain configured but cannot be ordered. Saving preserves
+menu items and other offers, uses the shared Offering write, and has the same
+revision/retry guarantees as dish edits. Review changes before separate publication
+in the workspace. Offer deletion is not exposed as a merchant tool yet.
 
 ## Errors and evidence
 

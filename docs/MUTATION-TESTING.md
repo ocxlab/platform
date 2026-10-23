@@ -33,7 +33,7 @@ Reports are local ignored artifacts:
 - `apps/web/reports/mutation/mutation.html` and `mutation.json`;
 - `reports/mutation/go/payment.json` and `food.json`.
 - `reports/mutation/go/work.json` for the separate worker task.
-- `reports/mutation/go/mcp.json` for merchant price-edit/diff rules.
+- `reports/mutation/go/mcp.json` for merchant price/meal edits, meal reads, and diff rules.
 
 Sandbox directories and reports are also excluded from Docker build context.
 
@@ -46,6 +46,17 @@ The corrected task's report lists only the two intended files. Architecture guar
 SQL functions, telemetry internals, and browser behavior are not mutated by this task.
 
 ## Executed results
+
+23 October 2026. The expanded `task test:mutation:mcp` includes `meal_offers.go`
+alongside `menu_edits.go`: **139 killed, zero surviving, 38 uncovered** mutations,
+with no timeouts, nonviable mutations, or skips. Efficacy is 100% among exercised
+mutations; mutant coverage is 78.53%. Mutation execution took 2.109 seconds after
+3.889 seconds gathering coverage, excluding Docker/task startup. The 38 uncovered
+expressions are schema/registration and HTTP/SQL callback paths. The real HTTP/SDK
+and PostgreSQL suite exercises those paths separately, not through these mutants.
+`merchant.go` and `menu_details.go` remain excluded. The
+[retained summary](evidence/mcp-mutation-2026-10-23.csv) identifies this expanded scope;
+the earlier narrower result below is not a whole-adapter comparison.
 
 23 October 2026. `task test:mutation:mcp` targeted only `menu_edits.go` in the
 Food merchant adapter: **75 killed, zero surviving, 25 uncovered** mutations;

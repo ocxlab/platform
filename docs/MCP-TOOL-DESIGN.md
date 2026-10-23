@@ -94,6 +94,22 @@ document is not itself an equivalent full-menu MCP result, and neither figure
 is a token or latency measurement. The fixture uses a prepared query and item,
 not an agent demonstrating it can choose the right calls.
 
+## Meal-offer disclosure
+
+`inspect_meal_offers` separates offer discovery from configuration detail using
+an optional exact offer selector. A store overview or main-dish filter returns at
+most 20 summaries with counts. An exact offer read pins the draft revision and
+returns its terms plus at most 20 named add-on choices per page. This keeps a
+large drink/side choice set out of ordinary menu reads without requiring one
+call per choice. Main dish eligibility remains a bounded ID list (up to 200).
+
+`save_meal_offer` creates or revises one complete offer through the shared Food
+validator and Offering write. An explicit create flag prevents a mistyped update
+ID from silently creating a new offer. Omitted translations are preserved; an
+explicit object replaces them. The agent can review the resulting retained diff,
+but still cannot publish through this tool. These design choices support merchant
+configuration; they do not grant customer ordering or payment authority.
+
 ## Coverage still to build
 
 The following intentions guide the next increments; the names are not promises
