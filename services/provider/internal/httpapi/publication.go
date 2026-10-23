@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/commerce"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence"
 )
 
 func (s *Server) GetPublication(w http.ResponseWriter, r *http.Request, merchant, store uuid.UUID) {
@@ -63,28 +64,28 @@ func (s *Server) createFoodQuote(w http.ResponseWriter, r *http.Request, merchan
 		problem(w, 400, "invalid_request", "Invalid food selection.", nil)
 		return
 	}
-	calculate := func(p persistence.PublicOffering) (persistence.QuoteCalculation, error) {
+	calculate := func(p persistence.PublicOffering) (foodstore.QuoteCalculation, error) {
 		locale := ""
 		if body.Locale != nil {
 			locale = string(*body.Locale)
 		}
 		priced, total, expires, err := food.PriceModel(p.Model, p.Document, lines, locale, p.EvaluatedAt)
 		if err != nil {
-			return persistence.QuoteCalculation{}, err
+			return foodstore.QuoteCalculation{}, err
 		}
 		encoded, err := json.Marshal(priced)
 		note := ""
 		if body.Note != nil {
 			note = *body.Note
 		}
-		return persistence.QuoteCalculation{Lines: encoded, Total: total, Note: note, ExpiresAt: expires}, err
+		return foodstore.QuoteCalculation{Lines: encoded, Total: total, Note: note, ExpiresAt: expires}, err
 	}
-	var value persistence.FoodQuote
+	var value foodstore.FoodQuote
 	var err error
 	if guest {
-		value, err = persistence.CreateGuestFoodQuote(r.Context(), s.db, principal(r), body.PublicationGeneration, calculate)
+		value, err = foodstore.CreateGuestFoodQuote(r.Context(), s.db, principal(r), body.PublicationGeneration, calculate)
 	} else {
-		value, err = persistence.CreateFoodQuote(r.Context(), s.db, merchant, store, body.PublicationGeneration, calculate)
+		value, err = foodstore.CreateFoodQuote(r.Context(), s.db, merchant, store, body.PublicationGeneration, calculate)
 	}
 	if err != nil {
 		write(w, nil, err)

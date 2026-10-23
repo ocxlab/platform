@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 type Effect struct {

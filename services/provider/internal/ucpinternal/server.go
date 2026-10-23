@@ -11,6 +11,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"ocp.local/platform/internal/database"
 	"strings"
 	"time"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/lodging"
-	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/problems"
 	"ocp.local/platform/internal/sessionkit"
 	"ocp.local/platform/internal/shopping"
@@ -301,7 +301,7 @@ func (s *server) execute(w http.ResponseWriter, r *http.Request, p sessionkit.Pr
 	}
 }
 func (s *server) transaction(ctx context.Context, p sessionkit.Principal, adapter sessionkit.Domain, action string, id uuid.UUID, key string, raw []byte) (sessionkit.Reply, error) {
-	tx, err := persistence.TenantTransaction(ctx, s.db, p.MerchantID)
+	tx, err := database.TenantTransaction(ctx, s.db, p.MerchantID)
 	if err != nil {
 		return sessionkit.Reply{}, err
 	}

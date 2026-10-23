@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/orderupdates"
-	"ocp.local/platform/internal/persistence"
 )
 
 func (s *Server) WatchPublicOffering(w http.ResponseWriter, r *http.Request, merchant, store uuid.UUID) {

@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"sync"
 	"testing"
-
-	"ocp.local/platform/internal/persistence"
 )
 
 func TestPickupProgressRequiresPaymentAndMerchantAuthority(t *testing.T) {
@@ -31,7 +30,7 @@ func TestPickupProgressRequiresPaymentAndMerchantAuthority(t *testing.T) {
 	f.request(t, "POST", guestPath+"/development-payment", token, "pickup-pay-success-001", `{"expected_revision":3,"action":"succeed"}`, 201)
 	action("mark_ready", 4, "pickup-skip-start-001", 409)
 	started := action("start_preparation", 4, "pickup-start-001", 201)
-	var preparing persistence.FoodOrder
+	var preparing foodstore.FoodOrder
 	must(t, json.Unmarshal(started, &preparing))
 	if preparing.FulfilmentProgress != "preparing" || preparing.Revision != 5 {
 		t.Fatalf("unexpected preparation: %+v", preparing)
@@ -50,12 +49,12 @@ func TestPickupProgressRequiresPaymentAndMerchantAuthority(t *testing.T) {
 	if string(action("start_preparation", 4, "pickup-start-001", 201)) != string(started) {
 		t.Fatal("progress changed historical replay")
 	}
-	var current persistence.FoodOrder
+	var current foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", guestPath, token, "", "", 200), &current))
 	if current.FulfilmentProgress != "collected" || current.Payment != "paid" || current.Revision != 7 || len(current.History) != 7 {
 		t.Fatalf("unexpected pickup: %+v", current)
 	}
-	var response persistence.FoodOrder
+	var response foodstore.FoodOrder
 	must(t, json.Unmarshal(completed, &response))
 	original, err := json.Marshal(order.Terms)
 	must(t, err)
@@ -64,7 +63,7 @@ func TestPickupProgressRequiresPaymentAndMerchantAuthority(t *testing.T) {
 	if string(original) != string(retained) {
 		t.Fatal("fulfilment rewrote agreed terms")
 	}
-	var page persistence.FoodOrderPage
+	var page foodstore.FoodOrderPage
 	must(t, json.Unmarshal(f.request(t, "GET", private+"/food/orders", f.token, "", "", 200), &page))
 	if len(page.Items) != 1 || page.Items[0].FulfilmentProgress != "collected" {
 		t.Fatal("inbox lost progress")
@@ -114,7 +113,7 @@ func TestPreparationAndCancellationSerialize(t *testing.T) {
 	if counts[201] != 1 || counts[409] != 1 {
 		t.Fatalf("race results: %v", counts)
 	}
-	var got persistence.FoodOrder
+	var got foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", guestPath, token, "", "", 200), &got))
 	if got.Revision != 5 {
 		t.Fatalf("race advanced more than once: %+v", got)

@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 func TestLocalBoundary(t *testing.T) {

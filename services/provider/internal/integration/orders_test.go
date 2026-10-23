@@ -8,12 +8,14 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"ocp.local/platform/internal/database"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"sync"
 	"testing"
 
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/httpapi"
-	"ocp.local/platform/internal/persistence"
 )
 
 func TestGuestOrderPlacement(t *testing.T) {
@@ -23,10 +25,10 @@ func TestGuestOrderPlacement(t *testing.T) {
 	public := strings.Replace(private, "/api/v1/", "/api/v1/public/", 1)
 	guest := strings.Replace(private, "/api/v1/", "/api/v1/guest/", 1)
 	f.request(t, "PUT", private+"/publication", f.token, "publish-order-menu-001", `{"expected_generation":0,"revision":1}`, 201)
-	var session, other persistence.GuestSession
+	var session, other foodstore.GuestSession
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &session))
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &other))
-	var quote persistence.FoodQuote
+	var quote foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", guest+"/food/quotes", session.Token, "", selection(1), 201), &quote))
 	body := fmt.Sprintf(`{"quote_id":%q,"fulfilment":"pickup"}`, quote.ID)
 	path := guest + "/food/orders"
@@ -34,10 +36,10 @@ func TestGuestOrderPlacement(t *testing.T) {
 	f.request(t, "POST", path, f.token, "place-food-order-001", body, 401)
 	f.request(t, "POST", path, other.Token, "place-food-order-001", body, 404)
 	first := f.request(t, "POST", path, session.Token, "place-food-order-001", body, 201)
-	var order persistence.FoodOrder
+	var order foodstore.FoodOrder
 	must(t, json.Unmarshal(first, &order))
 	byReference := path + "/by-reference/" + order.Reference
-	var resolved persistence.FoodOrder
+	var resolved foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", byReference, session.Token, "", "", 200), &resolved))
 	if resolved.ID != order.ID {
 		t.Fatal("reference resolved a different order")
@@ -85,7 +87,7 @@ func TestGuestOrderPlacement(t *testing.T) {
 	f.request(t, "POST", path, session.Token, "place-food-order-001", body, 401)
 }
 
-func orderFixture(t *testing.T) (*fixture, persistence.Store, string, string, string, persistence.FoodQuote) {
+func orderFixture(t *testing.T) (*fixture, persistence.Store, string, string, string, foodstore.FoodQuote) {
 	t.Helper()
 	f := setup(t)
 	store := preparedStore(t, f)
@@ -93,9 +95,9 @@ func orderFixture(t *testing.T) (*fixture, persistence.Store, string, string, st
 	public := strings.Replace(private, "/api/v1/", "/api/v1/public/", 1)
 	guest := strings.Replace(private, "/api/v1/", "/api/v1/guest/", 1)
 	f.request(t, "PUT", private+"/publication", f.token, "publish-guard-menu-001", `{"expected_generation":0,"revision":1}`, 201)
-	var s persistence.GuestSession
+	var s foodstore.GuestSession
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &s))
-	var quote persistence.FoodQuote
+	var quote foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", guest+"/food/quotes", s.Token, "", selection(1), 201), &quote))
 	return f, store, private, guest, s.Token, quote
 }
@@ -135,7 +137,7 @@ func TestOrderPriceAndAvailabilityGuards(t *testing.T) {
 			body := fmt.Sprintf(`{"quote_id":%q,"fulfilment":"pickup"}`, q.ID)
 			response := f.request(t, "POST", guest+"/food/orders", token, "guard-place-order-001", body, want)
 			if want == 201 {
-				var order persistence.FoodOrder
+				var order foodstore.FoodOrder
 				must(t, json.Unmarshal(response, &order))
 				if order.Terms.Total != 1400 {
 					t.Fatal("issued price was rewritten")
@@ -248,7 +250,7 @@ func TestOrderStorageAuthorityAndRollback(t *testing.T) {
 	if !hardened {
 		t.Fatal("guest lookup privilege boundary changed")
 	}
-	tx, err := persistence.TenantTransaction(context.Background(), f.app, store.ID)
+	tx, err := database.TenantTransaction(context.Background(), f.app, store.ID)
 	must(t, err)
 	var visible int
 	must(t, tx.QueryRow(`SELECT count(*) FROM commerce.food_quotes`).Scan(&visible))

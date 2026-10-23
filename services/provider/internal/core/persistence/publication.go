@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"ocp.local/platform/internal/database"
 	"time"
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
 	"ocp.local/platform/internal/offering"
-	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 type Publication struct {
@@ -22,8 +23,6 @@ type Publication struct {
 	Suspended  bool      `json:"suspended"`
 }
 type PublicationConflict struct{ Current int64 }
-
-var ErrQuoteCapacity = errors.New("active quote capacity exceeded")
 
 func (e *PublicationConflict) Error() string { return "publication generation conflict" }
 
@@ -50,7 +49,7 @@ func publication(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, loc
 	return p, err
 }
 func GetPublication(ctx context.Context, db *sql.DB, merchant, store uuid.UUID) (Publication, error) {
-	tx, err := TenantTransaction(ctx, db, merchant)
+	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return Publication{}, err
 	}
@@ -185,7 +184,10 @@ type PublicOffering struct {
 	Document    json.RawMessage `json:"document"`
 }
 
-func publicOffering(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, lock bool) (PublicOffering, error) {
+// PublicOfferingTx is the shared catalog read boundary for domain transactions.
+// A locking read serializes publication with quote creation and order placement;
+// callers must retain the transaction until their own decision has committed.
+func PublicOfferingTx(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, lock bool) (PublicOffering, error) {
 	p := PublicOffering{MerchantID: merchant, StoreID: store}
 	query := `SELECT s.display_name,s.publication_generation,s.published_revision,r.model_id,r.model_version,s.public_document
  FROM commerce.stores s JOIN commerce.offering_revisions r ON (s.merchant_id,s.id,s.published_revision)=(r.merchant_id,r.store_id,r.revision)
@@ -200,113 +202,14 @@ func publicOffering(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, 
 	return p, err
 }
 func GetPublicOffering(ctx context.Context, db *sql.DB, merchant, store uuid.UUID) (PublicOffering, error) {
-	tx, err := TenantTransaction(ctx, db, merchant)
+	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return PublicOffering{}, err
 	}
 	defer tx.Rollback()
-	p, err := publicOffering(ctx, tx, merchant, store, false)
+	p, err := PublicOfferingTx(ctx, tx, merchant, store, false)
 	if err != nil {
 		return p, err
 	}
 	return p, tx.Commit()
-}
-
-type QuoteCalculation struct {
-	ExpiresAt time.Time
-	Note      string
-	Lines     json.RawMessage
-	Total     int64
-}
-type FoodQuote struct {
-	Note       string          `json:"note,omitempty"`
-	ID         uuid.UUID       `json:"id"`
-	MerchantID uuid.UUID       `json:"merchant_id"`
-	StoreID    uuid.UUID       `json:"store_id"`
-	Generation int64           `json:"publication_generation"`
-	Revision   int64           `json:"revision"`
-	Model      offering.Model  `json:"model"`
-	Currency   string          `json:"currency"`
-	Lines      json.RawMessage `json:"lines"`
-	Total      int64           `json:"total_minor"`
-	CreatedAt  time.Time       `json:"created_at"`
-	ExpiresAt  time.Time       `json:"expires_at"`
-}
-
-func CreateFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID, expected int64, calculate func(PublicOffering) (QuoteCalculation, error)) (FoodQuote, error) {
-	return createFoodQuote(ctx, db, merchant, store, expected, nil, calculate)
-}
-
-func CreateGuestFoodQuote(ctx context.Context, db *sql.DB, guest Principal, expected int64, calculate func(PublicOffering) (QuoteCalculation, error)) (FoodQuote, error) {
-	return createFoodQuote(ctx, db, guest.MerchantID, guest.StoreID, expected, &guest, calculate)
-}
-
-func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID, expected int64, guest *Principal, calculate func(PublicOffering) (QuoteCalculation, error)) (FoodQuote, error) {
-	q := FoodQuote{}
-	tx, err := TenantTransaction(ctx, db, merchant)
-	if err != nil {
-		return q, err
-	}
-	defer tx.Rollback()
-	var guestID any
-	if guest != nil {
-		if err := checkGuest(ctx, tx, *guest); err != nil {
-			return q, err
-		}
-		guestID = guest.ID
-	}
-	p, err := publicOffering(ctx, tx, merchant, store, true)
-	if err != nil {
-		return q, err
-	}
-	ordering, err := foodOrdering(ctx, tx, merchant, store, false)
-	if err != nil {
-		return q, err
-	}
-	if !ordering.AcceptingOrders {
-		return q, ErrOrderingPaused
-	}
-	if p.Generation != expected {
-		return q, &PublicationConflict{p.Generation}
-	}
-	var evaluatedAt time.Time
-	if err = tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&evaluatedAt); err != nil {
-		return q, err
-	}
-	p.EvaluatedAt = evaluatedAt
-	calculation, err := calculate(p)
-	if err != nil {
-		return q, err
-	}
-	// Bound ephemeral anonymous writes per store. Expired snapshots are not purchase
-	// history. A later placement transaction must reject expired terms regardless.
-	if _, err = tx.ExecContext(ctx, `DELETE FROM commerce.food_quotes WHERE merchant_id=$1 AND store_id=$2 AND id IN
- (SELECT id FROM commerce.food_quotes WHERE merchant_id=$1 AND store_id=$2 AND expires_at<=clock_timestamp() ORDER BY expires_at LIMIT 1000)`, merchant, store); err != nil {
-		return q, err
-	}
-	var active int
-	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM commerce.food_quotes WHERE merchant_id=$1 AND store_id=$2 AND expires_at>clock_timestamp()`, merchant, store).Scan(&active); err != nil {
-		return q, err
-	}
-	if active >= 1000 {
-		return q, ErrQuoteCapacity
-	}
-	q = FoodQuote{ID: uuid.New(), MerchantID: merchant, StoreID: store, Generation: p.Generation, Revision: p.Revision, Model: p.Model, Currency: "EUR", Lines: calculation.Lines, Total: calculation.Total, Note: calculation.Note}
-	q.CreatedAt = evaluatedAt
-	q.ExpiresAt = q.CreatedAt.Add(10 * time.Minute)
-	if !calculation.ExpiresAt.IsZero() && calculation.ExpiresAt.Before(q.ExpiresAt) {
-		q.ExpiresAt = calculation.ExpiresAt
-	}
-	if !q.ExpiresAt.After(q.CreatedAt) {
-		return q, ErrQuoteExpired
-	}
-	body, err := json.Marshal(q)
-	if err != nil {
-		return q, err
-	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_quotes(merchant_id,store_id,id,body,expires_at,guest_id) VALUES($1,$2,$3,$4,$5,$6)`, merchant, store, q.ID, string(body), q.ExpiresAt, guestID)
-	if err != nil {
-		return q, err
-	}
-	return q, tx.Commit()
 }

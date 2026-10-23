@@ -6,12 +6,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	corestore "ocp.local/platform/internal/core/persistence"
+	"ocp.local/platform/internal/database"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/food/persistence/sqlgen"
 	"ocp.local/platform/internal/payment"
-	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 type OrderRevisionConflict struct{ Current int64 }
@@ -60,7 +62,7 @@ func parseOrderCursor(cursor string) (time.Time, uuid.UUID, error) {
 
 // Lock the mutable progress row, never the immutable placement body. Every
 // future payment/kitchen transition must use this same per-order serialization.
-func readFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.UUID, lock bool) (FoodOrder, error) {
+func readFoodOrder(ctx context.Context, tx *sql.Tx, p corestore.Principal, store, id uuid.UUID, lock bool) (FoodOrder, error) {
 	var order FoodOrder
 	queries := sqlgen.New(tx)
 	args := sqlgen.ReadFoodOrderParams{MerchantID: p.MerchantID, StoreID: store, ID: id, GuestID: uuid.NullUUID{UUID: p.ID, Valid: p.Guest}}
@@ -74,7 +76,7 @@ func readFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.
 		row, err = queries.ReadFoodOrder(ctx, args)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return order, ErrNotFound
+		return order, corestore.ErrNotFound
 	}
 	if err != nil {
 		return order, err
@@ -109,8 +111,8 @@ func readFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.
 	return order, nil
 }
 
-func GetFoodOrder(ctx context.Context, db *sql.DB, p Principal, store, id uuid.UUID) (FoodOrder, error) {
-	tx, err := TenantTransaction(ctx, db, p.MerchantID)
+func GetFoodOrder(ctx context.Context, db *sql.DB, p corestore.Principal, store, id uuid.UUID) (FoodOrder, error) {
+	tx, err := database.TenantTransaction(ctx, db, p.MerchantID)
 	if err != nil {
 		return FoodOrder{}, err
 	}
@@ -124,7 +126,7 @@ func GetFoodOrder(ctx context.Context, db *sql.DB, p Principal, store, id uuid.U
 
 // Decision, event, and replay all share Mutate's transaction. Neither endpoint
 // claims payment or sends a kitchen instruction.
-func ChangeFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.UUID, expected int64, action string, requestID uuid.UUID) (FoodOrder, error) {
+func ChangeFoodOrder(ctx context.Context, tx *sql.Tx, p corestore.Principal, store, id uuid.UUID, expected int64, action string, requestID uuid.UUID) (FoodOrder, error) {
 	order, err := readFoodOrder(ctx, tx, p, store, id, true)
 	if err != nil {
 		return order, err
@@ -180,7 +182,7 @@ func ChangeFoodOrder(ctx context.Context, tx *sql.Tx, p Principal, store, id uui
 	return order, err
 }
 
-func ListFoodOrders(ctx context.Context, db *sql.DB, p Principal, store uuid.UUID, after *string, limit int) (FoodOrderPage, error) {
+func ListFoodOrders(ctx context.Context, db *sql.DB, p corestore.Principal, store uuid.UUID, after *string, limit int) (FoodOrderPage, error) {
 	page := FoodOrderPage{Items: make([]FoodOrder, 0)}
 	if limit < 1 || limit > 100 {
 		return page, errors.New("order page limit outside bounds")
@@ -194,7 +196,7 @@ func ListFoodOrders(ctx context.Context, db *sql.DB, p Principal, store uuid.UUI
 		}
 		at, id = &value, &key
 	}
-	tx, err := TenantTransaction(ctx, db, p.MerchantID)
+	tx, err := database.TenantTransaction(ctx, db, p.MerchantID)
 	if err != nil {
 		return page, err
 	}
@@ -204,7 +206,7 @@ func ListFoodOrders(ctx context.Context, db *sql.DB, p Principal, store uuid.UUI
 		return page, err
 	}
 	if !exists {
-		return page, ErrNotFound
+		return page, corestore.ErrNotFound
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT o.body,s.revision,s.acceptance,s.resolution,o.display_number,coalesce(p.state,'not_started'),p.state IS NOT NULL,s.fulfilment_progress FROM commerce.food_orders o
  JOIN commerce.food_order_operations s ON (s.merchant_id,s.store_id,s.order_id)=(o.merchant_id,o.store_id,o.id)

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/httpapi"
-	"ocp.local/platform/internal/persistence"
 )
 
 func TestManagedStoreList(t *testing.T) {

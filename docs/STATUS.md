@@ -1,5 +1,50 @@
 # Development status
 
+## Core and commerce domains have separate runtime compositions
+
+23 October 2026. Step 1 of the cleanup plan separates shared persistence under
+`internal/core/persistence` from Food quote/order/fulfilment persistence under
+`internal/food/persistence`. Connection budgets, tenant transactions, role checks,
+and the unchanged 18-file Goose history now live under `internal/database`.
+Existing sqlc inputs generate separate ignored core/Food packages (16 and 17
+queries respectively); this relocates the existing 33 queries, not a broader SQL
+conversion. The obsolete central persistence/generated-output tree was removed.
+See [source ownership and deployment boundaries](DOMAIN-BOUNDARIES.md).
+
+The same maintained binary/image now selects `combined`, `core`, `food`,
+`shopping`, or `lodging` with `-service`. The normal application still combines
+core and Food in one process. Optional split processes keep their own bounded
+pools; core starts the public-offering listener and Food the order listener.
+Core owns shared/model-bound catalog routes, while Food owns guest checkout and
+purchase operations. Route ownership is checked before authentication or storage.
+Shopping/Lodging remain internal-only. Shared payment rules and discovery are
+retained; no extra payment gateway or mandatory deployment was introduced.
+
+Verification passed: full `task check` (including Spectral, deterministic/source-only
+generation guards, ten migration tests, zero Go lint issues, vet/race,
+PostgreSQL integration in 57.077 seconds, 94 frontend tests, zero Svelte diagnostics,
+and API/web builds); `task test:domains` (26.926 seconds); a final Go lint run;
+optional `task services:dev` / `task services:stop`; and combined `task smoke`.
+Actual core/Food Docker endpoints returned 200 for health and 503 for the other
+service's routes. A PostgreSQL activity query observed the two expected LISTEN
+channels in the split processes. These checks do not establish production costs
+or idle-database billing behavior.
+
+The new process regression publishes through core, places a Food order, stops
+core, accepts/reads the order through Food, replays placement through another Food
+process, and restarts core. Existing process tests now select Shopping/Lodging
+explicitly and retain saturation, process-kill/replay, pool-bound, and worker
+recovery checks. Worker delivery uses a test receiver, not native ONIX.
+
+Development data was not reset; temporary split/test services were stopped and
+the ordinary combined API was rebuilt and left running. No new browser, mutation,
+Schemathesis, native ONIX, real-payment, storage-loss, independent-database, or
+production failover test is claimed. No independent review was performed.
+Split ingress remains a later deployment concern, and PostgreSQL is still shared
+capacity. Step 2 is expansion of sqlc within these ownership boundaries. Account
+management remains a core responsibility for later REST/MCP work, not a feature
+implemented by this restructuring.
+
 ## Food order persistence uses typed queries
 
 23 October 2026. sqlc adoption increased from 16 to 33 named queries. New source

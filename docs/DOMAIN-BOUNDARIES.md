@@ -1,11 +1,63 @@
 # Domain boundaries and runtime admission
 
-The provider keeps a shared merchant/account and offering-publication foundation,
-while each commerce domain owns its price, allocation, and lifecycle decisions.
-Food is installed on the public listener. Shopping and Lodging are installed on
-an explicitly separate internal listener; their catalogs and sessions are not
-inserted into Food's offering registry. A domain name in configuration does not
-install code or establish UCP compatibility.
+The provider keeps shared merchant/account and offering-publication operations
+in core, while each commerce domain owns its price, allocation, and lifecycle
+decisions. Core and Food normally run together, without internal HTTP calls.
+They can also run as separate processes against the same database; Shopping and
+Lodging retain their separate, internal-only APIs. A domain name in configuration
+does not install code or establish UCP compatibility.
+
+## Source ownership and deployment composition
+
+| Source package | Responsibility |
+| --- | --- |
+| `internal/core/persistence` | Merchant/provider grants, store records, catalog revisions/publication, media records, authorized replay, and durable catalog intents |
+| `internal/food/persistence` | Guest checkout admission, quotes, pickup orders, acceptance, fulfilment, history, and Food's development-payment coordination |
+| `internal/shopping` | Shopping catalog, stock, checkout sessions, and orders |
+| `internal/lodging` | Property catalog, stay pricing, booking sessions, and allocation |
+| `internal/payment` | Shared typed payment subjects/terms, payment transition rules, and pay-later obligations |
+| `internal/networkcatalog` | Public catalog delivery, discovery projections, and search |
+| `internal/database` | Connection budgets, tenant transaction setup, restricted-role checks, and the ordered Goose migration history |
+
+The existing Offering registry and its Food model implement menu validation,
+pricing, and public projection. Core's model-bound catalog API uses that installed
+model; it does not run Food's order lifecycle. REST and the current local merchant
+adapter remain transport compositions over these packages. Future merchant and
+customer account operations belong to core, including their eventual MCP tools;
+this refactor does not implement those operations.
+
+Existing sqlc inputs and ignored outputs are now separate under
+`core/persistence/{queries,sqlgen}` and `food/persistence/{queries,sqlgen}`. Both
+read the same ordered Goose history. They do not share generated Go types.
+Handwritten application types and an explicitly passed SQL transaction remain
+the boundary. Food reads a published catalog through core's transaction-scoped
+helper, preserving the store lock that coordinates publication and placement.
+Moving persistence code does not add a remote call inside that transaction.
+
+`-service combined` is the default public composition. `-service core` mounts
+shared/model-bound APIs; `-service food` mounts Food operations, including guest
+checkout admission. Both retain health endpoints. Opposite-service routes return
+the contracted 503 Problem before credential lookup or database access. A future
+split deployment can route the same URL paths to their owners at ingress;
+the current web development setup continues to use the combined API. No split
+ingress or distributed-database transaction is claimed here.
+
+`-service shopping` and `-service lodging` select one internal domain each.
+Contradictory domain/service configuration fails startup. The role flags below
+remain useful for internal test composition and the catalog worker. Each process
+has its own bounded pool. Core starts only the offering-update listener; Food
+starts only the order-update listener. The combined process starts both. The
+database, deployed image, and any underlying machine remain shared infrastructure,
+not independent capacity or failure domains.
+
+For optional local split-process checks, `task services:dev` starts core on
+localhost:18182 and Food on localhost:18183. `task services:stop` stops only these
+two processes and retains data. Regular `task dev` / `task web:dev` still use the
+combined API on port 18180. No mandatory extra container, broker, database, or
+cloud product is introduced. Source dependency and route-admission tests guard
+these boundaries; `task test:domains` also exercises actual runtime processes.
+
+## Domain admission
 
 `OCP_ENABLED_DOMAINS` selects domain-specific HTTP operations for an API process.
 Absent configuration preserves Food. `food` explicitly selects Food, and `none`
@@ -50,7 +102,7 @@ external catalog identity. No broker or Kubernetes deployment is required.
 Executed role/recovery results and limitations are recorded in `STATUS.md`.
 One initial PostgreSQL cluster still shares capacity and failure modes.
 
-The public offering registry recognizes exact Food V1/V2 model versions; public
+The public offering registry recognizes the current exact Food V1 model; public
 listing projection filters by installed models. Internal Shopping/Lodging catalogs
 have their own paths and tables, rather than exposing unsupported model rows
 through public Food routes. This is deliberate ingress separation, not a claim

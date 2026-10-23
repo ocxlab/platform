@@ -9,8 +9,8 @@ import (
 	"regexp"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/offering"
-	"ocp.local/platform/internal/persistence"
 )
 
 var ErrForbidden = errors.New("merchant action denied")

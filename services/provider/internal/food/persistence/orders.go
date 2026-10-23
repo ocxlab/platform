@@ -5,13 +5,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	corestore "ocp.local/platform/internal/core/persistence"
+	"ocp.local/platform/internal/database"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/food/persistence/sqlgen"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 var ErrQuoteExpired = errors.New("quote expired")
@@ -39,10 +41,10 @@ type FoodOrder struct {
 // PlaceFoodOrder runs within the replay transaction. There are no external
 // effects here: merchant decisions use the operational row; payment and kitchen
 // work are not triggered by placement.
-func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, requestID uuid.UUID) (FoodOrder, error) {
+func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest corestore.Principal, quoteID, requestID uuid.UUID) (FoodOrder, error) {
 	var order FoodOrder
 	// The store lock also serializes quote pruning, publication, and placement.
-	current, err := publicOffering(ctx, tx, guest.MerchantID, guest.StoreID, true)
+	current, err := corestore.PublicOfferingTx(ctx, tx, guest.MerchantID, guest.StoreID, true)
 	if err != nil {
 		return order, err
 	}
@@ -56,7 +58,7 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	queries := sqlgen.New(tx)
 	quote, err := queries.GetGuestFoodQuote(ctx, sqlgen.GetGuestFoodQuoteParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, ID: quoteID, GuestID: uuid.NullUUID{UUID: guest.ID, Valid: true}})
 	if errors.Is(err, sql.ErrNoRows) {
-		return order, ErrNotFound
+		return order, corestore.ErrNotFound
 	}
 	if err != nil {
 		return order, err
@@ -134,31 +136,31 @@ func PlaceFoodOrder(ctx context.Context, tx *sql.Tx, guest Principal, quoteID, r
 	return order, err
 }
 
-func GetGuestFoodOrder(ctx context.Context, db *sql.DB, guest Principal, id uuid.UUID) (FoodOrder, error) {
+func GetGuestFoodOrder(ctx context.Context, db *sql.DB, guest corestore.Principal, id uuid.UUID) (FoodOrder, error) {
 	return getGuestFoodOrder(ctx, db, guest, id, "")
 }
 
-func GetGuestFoodOrderByReference(ctx context.Context, db *sql.DB, guest Principal, reference string) (FoodOrder, error) {
+func GetGuestFoodOrderByReference(ctx context.Context, db *sql.DB, guest corestore.Principal, reference string) (FoodOrder, error) {
 	return getGuestFoodOrder(ctx, db, guest, uuid.Nil, reference)
 }
 
-func getGuestFoodOrder(ctx context.Context, db *sql.DB, guest Principal, id uuid.UUID, reference string) (FoodOrder, error) {
-	tx, err := TenantTransaction(ctx, db, guest.MerchantID)
+func getGuestFoodOrder(ctx context.Context, db *sql.DB, guest corestore.Principal, id uuid.UUID, reference string) (FoodOrder, error) {
+	tx, err := database.TenantTransaction(ctx, db, guest.MerchantID)
 	if err != nil {
 		return FoodOrder{}, err
 	}
 	defer tx.Rollback()
-	if err = checkGuest(ctx, tx, guest); err != nil {
+	if err = corestore.CheckGuest(ctx, tx, guest); err != nil {
 		return FoodOrder{}, err
 	}
 	if reference != "" {
 		number, parseErr := strconv.ParseInt(strings.TrimPrefix(reference, "O-"), 10, 64)
 		if parseErr != nil || number < 1 || orderReference(number) != reference {
-			return FoodOrder{}, ErrNotFound
+			return FoodOrder{}, corestore.ErrNotFound
 		}
 		id, err = sqlgen.New(tx).GetGuestFoodOrderID(ctx, sqlgen.GetGuestFoodOrderIDParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, GuestID: guest.ID, DisplayNumber: sql.NullInt64{Int64: number, Valid: true}})
 		if errors.Is(err, sql.ErrNoRows) {
-			return FoodOrder{}, ErrNotFound
+			return FoodOrder{}, corestore.ErrNotFound
 		}
 		if err != nil {
 			return FoodOrder{}, err
@@ -171,18 +173,18 @@ func getGuestFoodOrder(ctx context.Context, db *sql.DB, guest Principal, id uuid
 	return order, tx.Commit()
 }
 
-func GetGuestFoodQuote(ctx context.Context, db *sql.DB, guest Principal, id uuid.UUID) (FoodQuote, error) {
-	tx, err := TenantTransaction(ctx, db, guest.MerchantID)
+func GetGuestFoodQuote(ctx context.Context, db *sql.DB, guest corestore.Principal, id uuid.UUID) (FoodQuote, error) {
+	tx, err := database.TenantTransaction(ctx, db, guest.MerchantID)
 	if err != nil {
 		return FoodQuote{}, err
 	}
 	defer tx.Rollback()
-	if err = checkGuest(ctx, tx, guest); err != nil {
+	if err = corestore.CheckGuest(ctx, tx, guest); err != nil {
 		return FoodQuote{}, err
 	}
 	row, err := sqlgen.New(tx).GetGuestFoodQuote(ctx, sqlgen.GetGuestFoodQuoteParams{MerchantID: guest.MerchantID, StoreID: guest.StoreID, ID: id, GuestID: uuid.NullUUID{UUID: guest.ID, Valid: true}})
 	if errors.Is(err, sql.ErrNoRows) {
-		return FoodQuote{}, ErrNotFound
+		return FoodQuote{}, corestore.ErrNotFound
 	}
 	if err != nil {
 		return FoodQuote{}, err

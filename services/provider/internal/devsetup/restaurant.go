@@ -7,14 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"ocp.local/platform/internal/database"
 	"regexp"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/devfixtures"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence"
 )
 
 var demoMerchant = uuid.MustParse("294e124d-5949-4f34-bae2-51caa7934df3")
@@ -88,7 +89,7 @@ func EnsureRestaurant(ctx context.Context, db *sql.DB) (persistence.Store, error
 	if err != nil {
 		return persistence.Store{}, fmt.Errorf("demo menu: %w", err)
 	}
-	tx, err := persistence.TenantTransaction(ctx, db, demoMerchant)
+	tx, err := database.TenantTransaction(ctx, db, demoMerchant)
 	if err != nil {
 		return persistence.Store{}, err
 	}

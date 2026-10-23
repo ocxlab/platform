@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"net/http"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 func (s *Server) ListPublicStores(w http.ResponseWriter, r *http.Request, params ListPublicStoresParams) {

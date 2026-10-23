@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/commerce"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/media"
-	"ocp.local/platform/internal/persistence"
 )
 
 func (s *Server) mediaEnabled(w http.ResponseWriter) bool {

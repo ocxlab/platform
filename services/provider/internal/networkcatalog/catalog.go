@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 type Binding struct {

@@ -7,11 +7,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"ocp.local/platform/internal/database"
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
 	"ocp.local/platform/internal/offering"
-	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 var ErrNotFound = errors.New("resource not found")
@@ -46,13 +47,13 @@ type Result struct {
 // Mutate serializes a scoped replay key and commits its result with the mutation.
 // Reconciliation of external effects is later purchase/payment work, not hidden here.
 func Mutate(ctx context.Context, db *sql.DB, principal Principal, operation, resource, key string, canonical []byte, change func(*sql.Tx) (any, error)) (Result, error) {
-	tx, err := TenantTransaction(ctx, db, principal.MerchantID)
+	tx, err := database.TenantTransaction(ctx, db, principal.MerchantID)
 	if err != nil {
 		return Result{}, err
 	}
 	defer tx.Rollback()
 	if principal.Guest {
-		if err := checkGuest(ctx, tx, principal); err != nil {
+		if err := CheckGuest(ctx, tx, principal); err != nil {
 			return Result{}, err
 		}
 	}
@@ -121,7 +122,7 @@ func CreateStore(ctx context.Context, tx *sql.Tx, merchant uuid.UUID, name strin
 }
 
 func GetStore(ctx context.Context, db *sql.DB, merchant, id uuid.UUID) (Store, error) {
-	tx, err := TenantTransaction(ctx, db, merchant)
+	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return Store{}, err
 	}
@@ -161,7 +162,7 @@ func AppendOffering(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, 
 }
 
 func GetOffering(ctx context.Context, db *sql.DB, merchant, store uuid.UUID, revision int64) (Revision, error) {
-	tx, err := TenantTransaction(ctx, db, merchant)
+	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return Revision{}, err
 	}

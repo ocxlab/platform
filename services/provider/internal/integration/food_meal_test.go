@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence"
 	"strings"
 	"testing"
 )
@@ -28,14 +28,14 @@ func TestFoodMealHTTPJourney(t *testing.T) {
 	f.request(t, "PUT", private+"/offering", f.token, "meal-no-v2-version-0001", write(1, "2.0.0"), 422)
 	f.request(t, "PUT", private+"/offering", f.token, "meal-write-menu-0001", write(1, "1.0.0"), 201)
 	f.request(t, "PUT", private+"/publication", f.token, "meal-publish-0001", `{"expected_generation":0,"revision":2}`, 201)
-	var session persistence.GuestSession
+	var session foodstore.GuestSession
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &session))
 	selected := map[string]any{}
 	must(t, json.Unmarshal([]byte(selection(1)), &selected))
 	line := selected["lines"].([]any)[0].(map[string]any)
 	line["meal_deal"] = map[string]string{"deal_id": "doner-meal", "addon_item_id": "drink", "addon_variant_id": "bottle"}
 	body, _ := json.Marshal(selected)
-	var q persistence.FoodQuote
+	var q foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", guest+"/food/quotes", session.Token, "", string(body), 201), &q))
 	var quoted []food.QuotedLine
 	must(t, json.Unmarshal(q.Lines, &quoted))
@@ -51,7 +51,7 @@ func TestFoodMealHTTPJourney(t *testing.T) {
 	if !bytes.Equal(first, f.request(t, "POST", guest+"/food/orders", session.Token, "meal-place-order-0001", orderBody, 201)) {
 		t.Fatal("changed replay")
 	}
-	var order persistence.FoodOrder
+	var order foodstore.FoodOrder
 	must(t, json.Unmarshal(first, &order))
 	if order.Terms.Total != 1800 {
 		t.Fatal("repriced terms")

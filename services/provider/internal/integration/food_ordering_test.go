@@ -5,18 +5,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"testing"
 	"time"
 
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 func TestOrderingControls(t *testing.T) {
 	f, store, private, guest, token, quote := orderFixture(t)
 	settings := private + "/food/ordering"
 	public := strings.Replace(private, "/api/v1/", "/api/v1/public/", 1)
-	var state persistence.FoodOrdering
+	var state foodstore.FoodOrdering
 	must(t, json.Unmarshal(f.request(t, "GET", settings, f.token, "", "", 200), &state))
 	if state.Revision != 0 || !state.AcceptingOrders || state.AcceptanceMode != "manual" {
 		t.Fatal("unsafe default settings")
@@ -57,7 +58,7 @@ func TestOrderingControls(t *testing.T) {
 		t.Fatal("historical replay changed live settings")
 	}
 	placed := f.request(t, "POST", guest+"/food/orders", token, "place-resumed-order", placement, 201)
-	var order persistence.FoodOrder
+	var order foodstore.FoodOrder
 	must(t, json.Unmarshal(placed, &order))
 	if order.Acceptance != "accepted" || order.Revision != 2 || order.Payment != "not_started" || order.FulfilmentProgress != "not_started" {
 		t.Fatalf("wrong automatic outcome: %+v", order)

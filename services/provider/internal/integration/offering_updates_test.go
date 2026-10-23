@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"ocp.local/platform/internal/database"
 	"os"
 	"strings"
 	"testing"
@@ -14,16 +15,15 @@ import (
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/orderupdates"
-	"ocp.local/platform/internal/persistence"
 )
 
 func TestPublicOfferingStreamsIsolateDraftsOrdersAndOtherStores(t *testing.T) {
 	f := setup(t)
-	var database string
-	must(t, f.admin.QueryRow("SELECT current_database()").Scan(&database))
+	var databaseName string
+	must(t, f.admin.QueryRow("SELECT current_database()").Scan(&databaseName))
 	dsn, err := url.Parse(os.Getenv("OCP_TEST_DATABASE_URL"))
 	must(t, err)
-	dsn.Path = "/" + database
+	dsn.Path = "/" + databaseName
 	dsn.User = url.UserPassword("ocp_app", "ocp_app_local_only")
 	ctx, cancel := context.WithCancel(context.Background())
 	hub := orderupdates.NewOfferings()
@@ -89,13 +89,13 @@ func TestPublicOfferingStreamsIsolateDraftsOrdersAndOtherStores(t *testing.T) {
 		}
 	}
 	// Draft-only store writes have no public meaning and must not emit a hint.
-	tx, err := persistence.TenantTransaction(ctx, f.app, f.principal.MerchantID)
+	tx, err := database.TenantTransaction(ctx, f.app, f.principal.MerchantID)
 	must(t, err)
 	_, err = tx.ExecContext(ctx, "UPDATE commerce.stores SET display_name=display_name WHERE merchant_id=$1 AND id=$2", f.principal.MerchantID, store.ID)
 	must(t, err)
 	must(t, tx.Commit())
 	quiet()
-	tx, err = persistence.TenantTransaction(ctx, f.app, f.principal.MerchantID)
+	tx, err = database.TenantTransaction(ctx, f.app, f.principal.MerchantID)
 	must(t, err)
 	_, err = tx.ExecContext(ctx, "UPDATE commerce.stores SET ordering_revision=ordering_revision+1 WHERE merchant_id=$1 AND id=$2", f.principal.MerchantID, store.ID)
 	must(t, err)

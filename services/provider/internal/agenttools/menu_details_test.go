@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/commerce"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 func TestFilterMenuItems(t *testing.T) {

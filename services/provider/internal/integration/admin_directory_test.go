@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 func TestAdminStoreDirectory(t *testing.T) {
@@ -122,7 +123,7 @@ func TestAdminOrderDirectory(t *testing.T) {
 	if len(page.Items) != 0 {
 		t.Fatal("resolution not preferred over acceptance")
 	}
-	var quote persistence.FoodQuote
+	var quote foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", guest+"/food/quotes", guestToken, "", selection(1), 201), &quote))
 	f.request(t, "POST", guest+"/food/orders", guestToken, "admin-directory-second-001", fmt.Sprintf(`{"quote_id":%q,"fulfilment":"pickup"}`, quote.ID), 201)
 	must(t, json.Unmarshal(f.request(t, "GET", path+"?limit=1", token, "", "", 200), &page))

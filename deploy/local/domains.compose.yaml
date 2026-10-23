@@ -4,7 +4,7 @@ services:
   internal-shopping:
     profiles: [domains]
     image: ocp-platform-api
-    command: [-role, internal]
+    command: [-service, shopping]
     environment:
       OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@db:5432/ocp_dev?sslmode=disable
       OCP_ENABLED_DOMAINS: shopping
@@ -25,6 +25,7 @@ services:
   internal-lodging:
     extends:
       service: internal-shopping
+    command: [-service, lodging]
     environment:
       OCP_ENABLED_DOMAINS: lodging
   catalog-worker:

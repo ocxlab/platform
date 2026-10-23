@@ -12,11 +12,11 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/networkcatalog"
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence"
 )
 
 func networkModels(t *testing.T) *offering.Registry {

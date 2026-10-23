@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	corestore "ocp.local/platform/internal/core/persistence"
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/food/persistence/sqlgen"
 	"ocp.local/platform/internal/payment"
-	"ocp.local/platform/internal/persistence/sqlgen"
 )
 
 func paymentOperation(ctx context.Context, tx *sql.Tx, order FoodOrder) (payment.Operation, error) {
@@ -30,7 +31,7 @@ func savePayment(ctx context.Context, tx *sql.Tx, order FoodOrder, operation pay
 
 // The same order lock serializes payment simulation, cancellation, and merchant
 // decisions. No network side effects occur inside this development transaction.
-func ChangeDevelopmentPayment(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.UUID, expected int64, action string, requestID uuid.UUID) (FoodOrder, error) {
+func ChangeDevelopmentPayment(ctx context.Context, tx *sql.Tx, p corestore.Principal, store, id uuid.UUID, expected int64, action string, requestID uuid.UUID) (FoodOrder, error) {
 	order, err := readFoodOrder(ctx, tx, p, store, id, true)
 	if err != nil {
 		return order, err

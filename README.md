@@ -53,6 +53,12 @@ task web:dev
 not order readiness. There is intentionally no successful readiness claim.
 PostgreSQL has no published host port; access it through Compose.
 
+The regular API combines core and Food. Optional `task services:dev` starts
+separate core/Food API processes on ports 18182/18183 against the same development
+database, without changing the web application's combined endpoint. Stop them
+with `task services:stop`. Shopping/Lodging remain internal-only; see
+[source ownership and runtime boundaries](docs/DOMAIN-BOUNDARIES.md).
+
 Open <http://localhost:18181> for the web application. **Browse a store** lists
 this provider's published stores, with name search and scrollable results. Open
 a store to browse and place a guest pickup order without a merchant login.

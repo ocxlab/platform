@@ -14,8 +14,8 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence"
 )
 
 func sample(t *testing.T) (Binding, persistence.Effect) {

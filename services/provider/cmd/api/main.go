@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"ocp.local/platform/internal/database"
 	"os"
 	"os/signal"
 	"strconv"
@@ -18,7 +19,7 @@ import (
 	"ocp.local/platform/internal/media"
 	"ocp.local/platform/internal/networkcatalog"
 	"ocp.local/platform/internal/orderupdates"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/runtimeconfig"
 	"ocp.local/platform/internal/runtimehttp"
 	"ocp.local/platform/internal/telemetry"
 	"ocp.local/platform/internal/ucpinternal"
@@ -28,10 +29,12 @@ import (
 func main() {
 	listen := flag.String("listen", ":8080", "HTTP listen address")
 	role := flag.String("role", "public", "Process role: public, internal, or worker")
+	service := flag.String("service", "", "Service composition: combined, core, food, shopping, or lodging")
 	check := flag.Bool("healthcheck", false, "check the local API process and exit")
 	flag.Parse()
-	if *role != "public" && *role != "internal" && *role != "worker" {
-		slog.Error("invalid listener role")
+	process, err := runtimeconfig.Resolve(*service, *role, os.Getenv("OCP_ENABLED_DOMAINS"))
+	if err != nil {
+		slog.Error("invalid service composition")
 		os.Exit(1)
 	}
 	if *check {
@@ -67,15 +70,15 @@ func main() {
 		}
 	}()
 	startup, cancel := context.WithTimeout(ctx, 10*time.Second)
-	pool, err := persistence.PoolFromEnv(os.Getenv)
+	pool, err := database.PoolFromEnv(os.Getenv)
 	if err != nil {
 		cancel()
 		slog.Error("invalid database pool configuration")
 		os.Exit(1)
 	}
-	db, err := persistence.OpenWithPool(startup, os.Getenv("OCP_DATABASE_URL"), pool)
+	db, err := database.OpenWithPool(startup, os.Getenv("OCP_DATABASE_URL"), pool)
 	if err == nil {
-		err = persistence.CheckRuntimeRole(startup, db)
+		err = database.CheckRuntimeRole(startup, db)
 	}
 	cancel()
 	if err != nil {
@@ -83,8 +86,8 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
-	if *role == "worker" {
-		enabled, err := capability.Parse(os.Getenv("OCP_ENABLED_DOMAINS"), []capability.Domain{capability.Food}, []capability.Domain{capability.Food})
+	if process.Role == "worker" {
+		enabled, err := capability.Parse(process.Domains, []capability.Domain{capability.Food}, []capability.Domain{capability.Food})
 		if err != nil || len(enabled.Enabled()) != 1 {
 			slog.Error("invalid worker domains")
 			os.Exit(1)
@@ -113,7 +116,7 @@ func main() {
 		}
 		return
 	}
-	if *role == "internal" {
+	if process.Role == "internal" {
 		concurrency := 4
 		if raw := os.Getenv("OCP_DOMAIN_CONCURRENCY"); raw != "" {
 			concurrency, err = strconv.Atoi(raw)
@@ -122,7 +125,7 @@ func main() {
 				os.Exit(1)
 			}
 		}
-		handler, err := ucpinternal.NewHandler(db, ucpinternal.Config{Domains: os.Getenv("OCP_ENABLED_DOMAINS"), Endpoint: os.Getenv("OCP_INTERNAL_ENDPOINT"), Concurrency: concurrency, Observer: signals.Observer})
+		handler, err := ucpinternal.NewHandler(db, ucpinternal.Config{Domains: process.Domains, Endpoint: os.Getenv("OCP_INTERNAL_ENDPOINT"), Concurrency: concurrency, Observer: signals.Observer})
 		if err != nil {
 			slog.Error("internal contract startup failed")
 			os.Exit(1)
@@ -134,9 +137,12 @@ func main() {
 		return
 	}
 	var options []httpapi.Option
-	options = append(options, httpapi.WithDomains(os.Getenv("OCP_ENABLED_DOMAINS")))
+	options = append(options, httpapi.WithDomains(process.Domains), httpapi.WithService(process.Service))
 	options = append(options, httpapi.WithTelemetry(signals.Observer))
-	storage, err := media.FromEnv(os.Getenv)
+	var storage *media.Storage
+	if process.Service != "food" {
+		storage, err = media.FromEnv(os.Getenv)
+	}
 	if err != nil {
 		slog.Error("invalid media configuration")
 		os.Exit(1)
@@ -147,13 +153,17 @@ func main() {
 	if os.Getenv("OCP_LOCAL_MERCHANT_MCP") == "true" {
 		options = append(options, httpapi.WithLocalMerchantMCP())
 	}
-	updates := orderupdates.New()
-	go updates.Run(ctx, os.Getenv("OCP_DATABASE_URL"))
-	options = append(options, httpapi.WithOrderUpdates(updates))
-	offeringUpdates := orderupdates.NewOfferings()
-	go offeringUpdates.Run(ctx, os.Getenv("OCP_DATABASE_URL"))
-	options = append(options, httpapi.WithOfferingUpdates(offeringUpdates))
-	if os.Getenv("OCP_DEVELOPMENT_PAYMENTS") == "true" {
+	if process.Service != "core" && process.Domains != "none" {
+		updates := orderupdates.New()
+		go updates.Run(ctx, os.Getenv("OCP_DATABASE_URL"))
+		options = append(options, httpapi.WithOrderUpdates(updates))
+	}
+	if process.Service != "food" && process.Domains != "none" {
+		offeringUpdates := orderupdates.NewOfferings()
+		go offeringUpdates.Run(ctx, os.Getenv("OCP_DATABASE_URL"))
+		options = append(options, httpapi.WithOfferingUpdates(offeringUpdates))
+	}
+	if os.Getenv("OCP_DEVELOPMENT_PAYMENTS") == "true" && process.Service != "core" {
 		options = append(options, httpapi.WithDevelopmentPayments())
 		slog.Warn("development payments enabled; no real money is moved")
 	}

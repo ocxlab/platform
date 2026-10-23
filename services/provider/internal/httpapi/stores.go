@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 func (s *Server) ListStores(w http.ResponseWriter, r *http.Request, merchant uuid.UUID, params ListStoresParams) {

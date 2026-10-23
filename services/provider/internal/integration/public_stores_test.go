@@ -3,12 +3,13 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"ocp.local/platform/internal/database"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 func TestPublicStoreDirectory(t *testing.T) {
@@ -73,7 +74,7 @@ func TestPublicStoreDirectory(t *testing.T) {
 	if len(second.Items) != 1 || second.Items[0].ID == first.Items[0].ID || second.NextAfter != nil {
 		t.Fatal("invalid directory continuation")
 	}
-	tx, err := persistence.TenantTransaction(context.Background(), f.app, store.MerchantID)
+	tx, err := database.TenantTransaction(context.Background(), f.app, store.MerchantID)
 	must(t, err)
 	var count int
 	must(t, tx.QueryRow(`SELECT count(*) FROM commerce.stores WHERE merchant_id=$1`, other).Scan(&count))

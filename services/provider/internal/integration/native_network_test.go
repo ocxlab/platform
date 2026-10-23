@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/networkcatalog"
-	"ocp.local/platform/internal/persistence"
 )
 
 // Real native ONIX services run in the opt-in isolated Docker composition. This
@@ -137,7 +138,7 @@ func TestNativeONIXFoodJourney(t *testing.T) {
 	})
 	for _, row := range search() {
 		endpoint := fmt.Sprintf("%s/public/merchants/%s/stores/%s/food/quotes", row.APIBase, row.MerchantID, row.StoreID)
-		var quote persistence.FoodQuote
+		var quote foodstore.FoodQuote
 		var selectionBody any
 		must(t, json.Unmarshal([]byte(selection(row.Generation)), &selectionBody))
 		must(t, json.Unmarshal(request("POST", endpoint, "", selectionBody, 201), &quote))
@@ -166,7 +167,7 @@ func TestNativeONIXFoodJourney(t *testing.T) {
 	must(t, json.Unmarshal([]byte(selection(oldGeneration)), &selected))
 	request("POST", public+"/food/quotes", "", selected, 409)
 	must(t, json.Unmarshal([]byte(selection(publications[0].Generation)), &selected))
-	var quote persistence.FoodQuote
+	var quote foodstore.FoodQuote
 	must(t, json.Unmarshal(request("POST", public+"/food/quotes", "", selected, 201), &quote))
 	if quote.Total != 1800 {
 		t.Fatal("updated authoritative price not applied")

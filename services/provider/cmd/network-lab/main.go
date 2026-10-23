@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"ocp.local/platform/internal/database"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -25,11 +26,11 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/networkcatalog"
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/work"
 )
 
@@ -92,11 +93,11 @@ func load() (state, error) {
 func initialize(ctx context.Context) error {
 	if _, err := os.Stat(filepath.Join(root, "state.json")); err == nil {
 		for _, name := range []string{"ocp_network", "provider_a", "provider_b"} {
-			db, err := persistence.Open(ctx, databaseURL(name, false))
+			db, err := database.Open(ctx, databaseURL(name, false))
 			if err != nil {
 				return err
 			}
-			err = persistence.Migrate(ctx, db)
+			err = database.Migrate(ctx, db)
 			db.Close()
 			if err != nil {
 				return err
@@ -112,7 +113,7 @@ func initialize(ctx context.Context) error {
 	if err := os.MkdirAll(root, 0700); err != nil {
 		return err
 	}
-	admin, err := persistence.Open(ctx, adminDSN)
+	admin, err := database.Open(ctx, adminDSN)
 	if err != nil {
 		return err
 	}
@@ -128,7 +129,7 @@ func initialize(ctx context.Context) error {
 			}
 		}
 	}
-	if err = persistence.Migrate(ctx, admin); err != nil {
+	if err = database.Migrate(ctx, admin); err != nil {
 		return err
 	}
 	var s state
@@ -143,11 +144,11 @@ func initialize(ctx context.Context) error {
 			return err
 		}
 		dbName := strings.ReplaceAll(name, "-", "_")
-		db, err := persistence.Open(ctx, databaseURL(dbName, false))
+		db, err := database.Open(ctx, databaseURL(dbName, false))
 		if err != nil {
 			return err
 		}
-		if err = persistence.Migrate(ctx, db); err != nil {
+		if err = database.Migrate(ctx, db); err != nil {
 			db.Close()
 			return err
 		}
@@ -156,7 +157,7 @@ func initialize(ctx context.Context) error {
 			db.Close()
 			return err
 		}
-		tx, err := persistence.TenantTransaction(ctx, db, principal.MerchantID)
+		tx, err := database.TenantTransaction(ctx, db, principal.MerchantID)
 		if err != nil {
 			db.Close()
 			return err
@@ -225,12 +226,12 @@ func serve(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	db, err := persistence.Open(ctx, databaseURL("ocp_network", true))
+	db, err := database.Open(ctx, databaseURL("ocp_network", true))
 	if err != nil {
 		return err
 	}
 	defer db.Close()
-	if err = persistence.CheckRuntimeRole(ctx, db); err != nil {
+	if err = database.CheckRuntimeRole(ctx, db); err != nil {
 		return err
 	}
 	spec, err := httpapi.GetSwagger()
@@ -300,12 +301,12 @@ func serve(ctx context.Context) error {
 	servers := []*http.Server{{Addr: ":8090", Handler: mux, ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 30 * time.Second}}
 	result := make(chan error, len(s.Peers)*2+1)
 	for n, p := range s.Peers {
-		app, err := persistence.Open(ctx, databaseURL(strings.ReplaceAll(p.Name, "-", "_"), true))
+		app, err := database.Open(ctx, databaseURL(strings.ReplaceAll(p.Name, "-", "_"), true))
 		if err != nil {
 			return err
 		}
 		defer app.Close()
-		if err = persistence.CheckRuntimeRole(ctx, app); err != nil {
+		if err = database.CheckRuntimeRole(ctx, app); err != nil {
 			return err
 		}
 		handler, err := httpapi.NewHandler(app)

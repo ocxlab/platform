@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"ocp.local/platform/internal/database"
 	"time"
 
 	"github.com/google/uuid"
@@ -44,7 +45,7 @@ func mediaAsset(ctx context.Context, tx *sql.Tx, merchant, store, id uuid.UUID) 
 	return a, err
 }
 func GetMedia(ctx context.Context, db *sql.DB, merchant, store, id uuid.UUID) (MediaAsset, error) {
-	tx, err := TenantTransaction(ctx, db, merchant)
+	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return MediaAsset{}, err
 	}
@@ -124,13 +125,13 @@ func validateMediaReferences(ctx context.Context, tx *sql.Tx, merchant, store uu
 }
 
 func PublicMedia(ctx context.Context, db *sql.DB, merchant, store, id uuid.UUID) (MediaAsset, error) {
-	tx, err := TenantTransaction(ctx, db, merchant)
+	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return MediaAsset{}, err
 	}
 	defer tx.Rollback()
 	// Authorization is the visible model projection, not knowledge of a UUID.
-	public, err := publicOffering(ctx, tx, merchant, store, false)
+	public, err := PublicOfferingTx(ctx, tx, merchant, store, false)
 	if err != nil {
 		return MediaAsset{}, err
 	}

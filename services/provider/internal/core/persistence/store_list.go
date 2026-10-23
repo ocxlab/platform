@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"ocp.local/platform/internal/database"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/persistence/sqlgen"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
 )
 
 type ManagedStore struct {
@@ -39,7 +40,7 @@ func ListStores(ctx context.Context, db *sql.DB, merchant uuid.UUID, after *uuid
 	if limit < 1 || limit > 100 {
 		return page, errors.New("store page limit outside bounds")
 	}
-	tx, err := TenantTransaction(ctx, db, merchant)
+	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return page, err
 	}

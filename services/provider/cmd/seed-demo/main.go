@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"ocp.local/platform/internal/database"
 	"ocp.local/platform/internal/devsetup"
-	"ocp.local/platform/internal/persistence"
 	"os"
 	"time"
 )
@@ -14,7 +14,7 @@ import (
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	db, err := persistence.Open(ctx, "postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable")
+	db, err := database.Open(ctx, "postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable")
 	if err != nil {
 		fail(err)
 	}

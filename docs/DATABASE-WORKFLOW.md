@@ -27,7 +27,7 @@ This tooling choice does not constrain the application runtime's architecture.
    using stale desired SQL after migration history changes; export a new NAME
    and merge your intended edits in that case.
 3. Turn the draft into a reviewed, numbered Goose migration under
-   `services/provider/internal/persistence/migrations/`. Drafts are ignored local
+   `services/provider/internal/database/migrations/`. Drafts are ignored local
    work; only reviewed migration SQL belongs in Git. There is deliberately no
    automatic promotion or pgschema apply command. pgschema's JSON wait directives
    are review information, not executable Goose SQL.

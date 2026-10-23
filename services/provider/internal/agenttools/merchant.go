@@ -16,9 +16,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"ocp.local/platform/internal/commerce"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/telemetry"
 )
 

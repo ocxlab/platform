@@ -8,21 +8,23 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"ocp.local/platform/internal/database"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence"
 )
 
-func placedOrderFixture(t *testing.T) (*fixture, persistence.Store, string, string, string, persistence.FoodOrder) {
+func placedOrderFixture(t *testing.T) (*fixture, persistence.Store, string, string, string, foodstore.FoodOrder) {
 	t.Helper()
 	f, store, private, guest, token, quote := orderFixture(t)
-	var order persistence.FoodOrder
+	var order foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "POST", guest+"/food/orders", token, "operations-placement-001", fmt.Sprintf(`{"quote_id":%q,"fulfilment":"pickup"}`, quote.ID), 201), &order))
 	return f, store, private, guest, token, order
 }
@@ -42,7 +44,7 @@ func TestFoodOrderProgressMigrationPreservesLegacyReplay(t *testing.T) {
 	// writes a durable export intent, a table deliberately absent from v3.
 	_, seedErr = f.admin.Exec(`UPDATE commerce.stores s SET published_revision=1,publication_generation=1,public_document=r.document FROM commerce.offering_revisions r WHERE s.id=$1 AND r.store_id=s.id AND r.revision=1`, store.ID)
 	must(t, seedErr)
-	var session persistence.GuestSession
+	var session foodstore.GuestSession
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &session))
 	// Current quote handlers require current ordering-policy columns. Build the
 	// historical terms with the same Food pricer instead of running today's
@@ -57,12 +59,12 @@ func TestFoodOrderProgressMigrationPreservesLegacyReplay(t *testing.T) {
 	must(t, err)
 	lines, err := json.Marshal(priced)
 	must(t, err)
-	quote := persistence.FoodQuote{ID: uuid.New(), MerchantID: store.MerchantID, StoreID: store.ID,
+	quote := foodstore.FoodQuote{ID: uuid.New(), MerchantID: store.MerchantID, StoreID: store.ID,
 		Generation: publication.Generation, Revision: publication.Revision, Model: publication.Model,
 		Currency: "EUR", Lines: lines, Total: total, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(10 * time.Minute)}
 	actor, err := persistence.AuthenticateGuest(context.Background(), f.app, session.Token)
 	must(t, err)
-	legacy := persistence.FoodOrder{ID: uuid.New(), MerchantID: store.MerchantID, StoreID: store.ID, Contract: "ocp.food.order.v1", Terms: quote, Fulfilment: "pickup", Acceptance: "pending", Payment: "not_started", FulfilmentProgress: "not_started", Resolution: "open", CreatedAt: time.Now().UTC()}
+	legacy := foodstore.FoodOrder{ID: uuid.New(), MerchantID: store.MerchantID, StoreID: store.ID, Contract: "ocp.food.order.v1", Terms: quote, Fulfilment: "pickup", Acceptance: "pending", Payment: "not_started", FulfilmentProgress: "not_started", Resolution: "open", CreatedAt: time.Now().UTC()}
 	requestBody := fmt.Sprintf(`{"quote_id":%q,"fulfilment":"pickup"}`, quote.ID)
 	var decoded httpapi.PlaceFoodOrderJSONRequestBody
 	must(t, json.Unmarshal([]byte(requestBody), &decoded))
@@ -83,9 +85,9 @@ func TestFoodOrderProgressMigrationPreservesLegacyReplay(t *testing.T) {
 		return legacy, err
 	})
 	must(t, err)
-	must(t, persistence.Migrate(context.Background(), f.admin))
-	must(t, persistence.Migrate(context.Background(), f.admin))
-	var got persistence.FoodOrder
+	must(t, database.Migrate(context.Background(), f.admin))
+	must(t, database.Migrate(context.Background(), f.admin))
+	var got foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", guest+"/food/orders/"+legacy.ID.String(), session.Token, "", "", 200), &got))
 	if got.Revision != 1 || len(got.History) != 1 || got.Reference == "" {
 		t.Fatal("legacy order was not backfilled")
@@ -126,7 +128,7 @@ func TestFoodOrderDecisionsAndCancellation(t *testing.T) {
 		t.Fatalf("missing current order revision: %s", stale)
 	}
 	accepted := f.request(t, "POST", path+"/decisions", f.token, "order-accept-key-001", decision, 201)
-	var got persistence.FoodOrder
+	var got foodstore.FoodOrder
 	must(t, json.Unmarshal(accepted, &got))
 	if got.Revision != 2 || got.Acceptance != "accepted" || got.Payment != "not_started" || got.FulfilmentProgress != "not_started" || len(got.History) != 2 {
 		t.Fatalf("invalid acceptance: %s", accepted)
@@ -139,7 +141,7 @@ func TestFoodOrderDecisionsAndCancellation(t *testing.T) {
 	// A different intention cannot override the decision, nor reuse its key.
 	f.request(t, "POST", path+"/decisions", f.token, "order-accept-key-001", `{"expected_revision":1,"decision":"reject"}`, 409)
 	f.request(t, "POST", path+"/decisions", f.token, "order-reject-key-001", `{"expected_revision":2,"decision":"reject"}`, 409)
-	var guestRead persistence.FoodOrder
+	var guestRead foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", guestPath, token, "", "", 200), &guestRead))
 	if guestRead.Acceptance != "accepted" || len(guestRead.History) != 2 {
 		t.Fatal("guest missed merchant decision")
@@ -200,24 +202,24 @@ func TestFoodOrderRejectionOwnershipAndPages(t *testing.T) {
 	path := private + "/food/orders/" + order.ID.String()
 	guestPath := guest + "/food/orders/" + order.ID.String()
 	public := strings.Replace(private, "/api/v1/", "/api/v1/public/", 1)
-	var other persistence.GuestSession
+	var other foodstore.GuestSession
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &other))
 	f.request(t, "POST", guestPath+"/cancellation", other.Token, "other-guest-cancel-001", `{"expected_revision":1}`, 404)
 	f.request(t, "GET", strings.Replace(path, store.ID.String(), uuid.NewString(), 1), f.token, "", "", 404)
 	result := f.request(t, "POST", path+"/decisions", f.token, "order-reject-key-002", `{"expected_revision":1,"decision":"reject"}`, 201)
-	var got persistence.FoodOrder
+	var got foodstore.FoodOrder
 	must(t, json.Unmarshal(result, &got))
 	if got.Acceptance != "rejected" || got.Resolution != "rejected" {
 		t.Fatal("rejection did not close order")
 	}
 	f.request(t, "POST", guestPath+"/cancellation", token, "rejected-cancel-001", `{"expected_revision":2}`, 409)
-	var page persistence.FoodOrderPage
+	var page foodstore.FoodOrderPage
 	must(t, json.Unmarshal(f.request(t, "GET", private+"/food/orders?limit=1", f.token, "", "", 200), &page))
 	if len(page.Items) != 1 || page.Items[0].Resolution != "rejected" || page.NextAfter != nil {
 		t.Fatal("closed order missing from inbox")
 	}
 	// Exercise a real continuation page, not just an empty cursor result.
-	var quote persistence.FoodQuote
+	var quote foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", guest+"/food/quotes", token, "", selection(1), 201), &quote))
 	f.request(t, "POST", guest+"/food/orders", token, "second-inbox-order-001", fmt.Sprintf(`{"quote_id":%q,"fulfilment":"pickup"}`, quote.ID), 201)
 	must(t, json.Unmarshal(f.request(t, "GET", private+"/food/orders?limit=1", f.token, "", "", 200), &page))
@@ -228,7 +230,7 @@ func TestFoodOrderRejectionOwnershipAndPages(t *testing.T) {
 	if firstID == order.ID {
 		t.Fatal("newest order was not first")
 	}
-	var next persistence.FoodOrderPage
+	var next foodstore.FoodOrderPage
 	must(t, json.Unmarshal(f.request(t, "GET", private+"/food/orders?limit=1&after="+*page.NextAfter, f.token, "", "", 200), &next))
 	if len(next.Items) != 1 || next.Items[0].ID == firstID || next.NextAfter != nil {
 		t.Fatal("invalid continuation page")
@@ -237,7 +239,7 @@ func TestFoodOrderRejectionOwnershipAndPages(t *testing.T) {
 	f.request(t, "GET", private+"/food/orders?after=invalid", f.token, "", "", 400)
 	f.request(t, "GET", strings.Replace(private, store.ID.String(), uuid.NewString(), 1)+"/food/orders", f.token, "", "", 404)
 	// Direct tenant-scoped runtime access cannot see other merchants' operations.
-	tx, err := persistence.TenantTransaction(context.Background(), f.app, uuid.New())
+	tx, err := database.TenantTransaction(context.Background(), f.app, uuid.New())
 	must(t, err)
 	var count int
 	must(t, tx.QueryRow(`SELECT count(*) FROM commerce.food_order_operations`).Scan(&count))
@@ -274,7 +276,7 @@ func TestFoodOrderCancellationAtomicRollback(t *testing.T) {
 	_, err := f.admin.Exec(`ALTER TABLE commerce.food_order_events ADD CONSTRAINT reject_cancellation_event CHECK (event <> 'cancelled')`)
 	must(t, err)
 	f.request(t, "POST", path, token, "cancel-atomic-key-001", `{"expected_revision":1}`, 503)
-	var current persistence.FoodOrder
+	var current foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", private+"/food/orders/"+order.ID.String(), f.token, "", "", 200), &current))
 	if current.Revision != 1 || current.Resolution != "open" || len(current.History) != 1 {
 		t.Fatal("failed event left partial cancellation")

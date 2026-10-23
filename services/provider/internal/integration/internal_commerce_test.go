@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"ocp.local/platform/internal/database"
 	"strings"
 	"sync"
 	"testing"
@@ -17,7 +18,7 @@ import (
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/sessionkit"
 	"ocp.local/platform/internal/ucpcontract"
 	"ocp.local/platform/internal/ucpinternal"
@@ -184,7 +185,7 @@ func TestInternalShoppingJourney(t *testing.T) {
 	}
 	x.request(t, "GET", orderPath, x.shop, "", "", 200)
 	x.request(t, "GET", orderPath, x.shopOther, "", "", 404)
-	storeTx, err := persistence.TenantTransaction(context.Background(), x.f.app, x.f.principal.MerchantID)
+	storeTx, err := database.TenantTransaction(context.Background(), x.f.app, x.f.principal.MerchantID)
 	must(t, err)
 	otherStore, err := persistence.CreateStore(context.Background(), storeTx, x.f.principal.MerchantID, "Another store")
 	must(t, err)
@@ -225,7 +226,7 @@ func TestInternalShoppingJourney(t *testing.T) {
 func TestInternalAdmissionAndCredentialPrivileges(t *testing.T) {
 	x := internalSetup(t)
 	ctx := context.Background()
-	must(t, persistence.CheckRuntimeRole(ctx, x.f.app))
+	must(t, database.CheckRuntimeRole(ctx, x.f.app))
 	var hardened bool
 	must(t, x.f.admin.QueryRow(`SELECT p.prosecdef AND r.rolname='ocp_internal_auth_owner' AND NOT r.rolcanlogin AND NOT r.rolsuper AND NOT r.rolbypassrls
  AND p.proconfig=ARRAY['search_path=pg_catalog'] AND NOT EXISTS(SELECT FROM aclexplode(p.proacl) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE')

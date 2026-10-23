@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"ocp.local/platform/internal/database"
 	"strings"
 	"testing"
 	"time"
@@ -16,9 +17,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/devsetup"
 	"ocp.local/platform/internal/httpapi"
-	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/telemetry"
 )
 
@@ -438,7 +439,7 @@ func TestMerchantMCP(t *testing.T) {
 func TestMerchantResourceGrantUpgrade(t *testing.T) {
 	f := setupAtVersion(t, 12)
 	ctx := context.Background()
-	must(t, persistence.Migrate(ctx, f.admin))
+	must(t, database.Migrate(ctx, f.admin))
 	// Existing REST credentials keep working after the new resource column.
 	p, err := persistence.Authenticate(ctx, f.app, f.token)
 	must(t, err)

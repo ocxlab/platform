@@ -4,6 +4,7 @@ vars:
   COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml
   NETWORK_COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml --file deploy/local/network.compose.yaml
   DOMAINS_COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml --file deploy/local/network.compose.yaml --file deploy/local/domains.compose.yaml
+  SERVICES_COMPOSE: docker compose --project-directory . --file deploy/local/compose.yaml --file deploy/local/services.compose.yaml
 
 tasks:
   migrations:build:
@@ -60,8 +61,8 @@ tasks:
   sql:generate:
     desc: Generate ignored Go queries from owned SQL and Goose migrations
     deps: [tools:build]
-    sources: [services/provider/sqlc.yaml, services/provider/internal/persistence/queries/*.sql, services/provider/internal/persistence/migrations/*.sql]
-    generates: [services/provider/internal/persistence/sqlgen/*.go]
+    sources: [services/provider/sqlc.yaml, services/provider/internal/core/persistence/queries/*.sql, services/provider/internal/food/persistence/queries/*.sql, services/provider/internal/database/migrations/*.sql]
+    generates: [services/provider/internal/core/persistence/sqlgen/*.go, services/provider/internal/food/persistence/sqlgen/*.go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools sqlc generate'
 
@@ -103,7 +104,19 @@ tasks:
     deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} up --detach --wait test-db'
-      - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable -e OCP_TEST_API_BINARY=/tmp/ocp-api -e OCP_TEST_UCP_SOURCE=true tools sh -ec ''go build -o /tmp/ocp-api ./cmd/api; go test -race -count=1 ./internal/integration -run "TestInternal|TestDomainProcess|TestWorkerProcess" -v'''
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable -e OCP_TEST_API_BINARY=/tmp/ocp-api -e OCP_TEST_UCP_SOURCE=true tools sh -ec ''go build -o /tmp/ocp-api ./cmd/api; go test -race -count=1 ./internal/integration -run "TestInternal|TestDomainProcess|TestWorkerProcess|TestServiceProcess" -v'''
+
+  services:dev:
+    desc: Start optional separate core and Food API processes on ports 18182 and 18183
+    cmds:
+      - task: db:prepare
+      - '{{.COMPOSE}} build api'
+      - '{{.SERVICES_COMPOSE}} up --detach --wait core-api food-api'
+
+  services:stop:
+    desc: Stop only the separate core and Food APIs, retaining local data
+    cmds:
+      - '{{.SERVICES_COMPOSE}} stop core-api food-api'
   network:prepare:
     desc: Build pinned native ONIX and provision isolated synthetic provider databases
     deps: [generate:go]
@@ -145,7 +158,7 @@ tasks:
     cmds:
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
-        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/provider/internal/httpapi/generated.go services/provider/internal/ucpcontract/generated.go services/provider/internal/persistence/sqlgen services/provider/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
+        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/provider/internal/httpapi/generated.go services/provider/internal/ucpcontract/generated.go ":(glob)services/provider/internal/**/sqlgen/**" services/provider/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
 
   media:start:
     desc: Start optional local S3-compatible storage without changing application data

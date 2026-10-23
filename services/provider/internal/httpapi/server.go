@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"time"
 
@@ -18,10 +19,10 @@ import (
 	"ocp.local/platform/internal/agenttools"
 	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/commerce"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
 	"ocp.local/platform/internal/orderupdates"
-	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/problems"
 	"ocp.local/platform/internal/telemetry"
 )
@@ -37,9 +38,17 @@ type Server struct {
 	localMerchantMCP    bool
 	mediaStore          commerce.MediaStorage
 	domainSelection     string
+	service             string
 }
 
 type Option func(*Server)
+
+// WithService chooses route ownership, not authorization. Core owns shared
+// store/catalog administration; Food owns quote/order/fulfilment operations.
+// The combined composition mounts both without an internal HTTP hop.
+func WithService(service string) Option {
+	return func(s *Server) { s.service = service }
+}
 
 // WithDomains selects installed domain routes for this process. An explicit
 // "none" retains shared control-plane APIs; uninstalled names fail startup.
@@ -77,9 +86,12 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	server := &Server{db: db}
+	server := &Server{db: db, service: "combined"}
 	for _, option := range options {
 		option(server)
+	}
+	if server.service != "combined" && server.service != "core" && server.service != "food" {
+		return nil, errors.New("unknown public service composition")
 	}
 	domains, err := capability.Parse(server.domainSelection, []capability.Domain{capability.Food}, []capability.Domain{capability.Food})
 	if err != nil {
@@ -167,7 +179,7 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 		}
 	}
 	var merchantMCP http.Handler
-	if server.localMerchantMCP && domains.Allows(capability.Food) {
+	if server.localMerchantMCP && server.service != "food" && domains.Allows(capability.Food) {
 		merchantMCP = (agenttools.Merchant{DB: db, Models: server.models, Observer: server.telemetry}).LocalHandler()
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -195,6 +207,10 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 				return
 			}
 			domain := route.PathItem.Extensions["x-commerce-boundary"].(string)
+			if route.Operation.OperationID != "GetLiveness" && ((server.service == "core" && domain == "food") || (server.service == "food" && domain != "food")) {
+				problem(w, 503, "unavailable", "This API operation belongs to another service.", nil)
+				return
+			}
 			if (domain == "model" && len(validators) == 0) || (capability.Domain(domain).Valid() && !domains.Allows(capability.Domain(domain))) {
 				// The contract's shared 503 response also covers disabled runtime
 				// capabilities. Do not authenticate, query storage, or dispatch.
@@ -362,26 +378,26 @@ func write(w http.ResponseWriter, value any, err error) {
 	if err != nil {
 		var conflict *persistence.RevisionConflict
 		var publicationConflict *persistence.PublicationConflict
-		var orderConflict *persistence.OrderRevisionConflict
-		var orderingConflict *persistence.OrderingRevisionConflict
+		var orderConflict *foodstore.OrderRevisionConflict
+		var orderingConflict *foodstore.OrderingRevisionConflict
 		switch {
 		case errors.As(err, &orderingConflict):
 			problem(w, 409, "ordering_revision_conflict", "Ordering settings have changed. Read their current revision before retrying.", &orderingConflict.Current)
-		case errors.Is(err, persistence.ErrOrderingPaused):
+		case errors.Is(err, foodstore.ErrOrderingPaused):
 			problem(w, 409, "ordering_paused", "This store has paused new orders. Existing orders remain available.", nil)
 		case errors.Is(err, persistence.ErrPublicStoreCursor):
 			problem(w, 400, "invalid_request", "The store continuation cursor is invalid.", nil)
-		case errors.Is(err, persistence.ErrOrderCursor):
+		case errors.Is(err, foodstore.ErrOrderCursor):
 			problem(w, 400, "invalid_request", "The order continuation cursor is invalid.", nil)
 		case errors.As(err, &orderConflict):
 			problem(w, 409, "order_revision_conflict", "Order progress has changed. Read its current revision before retrying.", &orderConflict.Current)
-		case errors.Is(err, persistence.ErrOrderTransition):
+		case errors.Is(err, foodstore.ErrOrderTransition):
 			problem(w, 409, "order_transition_conflict", "This action is not available for the current order state.", nil)
 		case errors.Is(err, persistence.ErrUnauthenticated):
 			problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)
-		case errors.Is(err, persistence.ErrQuoteExpired):
+		case errors.Is(err, foodstore.ErrQuoteExpired):
 			problem(w, 409, "quote_expired", "This quote has expired. Request fresh terms before placing an order.", nil)
-		case errors.Is(err, persistence.ErrQuoteUsed):
+		case errors.Is(err, foodstore.ErrQuoteUsed):
 			problem(w, 409, "quote_already_placed", "This quote already has an order. Retry with the original placement key or inspect the existing order.", nil)
 		case errors.Is(err, persistence.ErrNotFound):
 			problem(w, 404, "not_found", "Resource not found.", nil)
@@ -395,10 +411,10 @@ func write(w http.ResponseWriter, value any, err error) {
 			problem(w, 422, "invalid_selection", "Select available items and supported variants/options within the published limits.", nil)
 		case errors.Is(err, persistence.ErrMediaReference):
 			problem(w, 422, "invalid_offering", "Menu photos must be ready images owned by this store.", nil)
-		case errors.Is(err, persistence.ErrQuoteCapacity):
+		case errors.Is(err, foodstore.ErrQuoteCapacity):
 			w.Header().Set("Retry-After", "60")
 			problem(w, 429, "quote_capacity", "This store has reached its temporary quote capacity. Please try again later.", nil)
-		case errors.Is(err, persistence.ErrGuestCapacity):
+		case errors.Is(err, foodstore.ErrGuestCapacity):
 			w.Header().Set("Retry-After", "60")
 			problem(w, 429, "guest_capacity", "This store has reached its temporary guest checkout capacity. Please try again later.", nil)
 		case errors.Is(err, offering.ErrUnsupported):

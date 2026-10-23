@@ -9,8 +9,8 @@ import (
 
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/media"
-	"ocp.local/platform/internal/persistence"
 )
 
 type MediaStorage interface {

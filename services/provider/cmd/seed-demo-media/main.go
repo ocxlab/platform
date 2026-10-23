@@ -13,18 +13,19 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"ocp.local/platform/internal/database"
 	"os"
 	"time"
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/commerce"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/devfixtures"
 	"ocp.local/platform/internal/devsetup"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/media"
 	"ocp.local/platform/internal/offering"
 	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/persistence"
 )
 
 func main() {
@@ -36,7 +37,7 @@ func main() {
 func run() (resultErr error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	admin, err := persistence.Open(ctx, "postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable")
+	admin, err := database.Open(ctx, "postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable")
 	if err != nil {
 		return err
 	}
@@ -45,7 +46,7 @@ func run() (resultErr error) {
 	if err != nil {
 		return err
 	}
-	db, err := persistence.Open(ctx, "postgres://ocp_app:ocp_app_local_only@db:5432/ocp_dev?sslmode=disable")
+	db, err := database.Open(ctx, "postgres://ocp_app:ocp_app_local_only@db:5432/ocp_dev?sslmode=disable")
 	if err != nil {
 		return err
 	}
@@ -119,7 +120,7 @@ func run() (resultErr error) {
 		sum := base64.StdEncoding.EncodeToString(hash[:])
 		// Reuse a previously completed asset after an interrupted seed, independent
 		// of this run's temporary credential and request replay scope.
-		tx, err := persistence.TenantTransaction(ctx, db, store.MerchantID)
+		tx, err := database.TenantTransaction(ctx, db, store.MerchantID)
 		if err != nil {
 			return err
 		}

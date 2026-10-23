@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	corestore "ocp.local/platform/internal/core/persistence"
 
 	"github.com/google/uuid"
 )
@@ -10,7 +11,7 @@ import (
 // Merchant reports of physical work are separate from financial outcomes. This
 // pickup slice deliberately requires payment before work starts; cash-on-pickup
 // and merchant-configured payment conditions are separate future capabilities.
-func ProgressFoodFulfilment(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.UUID, expected int64, action string, requestID uuid.UUID) (FoodOrder, error) {
+func ProgressFoodFulfilment(ctx context.Context, tx *sql.Tx, p corestore.Principal, store, id uuid.UUID, expected int64, action string, requestID uuid.UUID) (FoodOrder, error) {
 	order, err := readFoodOrder(ctx, tx, p, store, id, true)
 	if err != nil {
 		return order, err

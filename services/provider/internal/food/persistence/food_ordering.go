@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	corestore "ocp.local/platform/internal/core/persistence"
+	"ocp.local/platform/internal/database"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/persistence/sqlgen"
+	"ocp.local/platform/internal/food/persistence/sqlgen"
 )
 
 var ErrOrderingPaused = errors.New("new food ordering paused")
@@ -40,13 +42,13 @@ func readFoodOrdering(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID
 		row, err = queries.GetFoodOrdering(ctx, args)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		err = ErrNotFound
+		err = corestore.ErrNotFound
 	}
 	return FoodOrdering{Revision: row.OrderingRevision, AcceptingOrders: row.AcceptingOrders, AcceptanceMode: row.AcceptanceMode, actor: row.OrderingActorID}, err
 }
 
 func GetFoodOrdering(ctx context.Context, db *sql.DB, merchant, store uuid.UUID, public bool) (FoodOrdering, error) {
-	tx, err := TenantTransaction(ctx, db, merchant)
+	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return FoodOrdering{}, err
 	}
@@ -60,7 +62,7 @@ func GetFoodOrdering(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 	return state, tx.Commit()
 }
 
-func ChangeFoodOrdering(ctx context.Context, tx *sql.Tx, actor Principal, store uuid.UUID, expected int64, accepting bool, mode string, requestID uuid.UUID) (FoodOrdering, error) {
+func ChangeFoodOrdering(ctx context.Context, tx *sql.Tx, actor corestore.Principal, store uuid.UUID, expected int64, accepting bool, mode string, requestID uuid.UUID) (FoodOrdering, error) {
 	state, err := foodOrdering(ctx, tx, actor.MerchantID, store, true)
 	if err != nil {
 		return state, err

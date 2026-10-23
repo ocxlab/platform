@@ -3,14 +3,15 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	corestore "ocp.local/platform/internal/core/persistence"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/persistence/sqlgen"
+	"ocp.local/platform/internal/food/persistence/sqlgen"
 )
 
 // The caller holds the order's operational lock. Progress and its attributable
 // event commit in the same transaction as the idempotent response.
-func changeOrderEvent(ctx context.Context, tx *sql.Tx, p Principal, order *FoodOrder, event string, requestID uuid.UUID) error {
+func changeOrderEvent(ctx context.Context, tx *sql.Tx, p corestore.Principal, order *FoodOrder, event string, requestID uuid.UUID) error {
 	order.Revision++
 	queries := sqlgen.New(tx)
 	err := queries.UpdateFoodOrderOperations(ctx, sqlgen.UpdateFoodOrderOperationsParams{MerchantID: order.MerchantID, StoreID: order.StoreID, OrderID: order.ID, Revision: order.Revision, Acceptance: order.Acceptance, Resolution: order.Resolution, FulfilmentProgress: order.FulfilmentProgress})

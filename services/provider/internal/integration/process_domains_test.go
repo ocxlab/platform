@@ -13,8 +13,9 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/persistence"
+	"ocp.local/platform/internal/database"
 	"ocp.local/platform/internal/networkcatalog"
-	"ocp.local/platform/internal/persistence"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -43,7 +44,11 @@ func startRole(t *testing.T, f *fixture, role, domains string, extra ...string) 
 	must(t, err)
 	address := listener.Addr().String()
 	must(t, listener.Close())
-	cmd := exec.Command(binary, "-role", role, "-listen", address)
+	selector := "-role"
+	if role == "core" || role == "food" || role == "shopping" || role == "lodging" {
+		selector = "-service"
+	}
+	cmd := exec.Command(binary, selector, role, "-listen", address)
 	cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "OCP_DATABASE_URL=" + dsn.String(), "OCP_ENABLED_DOMAINS=" + domains, "OCP_INTERNAL_ENDPOINT=https://internal.ocplab.org", "OCP_DOMAIN_CONCURRENCY=1", "OCP_DB_MAX_OPEN=2", "OCP_DB_MAX_IDLE=1", "OCP_OTEL_EXPORTER=none"}
 	cmd.Env = append(cmd.Env, extra...)
 	cmd.Stdout = io.Discard
@@ -74,9 +79,9 @@ func TestDomainProcessIsolationRecoveryAndSaturation(t *testing.T) {
 		t.Skip("requires task test:domains")
 	}
 	x := internalSetup(t)
-	shop, stopShop := startRole(t, x.f, "internal", "shopping")
-	shopReplica, _ := startRole(t, x.f, "internal", "shopping")
-	hotel, _ := startRole(t, x.f, "internal", "lodging")
+	shop, stopShop := startRole(t, x.f, "shopping", "shopping")
+	shopReplica, _ := startRole(t, x.f, "shopping", "shopping")
+	hotel, _ := startRole(t, x.f, "lodging", "lodging")
 	food, _ := startRole(t, x.f, "public", "food")
 	x.apiURL = shop
 	x.request(t, "PUT", "/shopping/catalog", x.shopManage, uuid.NewString(), shopCatalog, 200)
@@ -198,7 +203,7 @@ func TestWorkerProcessRecoveryAfterExternalReceipt(t *testing.T) {
 	config := networkcatalog.PublisherConfig{Endpoint: endpoint.URL, Bindings: []networkcatalog.Binding{binding}, PrivateKey: base64.StdEncoding.EncodeToString(private)}
 	path := filepath.Join(t.TempDir(), "publisher.json")
 	must(t, os.WriteFile(path, sessionJSON(t, config), 0600))
-	tx, err := persistence.TenantTransaction(ctx, f.app, store.MerchantID)
+	tx, err := database.TenantTransaction(ctx, f.app, store.MerchantID)
 	must(t, err)
 	id, err := persistence.EnqueueEffect(ctx, tx, persistence.Effect{MerchantID: store.MerchantID, StoreID: store.ID, Domain: capability.Food, Kind: "catalog.publish", SubjectID: store.ID, Key: "crash-receipt", Payload: catalogPayload(t)})
 	must(t, err)

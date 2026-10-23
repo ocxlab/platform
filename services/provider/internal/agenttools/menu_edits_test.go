@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"ocp.local/platform/internal/commerce"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 const priceMenu = `{"currency":"EUR","availability_mode":"manual","items":[{"id":"pizza","name":"بيتزا","available":true,"variants":[{"id":"small","name":"Small","price_minor":700},{"id":"large","name":"Large","price_minor":950}],"option_groups":[{"id":"extras","name":"Extras","min_selected":0,"max_selected":2,"options":[{"id":"cheese","name":"Käse","price_minor":100},{"id":"garlic","name":"Garlic","price_minor":0}]}]},{"id":"bread","available":false,"variants":[{"id":"normal","price_minor":200}]}]}`

@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/devsetup"
-	"ocp.local/platform/internal/persistence"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"testing"
 	"time"
@@ -52,7 +53,7 @@ func TestDemoSeedAndSelectedMerchantCredentials(t *testing.T) {
 	}
 	// Required sauce, paid/free extras, quantities, and sizes are server-priced.
 	quote := `{"publication_generation":1,"lines":[{"item_id":"doener","variant_id":"large","quantity":2,"options":[{"group_id":"sauce","option_id":"garlic"},{"group_id":"extras","option_id":"cheese"},{"group_id":"extras","option_id":"chilli"}]},{"item_id":"pizza-margherita","variant_id":"large","quantity":1,"options":[{"group_id":"extras","option_id":"cheese"},{"group_id":"extras","option_id":"garlic"}]}]}`
-	var priced persistence.FoodQuote
+	var priced foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/food/quotes", "", "", quote, 201), &priced))
 	if priced.Total != 3300 {
 		t.Fatalf("wrong demo quote: %d", priced.Total)

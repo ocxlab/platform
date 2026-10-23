@@ -7,6 +7,8 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"errors"
+	corestore "ocp.local/platform/internal/core/persistence"
+	"ocp.local/platform/internal/database"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,12 +24,12 @@ var ErrGuestCapacity = errors.New("active guest capacity exceeded")
 // A guest is an opaque, store-bound checkout grant, not an account. Only its
 // digest is retained; the secret never enters quotes, order history or replays.
 func CreateGuestSession(ctx context.Context, db *sql.DB, merchant, store uuid.UUID) (GuestSession, error) {
-	tx, err := TenantTransaction(ctx, db, merchant)
+	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return GuestSession{}, err
 	}
 	defer tx.Rollback()
-	if _, err = publicOffering(ctx, tx, merchant, store, true); err != nil {
+	if _, err = corestore.PublicOfferingTx(ctx, tx, merchant, store, true); err != nil {
 		return GuestSession{}, err
 	}
 	// Only abandoned grants are disposable. Retain order actors and replay
@@ -63,30 +65,4 @@ func CreateGuestSession(ctx context.Context, db *sql.DB, merchant, store uuid.UU
 		return GuestSession{}, err
 	}
 	return result, tx.Commit()
-}
-
-func AuthenticateGuest(ctx context.Context, db *sql.DB, token string) (Principal, error) {
-	if len(token) != 47 || token[:4] != "ocg_" {
-		return Principal{}, ErrUnauthenticated
-	}
-	digest := sha256.Sum256([]byte(token))
-	p := Principal{Guest: true, Scopes: []string{"quote:create", "order:create", "order:read", "order:cancel"}}
-	err := db.QueryRowContext(ctx, `SELECT id,merchant_id,store_id FROM auth.lookup_guest_grant($1)`, digest[:]).Scan(&p.ID, &p.MerchantID, &p.StoreID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return Principal{}, ErrUnauthenticated
-	}
-	return p, err
-}
-
-// Recheck at the application transaction boundary, including before replay.
-func checkGuest(ctx context.Context, tx *sql.Tx, p Principal) error {
-	if !p.Guest {
-		return ErrUnauthenticated
-	}
-	var id uuid.UUID
-	err := tx.QueryRowContext(ctx, `SELECT id FROM commerce.guest_grants WHERE merchant_id=$1 AND store_id=$2 AND id=$3 AND NOT revoked AND expires_at>clock_timestamp() FOR SHARE`, p.MerchantID, p.StoreID, p.ID).Scan(&id)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrUnauthenticated
-	}
-	return err
 }

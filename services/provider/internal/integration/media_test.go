@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"ocp.local/platform/internal/database"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -13,9 +14,9 @@ import (
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/media"
-	"ocp.local/platform/internal/persistence"
 )
 
 type fakeMedia struct {
@@ -89,7 +90,7 @@ func TestMediaOwnershipReplayAndPublication(t *testing.T) {
 	var second persistence.Store
 	must(t, json.Unmarshal(f.request(t, "POST", f.merchantPath, f.token, "media-store-create02", `{"display_name":"Second store"}`, 201), &second))
 	f.request(t, "PUT", f.merchantPath+"/"+second.ID.String()+"/offering", f.token, "image-cross-store01", offeringBody(t, 0, doc, "ocp.food.menu"), 422)
-	tx, err := persistence.TenantTransaction(ctx, f.admin, f.principal.MerchantID)
+	tx, err := database.TenantTransaction(ctx, f.admin, f.principal.MerchantID)
 	must(t, err)
 	_, err = tx.Exec(`UPDATE commerce.stores SET published_revision=1,public_document=(SELECT document FROM commerce.offering_revisions WHERE merchant_id=$1 AND store_id=$2 AND revision=1),publication_generation=1 WHERE merchant_id=$1 AND id=$2`, f.principal.MerchantID, store.ID)
 	must(t, err)
@@ -107,7 +108,7 @@ func TestMediaOwnershipReplayAndPublication(t *testing.T) {
 	must(t, err)
 	f.request(t, "GET", publicPath, "", "", "", 404)
 	// RLS is real: a tenant transaction cannot enumerate the other tenant.
-	tx, err = persistence.TenantTransaction(ctx, f.app, other.MerchantID)
+	tx, err = database.TenantTransaction(ctx, f.app, other.MerchantID)
 	must(t, err)
 	defer tx.Rollback()
 	var count int

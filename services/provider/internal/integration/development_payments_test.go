@@ -7,20 +7,21 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"sync"
 	"testing"
 
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/httpapi"
-	"ocp.local/platform/internal/persistence"
 )
 
 func TestDevelopmentPaymentWorkflow(t *testing.T) {
 	f, store, private, guest, token, order := placedOrderFixture(t)
 	path := guest + "/food/orders/" + order.ID.String()
 	pay := path + "/development-payment"
-	read := func() persistence.FoodOrder {
-		var got persistence.FoodOrder
+	read := func() foodstore.FoodOrder {
+		var got foodstore.FoodOrder
 		must(t, json.Unmarshal(f.request(t, "GET", path, token, "", "", 200), &got))
 		return got
 	}
@@ -93,7 +94,7 @@ func TestDevelopmentPaymentEventFailureRollsBack(t *testing.T) {
 	must(t, err)
 	body := `{"expected_revision":2,"action":"start"}`
 	f.request(t, "POST", path+"/development-payment", token, "payment-rollback-start-001", body, 503)
-	var current persistence.FoodOrder
+	var current foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", path, token, "", "", 200), &current))
 	if current.Payment != "not_started" || current.PaymentProvider != "" || current.Revision != 2 || len(current.History) != 2 {
 		t.Fatalf("failed event left partial payment or order progress: %+v", current)
@@ -127,7 +128,7 @@ func TestDevelopmentPaymentAccessAndDefaultDisabled(t *testing.T) {
 	f.request(t, "POST", path, "", "payment-no-credential-001", body, 401)
 	f.request(t, "POST", path, f.token, "payment-wrong-audience-001", body, 401)
 	public := strings.Replace(private, "/api/v1/", "/api/v1/public/", 1)
-	var other persistence.GuestSession
+	var other foodstore.GuestSession
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &other))
 	f.request(t, "POST", path, other.Token, "payment-wrong-guest-001", body, 404)
 	f.request(t, "POST", path, token, "payment-invalid-amount-001", `{"expected_revision":1,"action":"start","amount_minor":1}`, 400)
@@ -184,7 +185,7 @@ func TestPaymentCompletionRacesOrderCancellation(t *testing.T) {
 	if counts[201] != 1 || counts[409] != 1 {
 		t.Fatalf("race results: %v", counts)
 	}
-	var got persistence.FoodOrder
+	var got foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", path, token, "", "", 200), &got))
 	if got.Resolution == "cancelled" && got.Payment != "not_started" {
 		t.Fatalf("closed order took money: %+v", got)
@@ -206,9 +207,9 @@ func TestReadableReferencesRemainUniqueAndTenantScoped(t *testing.T) {
 	if current.Handle != store.Handle {
 		t.Fatal("store reference changed")
 	}
-	var quote persistence.FoodQuote
+	var quote foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", guest+"/food/quotes", token, "", selection(1), 201), &quote))
-	var another persistence.FoodOrder
+	var another foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "POST", guest+"/food/orders", token, "human-reference-order-002", fmt.Sprintf(`{"quote_id":%q,"fulfilment":"pickup"}`, quote.ID), 201), &another))
 	if another.Reference == order.Reference {
 		t.Fatal("order references collide")

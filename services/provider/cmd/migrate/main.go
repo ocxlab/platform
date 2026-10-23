@@ -4,7 +4,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/database"
 	"os"
 	"time"
 )
@@ -12,10 +12,10 @@ import (
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	db, err := persistence.Open(ctx, os.Getenv("OCP_MIGRATION_DATABASE_URL"))
+	db, err := database.Open(ctx, os.Getenv("OCP_MIGRATION_DATABASE_URL"))
 	if err == nil {
 		defer db.Close()
-		err = persistence.Migrate(ctx, db)
+		err = database.Migrate(ctx, db)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "migration failed:", err)

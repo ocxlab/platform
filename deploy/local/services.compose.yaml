@@ -1,0 +1,47 @@
+# Optional independent core/Food processes. The regular API stays combined.
+services:
+  core-api:
+    profiles: [split-services]
+    image: ocp-platform-api
+    command: [-service, core]
+    environment:
+      OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@db:5432/ocp_dev?sslmode=disable
+      OCP_ENABLED_DOMAINS: food
+      OCP_DB_MAX_OPEN: '2'
+      OCP_DB_MAX_IDLE: '1'
+      OCP_LOCAL_MERCHANT_MCP: 'true'
+      OCP_MEDIA_ENABLED: 'true'
+      OCP_MEDIA_INTERNAL_ENDPOINT: http://object-store:9000
+      OCP_MEDIA_PUBLIC_ENDPOINT: http://localhost:18900
+      OCP_MEDIA_REGION: us-east-1
+      OCP_MEDIA_BUCKET: ocp-demo-media
+      OCP_MEDIA_ACCESS_KEY: ocp_local_media
+      OCP_MEDIA_SECRET_KEY: ocp_local_media_only_123
+    ports: ['127.0.0.1:18182:8080']
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, /ocp-api, -healthcheck]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  food-api:
+    profiles: [split-services]
+    image: ocp-platform-api
+    command: [-service, food]
+    environment:
+      OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@db:5432/ocp_dev?sslmode=disable
+      OCP_ENABLED_DOMAINS: food
+      OCP_DB_MAX_OPEN: '2'
+      OCP_DB_MAX_IDLE: '1'
+      OCP_DEVELOPMENT_PAYMENTS: 'true'
+    ports: ['127.0.0.1:18183:8080']
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, /ocp-api, -healthcheck]
+      interval: 2s
+      timeout: 3s
+      retries: 20

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/database"
 	"ocp.local/platform/internal/sessionkit"
 	"ocp.local/platform/internal/ucpinternal"
 	"os"
@@ -38,7 +38,7 @@ func main() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	db, err := persistence.Open(ctx, os.Getenv("OCP_MIGRATION_DATABASE_URL"))
+	db, err := database.Open(ctx, os.Getenv("OCP_MIGRATION_DATABASE_URL"))
 	if err != nil {
 		fail("administrative database unavailable")
 	}

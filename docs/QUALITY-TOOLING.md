@@ -62,13 +62,15 @@ the latter must return 400, not report a storage outage.
 
 ## sqlc retains application transactions
 
-The adoption now covers 33 queries grouped under
-`services/provider/internal/persistence/queries/`: store creation, lookup and
+The adoption now covers 33 queries grouped under the owning
+`services/provider/internal/core/persistence/queries/` and
+`services/provider/internal/food/persistence/queries/` directories: store creation, lookup and
 pagination; offering head locking, append and lookup; publication reads, visibility
 updates, audit and catalog snapshots; durable effect insertion/deduplication;
 Food ordering settings and their audit; quote retrieval and order placement;
 order reads, locking and event history; and development-payment persistence.
-The config reads all Goose migrations in ascending order. sqlc generates a private `sqlgen` package;
+The config reads all Goose migrations in ascending order from `internal/database/migrations`.
+sqlc generates a separate private `sqlgen` package for each query owner;
 it does not own migrations or introduce an ORM, new connection pool or cloud service.
 
 Handwritten persistence code calls `sqlgen.New(tx)` with its existing tenant-scoped
@@ -77,8 +79,8 @@ generation checks, audit entries and transactional outbox work remain intact.
 Generated database types stay behind handwritten domain/HTTP types.
 
 Edit SQL/configuration, then run `task sql:generate` and `task check`. Never edit
-or commit `internal/persistence/sqlgen/`. Task and clean Docker builds generate
-it themselves. `sqlc vet` here is the local parser/check command; no remote
+or commit either owner's `persistence/sqlgen/`. Task and clean Docker builds generate
+both themselves. `sqlc vet` here is the local parser/check command; no remote
 analysis or database-backed EXPLAIN rules have been configured. PostgreSQL tests
 remain necessary to establish runtime locking and isolation behavior.
 
@@ -122,7 +124,7 @@ lock statements also occur at several sites.
 | --- | ---: | --- |
 | Shopping | 12 | Catalog reads/writes, stock, checkout sessions and orders |
 | Lodging | 13 | Properties, units, sessions, occupancy checks, bookings and allocations |
-| Food | 7 | Public-offering reads/locks, quote creation/pruning and order pagination |
+| Food and shared catalog reads | 7 | Public-offering reads/locks, quote creation/pruning and order pagination |
 | Authentication and guest access | 16 | Grant lookup/provisioning, guest sessions, tenant context and runtime-role checks |
 | Media | 4 | Asset reads, quotas, reservations and completion |
 | Idempotency | 6 | Replay advisory locks, lookups and inserts in public and internal commerce |

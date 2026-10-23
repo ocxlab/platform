@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"ocp.local/platform/internal/database"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"sync"
 	"testing"
@@ -14,7 +16,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 func preparedStore(t *testing.T, f *fixture) persistence.Store {
@@ -54,7 +56,7 @@ func TestPublicationJourney(t *testing.T) {
 			t.Fatalf("private field %s leaked", field)
 		}
 	}
-	var q persistence.FoodQuote
+	var q foodstore.FoodQuote
 	quoteBody := f.request(t, "POST", public+"/food/quotes", "", "", selection(1), 201)
 	must(t, json.Unmarshal(quoteBody, &q))
 	if q.Total != 1400 || q.Generation != 1 || q.ExpiresAt.Sub(q.CreatedAt) != 10*time.Minute {
@@ -62,13 +64,13 @@ func TestPublicationJourney(t *testing.T) {
 	}
 	var saved []byte
 	must(t, f.admin.QueryRow(`SELECT body FROM commerce.food_quotes WHERE merchant_id=$1 AND id=$2`, store.MerchantID, q.ID).Scan(&saved))
-	var stored persistence.FoodQuote
+	var stored foodstore.FoodQuote
 	must(t, json.Unmarshal(saved, &stored))
 	if stored.Total != q.Total {
 		t.Fatal("quote not retained")
 	}
 	// Quotes are explicitly non-idempotent and create no purchase/payment effects.
-	var again persistence.FoodQuote
+	var again foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/food/quotes", "", "", selection(1), 201), &again))
 	if again.ID == q.ID {
 		t.Fatal("quote should be a new snapshot")
@@ -93,7 +95,7 @@ func TestPublicationJourney(t *testing.T) {
 	}
 	f.request(t, "PUT", private+"/publication", f.token, "publish-price-update-001", `{"expected_generation":1,"revision":2}`, 201)
 	f.request(t, "POST", public+"/food/quotes", "", "", selection(1), 409)
-	var revised persistence.FoodQuote
+	var revised foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/food/quotes", "", "", selection(2), 201), &revised))
 	if revised.Total != 1800 {
 		t.Fatal("new quote did not use new price")
@@ -231,7 +233,7 @@ func TestQuoteQuotaAndExpiredCleanup(t *testing.T) {
 	if count != 1 {
 		t.Fatalf("expired snapshots not pruned: %d", count)
 	}
-	tx, err := persistence.TenantTransaction(context.Background(), f.app, store.MerchantID)
+	tx, err := database.TenantTransaction(context.Background(), f.app, store.MerchantID)
 	must(t, err)
 	defer tx.Rollback()
 	_, err = tx.Exec(`UPDATE commerce.food_quotes SET body='{}'`)

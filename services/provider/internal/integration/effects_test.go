@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"ocp.local/platform/internal/database"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/offering"
-	"ocp.local/platform/internal/persistence"
 )
 
 func TestDurableEffectsAndLeaseFencing(t *testing.T) {
@@ -19,7 +20,7 @@ func TestDurableEffectsAndLeaseFencing(t *testing.T) {
 	store := preparedStore(t, f)
 	ctx := context.Background()
 	effect := persistence.Effect{MerchantID: store.MerchantID, StoreID: store.ID, Domain: capability.Food, Kind: "catalog.publish", SubjectID: store.ID, Key: "test-generation", Payload: catalogPayload(t)}
-	tx, err := persistence.TenantTransaction(ctx, f.app, store.MerchantID)
+	tx, err := database.TenantTransaction(ctx, f.app, store.MerchantID)
 	must(t, err)
 	_, err = persistence.EnqueueEffect(ctx, tx, effect)
 	must(t, err)
@@ -29,12 +30,12 @@ func TestDurableEffectsAndLeaseFencing(t *testing.T) {
 	if len(rows) != 0 {
 		t.Fatal("rollback retained intent")
 	}
-	tx, err = persistence.TenantTransaction(ctx, f.app, store.MerchantID)
+	tx, err = database.TenantTransaction(ctx, f.app, store.MerchantID)
 	must(t, err)
 	id, err := persistence.EnqueueEffect(ctx, tx, effect)
 	must(t, err)
 	must(t, tx.Commit())
-	tx, err = persistence.TenantTransaction(ctx, f.app, store.MerchantID)
+	tx, err = database.TenantTransaction(ctx, f.app, store.MerchantID)
 	must(t, err)
 	again, err := persistence.EnqueueEffect(ctx, tx, effect)
 	must(t, err)
@@ -87,7 +88,7 @@ func TestDurableEffectsAndLeaseFencing(t *testing.T) {
 	if count != 0 {
 		t.Fatal("cross-tenant direct read")
 	}
-	tx, err = persistence.TenantTransaction(ctx, f.app, uuid.New())
+	tx, err = database.TenantTransaction(ctx, f.app, uuid.New())
 	must(t, err)
 	must(t, tx.QueryRow(`SELECT count(*) FROM runtime.effects`).Scan(&count))
 	must(t, tx.Rollback())
@@ -122,7 +123,7 @@ func TestEffectACLConcurrencyRetryAndPublicationRollback(t *testing.T) {
 		t.Fatal("worker owner membership")
 	}
 	// All three records belong to one transaction, including its immutable export.
-	tx, err := persistence.TenantTransaction(ctx, f.app, store.MerchantID)
+	tx, err := database.TenantTransaction(ctx, f.app, store.MerchantID)
 	must(t, err)
 	revision := int64(1)
 	_, err = persistence.ChangePublication(ctx, tx, f.principal, store.ID, 0, &revision, nil, "", uuid.New(), func(_ offering.Model, raw json.RawMessage) (json.RawMessage, error) { return raw, nil })
@@ -136,7 +137,7 @@ func TestEffectACLConcurrencyRetryAndPublicationRollback(t *testing.T) {
 	// Unknown domain/kind never reaches SQL, while distinct committed work can
 	// be claimed concurrently without duplicate deliveries under a live lease.
 	for i := 0; i < 4; i++ {
-		tx, err := persistence.TenantTransaction(ctx, f.app, store.MerchantID)
+		tx, err := database.TenantTransaction(ctx, f.app, store.MerchantID)
 		must(t, err)
 		_, err = persistence.EnqueueEffect(ctx, tx, persistence.Effect{MerchantID: store.MerchantID, StoreID: store.ID, Domain: capability.Food, Kind: "catalog.publish", SubjectID: store.ID, Key: fmt.Sprint(i), Payload: catalogPayload(t)})
 		must(t, err)
@@ -221,7 +222,7 @@ func TestEffectRejectsUnregisteredAndMalformedWork(t *testing.T) {
 		e.StoreID = store.ID
 		e.SubjectID = store.ID
 		e.Key = "invalid"
-		tx, err := persistence.TenantTransaction(ctx, f.app, store.MerchantID)
+		tx, err := database.TenantTransaction(ctx, f.app, store.MerchantID)
 		must(t, err)
 		_, err = persistence.EnqueueEffect(ctx, tx, e)
 		must(t, tx.Rollback())

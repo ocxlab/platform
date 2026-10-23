@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: postgresql
-    schema: internal/persistence/migrations
-    queries: internal/persistence/queries
+    schema: internal/database/migrations
+    queries: internal/core/persistence/queries
     gen:
-      go:
+      go: &go
         package: sqlgen
-        out: internal/persistence/sqlgen
+        out: internal/core/persistence/sqlgen
         sql_package: database/sql
         emit_empty_slices: true
         omit_unused_structs: true
@@ -17,3 +17,10 @@ sql:
               import: encoding/json
               type: RawMessage
               pointer: true
+  - engine: postgresql
+    schema: internal/database/migrations
+    queries: internal/food/persistence/queries
+    gen:
+      go:
+        <<: *go
+        out: internal/food/persistence/sqlgen

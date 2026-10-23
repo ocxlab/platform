@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 )
 
 func (s *Server) adminDirectory(w http.ResponseWriter, r *http.Request, kind, q, status string, after *string, limit *int) {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/offering"
-	"ocp.local/platform/internal/persistence"
 	"testing"
 )
 

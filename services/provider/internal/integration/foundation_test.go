@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"ocp.local/platform/internal/database"
 	"os"
 	"strings"
 	"sync"
@@ -22,8 +23,8 @@ import (
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"github.com/google/uuid"
 	"github.com/pressly/goose/v3"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/httpapi"
-	"ocp.local/platform/internal/persistence"
 )
 
 type fixture struct {
@@ -48,7 +49,7 @@ func setupAtVersion(t *testing.T, version int64) *fixture {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	t.Cleanup(cancel)
-	root, err := persistence.Open(ctx, dsn)
+	root, err := database.Open(ctx, dsn)
 	must(t, err)
 	t.Cleanup(func() { root.Close() })
 	name := "foundation_" + strings.ReplaceAll(uuid.NewString(), "-", "")
@@ -63,24 +64,24 @@ func setupAtVersion(t *testing.T, version int64) *fixture {
 	parsed, err := url.Parse(dsn)
 	must(t, err)
 	parsed.Path = "/" + name
-	admin, err := persistence.Open(ctx, parsed.String())
+	admin, err := database.Open(ctx, parsed.String())
 	must(t, err)
 	t.Cleanup(func() { admin.Close() })
 	if version == 0 {
-		must(t, persistence.Migrate(ctx, admin))
-		must(t, persistence.Migrate(ctx, admin))
+		must(t, database.Migrate(ctx, admin))
+		must(t, database.Migrate(ctx, admin))
 	} else {
-		provider, err := goose.NewProvider(goose.DialectPostgres, admin, os.DirFS("../persistence/migrations"))
+		provider, err := goose.NewProvider(goose.DialectPostgres, admin, os.DirFS("../database/migrations"))
 		must(t, err)
 		_, err = provider.UpTo(ctx, version)
 		must(t, err)
 	}
 	parsed.User = url.UserPassword("ocp_app", "ocp_app_local_only")
-	app, err := persistence.Open(ctx, parsed.String())
+	app, err := database.Open(ctx, parsed.String())
 	must(t, err)
 	t.Cleanup(func() { app.Close() })
-	must(t, persistence.CheckRuntimeRole(ctx, app))
-	if persistence.CheckRuntimeRole(ctx, admin) == nil {
+	must(t, database.CheckRuntimeRole(ctx, app))
+	if database.CheckRuntimeRole(ctx, admin) == nil {
 		t.Fatal("administrative runtime role accepted")
 	}
 	p, token, err := persistence.Provision(ctx, admin, "Example restaurant", []string{"store:read", "store:write", "offering:read", "offering:write", "order:read", "order:manage"}, time.Now().Add(time.Hour))
@@ -371,7 +372,7 @@ func TestFoundation(t *testing.T) {
 	t.Run("forced_RLS_and_pool_cleanup", func(t *testing.T) {
 		f.app.SetMaxOpenConns(1)
 		f.app.SetMaxIdleConns(1)
-		tx, err := persistence.TenantTransaction(ctx, f.app, uuid.New())
+		tx, err := database.TenantTransaction(ctx, f.app, uuid.New())
 		must(t, err)
 		var count int
 		must(t, tx.QueryRow(`SELECT count(*) FROM commerce.stores`).Scan(&count))
@@ -384,7 +385,7 @@ func TestFoundation(t *testing.T) {
 		}
 		must(t, tx.Rollback())
 		for _, commit := range []bool{false, true} {
-			tx, err := persistence.TenantTransaction(ctx, f.app, f.principal.MerchantID)
+			tx, err := database.TenantTransaction(ctx, f.app, f.principal.MerchantID)
 			must(t, err)
 			if commit {
 				must(t, tx.Commit())
@@ -396,7 +397,7 @@ func TestFoundation(t *testing.T) {
 				t.Fatal("tenant context leaked through pool")
 			}
 		}
-		tx, err = persistence.TenantTransaction(ctx, f.app, f.principal.MerchantID)
+		tx, err = database.TenantTransaction(ctx, f.app, f.principal.MerchantID)
 		must(t, err)
 		_, err = tx.Exec(`UPDATE commerce.offering_revisions SET revision=99`)
 		if err == nil {
@@ -432,7 +433,7 @@ func TestFoundation(t *testing.T) {
 		_, err := f.admin.Exec(`ALTER TABLE commerce.stores OWNER TO ocp_app`)
 		must(t, err)
 		defer func() { _, err := f.admin.Exec(`ALTER TABLE commerce.stores OWNER TO ` + quoted); must(t, err) }()
-		if persistence.CheckRuntimeRole(ctx, f.app) == nil {
+		if database.CheckRuntimeRole(ctx, f.app) == nil {
 			t.Fatal("table-owning runtime accepted")
 		}
 		_, err = f.admin.Exec(`ALTER TABLE commerce.stores OWNER TO ` + quoted)
@@ -443,7 +444,7 @@ func TestFoundation(t *testing.T) {
 			_, err := f.admin.Exec(`ALTER TABLE payment.development_operations OWNER TO ` + quoted)
 			must(t, err)
 		}()
-		if persistence.CheckRuntimeRole(ctx, f.app) == nil {
+		if database.CheckRuntimeRole(ctx, f.app) == nil {
 			t.Fatal("payment-table-owning runtime accepted")
 		}
 		_, err = f.admin.Exec(`ALTER TABLE payment.development_operations OWNER TO ` + quoted)
@@ -451,7 +452,7 @@ func TestFoundation(t *testing.T) {
 		_, err = f.admin.Exec(`ALTER SCHEMA payment OWNER TO ocp_app`)
 		must(t, err)
 		defer func() { _, err := f.admin.Exec(`ALTER SCHEMA payment OWNER TO ` + quoted); must(t, err) }()
-		if persistence.CheckRuntimeRole(ctx, f.app) == nil {
+		if database.CheckRuntimeRole(ctx, f.app) == nil {
 			t.Fatal("payment-schema-owning runtime accepted")
 		}
 		_, err = f.admin.Exec(`ALTER SCHEMA payment OWNER TO ` + quoted)
@@ -459,12 +460,12 @@ func TestFoundation(t *testing.T) {
 		_, err = f.admin.Exec(`GRANT ` + quoted + ` TO ocp_app`)
 		must(t, err)
 		defer func() { _, err := f.admin.Exec(`REVOKE ` + quoted + ` FROM ocp_app`); must(t, err) }()
-		if persistence.CheckRuntimeRole(ctx, f.app) == nil {
+		if database.CheckRuntimeRole(ctx, f.app) == nil {
 			t.Fatal("administratively elevated runtime accepted")
 		}
 		_, err = f.admin.Exec(`REVOKE ` + quoted + ` FROM ocp_app`)
 		must(t, err)
-		must(t, persistence.CheckRuntimeRole(ctx, f.app))
+		must(t, database.CheckRuntimeRole(ctx, f.app))
 	})
 	t.Run("credential_lookup_security_definer_boundary", func(t *testing.T) {
 		var safe bool

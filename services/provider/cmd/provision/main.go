@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"ocp.local/platform/internal/core/persistence"
+	"ocp.local/platform/internal/database"
 	"ocp.local/platform/internal/devsetup"
-	"ocp.local/platform/internal/persistence"
 	"os"
 	"time"
 )
@@ -19,7 +20,7 @@ func main() {
 	flag.Parse()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	db, err := persistence.Open(ctx, os.Getenv("OCP_MIGRATION_DATABASE_URL"))
+	db, err := database.Open(ctx, os.Getenv("OCP_MIGRATION_DATABASE_URL"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "administrative database unavailable")
 		os.Exit(1)

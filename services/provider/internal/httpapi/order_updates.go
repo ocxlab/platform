@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/orderupdates"
-	"ocp.local/platform/internal/persistence"
 )
 
 func (s *Server) WatchGuestFoodOrder(w http.ResponseWriter, r *http.Request, merchant, store, order uuid.UUID) {
@@ -49,9 +50,9 @@ func (s *Server) watchOrders(w http.ResponseWriter, r *http.Request, change orde
 			return nil
 		}
 		if p.Guest {
-			_, err = persistence.GetGuestFoodOrder(ctx, s.db, current, change.Order)
+			_, err = foodstore.GetGuestFoodOrder(ctx, s.db, current, change.Order)
 		} else {
-			_, err = persistence.ListFoodOrders(ctx, s.db, current, change.Store, nil, 1)
+			_, err = foodstore.ListFoodOrders(ctx, s.db, current, change.Store, nil, 1)
 		}
 		return err
 	}

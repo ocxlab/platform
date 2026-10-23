@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"ocp.local/platform/internal/database"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"os"
 	"strings"
 	"testing"
@@ -16,17 +18,16 @@ import (
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/httpapi"
 	"ocp.local/platform/internal/orderupdates"
-	"ocp.local/platform/internal/persistence"
 	"ocp.local/platform/internal/telemetry"
 )
 
 func TestOrderStreamsUseCommittedScopedHintsAndOrdinaryReads(t *testing.T) {
 	f := setup(t)
-	var database string
-	must(t, f.admin.QueryRow("SELECT current_database()").Scan(&database))
+	var databaseName string
+	must(t, f.admin.QueryRow("SELECT current_database()").Scan(&databaseName))
 	dsn, err := url.Parse(os.Getenv("OCP_TEST_DATABASE_URL"))
 	must(t, err)
-	dsn.Path = "/" + database
+	dsn.Path = "/" + databaseName
 	dsn.User = url.UserPassword("ocp_app", "ocp_app_local_only")
 	ctx, cancel := context.WithCancel(context.Background())
 	hub := orderupdates.New()
@@ -60,12 +61,12 @@ func TestOrderStreamsUseCommittedScopedHintsAndOrdinaryReads(t *testing.T) {
 	public := strings.Replace(private, "/api/v1/", "/api/v1/public/", 1)
 	guestPath := strings.Replace(private, "/api/v1/", "/api/v1/guest/", 1)
 	f.request(t, "PUT", private+"/publication", f.token, "publish-stream-menu-001", `{"expected_generation":0,"revision":1}`, 201)
-	var guest, stranger persistence.GuestSession
+	var guest, stranger foodstore.GuestSession
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &guest))
 	must(t, json.Unmarshal(f.request(t, "POST", public+"/guest-sessions", "", "", `{}`, 201), &stranger))
-	var quote persistence.FoodQuote
+	var quote foodstore.FoodQuote
 	must(t, json.Unmarshal(f.request(t, "POST", guestPath+"/food/quotes", guest.Token, "", selection(1), 201), &quote))
-	var order persistence.FoodOrder
+	var order foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "POST", guestPath+"/food/orders", guest.Token, "stream-placement-001", fmt.Sprintf(`{"quote_id":%q,"fulfilment":"pickup"}`, quote.ID), 201), &order))
 	updates := guestPath + "/food/order-updates/" + order.ID.String()
 	f.request(t, "GET", updates, "", "", "", 401)
@@ -113,7 +114,7 @@ func TestOrderStreamsUseCommittedScopedHintsAndOrdinaryReads(t *testing.T) {
 	}
 	defer release()
 	// A rolled-back event must not escape as a hint.
-	tx, err := persistence.TenantTransaction(ctx, f.app, f.principal.MerchantID)
+	tx, err := database.TenantTransaction(ctx, f.app, f.principal.MerchantID)
 	must(t, err)
 	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_order_events(merchant_id,store_id,order_id,sequence,event,actor_id,request_id) VALUES($1,$2,$3,2,'accepted',$4,$5)`, order.MerchantID, order.StoreID, order.ID, f.principal.ID, uuid.New())
 	must(t, err)
@@ -135,7 +136,7 @@ func TestOrderStreamsUseCommittedScopedHintsAndOrdinaryReads(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("committed hint missing")
 	}
-	var current persistence.FoodOrder
+	var current foodstore.FoodOrder
 	must(t, json.Unmarshal(f.request(t, "GET", guestPath+"/food/orders/"+order.ID.String(), guest.Token, "", "", 200), &current))
 	if current.Acceptance != "accepted" || current.Revision != 2 || len(current.History) != 2 {
 		t.Fatalf("authoritative state missing: %+v", current)

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"ocp.local/platform/internal/capability"
-	"ocp.local/platform/internal/persistence"
+	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/telemetry"
 )
 
