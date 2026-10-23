@@ -1,5 +1,50 @@
 # Development status
 
+## Researched XState/TanStack receipt foundation
+
+24 October 2026. Official documentation, tagged source, installed type definitions,
+and registry versions informed the first slice: pinned XState 5.33.3 coordinates
+connection/read lifetimes, and TanStack Svelte Query 6.3.5 owns fetched receipt
+data. XState 6 alpha was not adopted. The
+[research and ownership note](FRONTEND-STATE-RESEARCH.md) records sources, SSR
+isolation, cancellation, defaults, implementation boundaries, and follow-ups.
+
+The shared SSE coordinator now has explicit active/paused/retry states, serialized
+reads, one trailing refresh per burst, reconnection reads, and disposal cleanup.
+There is no periodic order polling. Customer receipts use a component-local query
+client seeded by SSR, an authenticated same-origin JSON read, and cancellation
+through the browser/server fetch. Rendering and form revisions use one query
+snapshot. Credentials remain HttpOnly; cache is cleared on component destruction.
+Merchant/menu pages retain their existing SvelteKit invalidation adapter; the
+basket and all other screens have not been wholesale migrated.
+
+Full `task check` passed, including zero Svelte errors/warnings, 101 frontend
+tests, source-only generation checks, Spectral, sqlc, migration/Squawk checks,
+Go lint/vet/race tests, PostgreSQL integration, and API/web builds. The focused
+Stryker run killed 111 of 114 mutants (97.37%), with three equivalent survivors
+and no uncovered expressions, timeouts, or errors; see
+[scope and interpretation](MUTATION-TESTING.md). `task smoke` also passed.
+
+The final `task test:browser` passed all seven Chromium scenarios (40.3 seconds):
+merchant/customer live acceptance and pickup progress without manual reload,
+simulated checkout/decline/payment/refund, authorized receipt JSON and denied
+cookie-less access, no-store responses, SSR receipts without JavaScript,
+Arabic/mobile presentation, the 48-item menu, meal upgrades, administration
+regression, and direct signed media uploads. An initial browser attempt used an
+older test image with an overly exact cache-header assertion and exposed an
+existing test race around asynchronous basket restoration. The fresh run checks
+the required no-store directive and waits for the intended restored dialog.
+No interactive browser inspection, production OAuth/account switching, real
+payment, or live-model MCP evaluation is claimed.
+
+`task web:local` installed the pinned dependencies and is serving the native Vite
+app at `http://127.0.0.1:18181/`; its root returned HTTP 200. The local API/database
+remain running, development data was not reset, and disposable browser/test
+databases are stopped. The authorized three-batch continuation is complete at
+this bounded level. Stop before provider admin redesign and obtain the founder's
+screenshots; Beckn/ONIX follows that work. Production identity/saved payments and
+the retained live-model evaluation remain explicit follow-ups.
+
 ## Customer Food MCP and Core account profiles
 
 24 October 2026. Customer Food MCP now has ten bounded intentions covering local

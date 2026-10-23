@@ -4,7 +4,7 @@
   "plugins": ["@stryker-mutator/vitest-runner"],
   "ignorePatterns": ["**", "!src/**/*", "!tests/mutation-env.ts", "!package.json", "!tsconfig.json", "!vitest.mutation.config.ts", "!.svelte-kit/tsconfig.json"],
   "vitest": { "configFile": "vitest.mutation.config.ts", "related": false },
-  "mutate": ["src/lib/orders.ts", "src/lib/money.ts", "src/lib/server/guest.ts", "src/lib/server/sessions.ts", "src/lib/food-menu.ts", "src/lib/server/food-selection.ts"],
+  "mutate": ["src/lib/orders.ts", "src/lib/money.ts", "src/lib/server/guest.ts", "src/lib/server/sessions.ts", "src/lib/food-menu.ts", "src/lib/server/food-selection.ts", "src/lib/live-updates.ts"],
   "reporters": ["clear-text", "progress", "html", "json"],
   "coverageAnalysis": "perTest",
   "concurrency": 2,

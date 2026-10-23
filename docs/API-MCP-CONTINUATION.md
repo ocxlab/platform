@@ -26,7 +26,8 @@ dispatcher. Existing implementation and gaps are recorded in [tool design](MCP-T
    the relevant packages, and migrate a tested vertical slice before expanding.
    Do not duplicate server data in two stores or assume either library enforces
    backend authorization. Cover failure/retry, stale responses, navigation, and
-   SSE-driven invalidation. This is planned work, not an installed dependency.
+   SSE-driven invalidation. The first receipt slice and its pinned dependency
+   choices are described in [frontend state ownership](FRONTEND-STATE-RESEARCH.md).
 6. Build provider administration on that foundation, then continue the planned
    Beckn/ONIX work. Notify the founder before admin design so their screenshots
    can inform it. Keep existing catalog/network behavior working throughout.
@@ -41,8 +42,10 @@ the same Food model validation and Offering write as REST. The three merchant
 batches now add focused dish/category setup, exact reviewed publication, and
 order inbox/detail, decisions, and pickup progression. Food owns shared order
 application operations for REST and MCP. Offer deletion, ordering-policy setup,
-customer tools, and account tools remain further work; these merchant batches
-do not complete the API/MCP phase. Full-merchant local MCP credentials now include
+production account identity and saved-payment tools remain further work; these
+batches do not complete the API/MCP phase. Customer Food tools and bounded Core
+profile/preferences tools are now implemented; see their linked contracts and
+development status for verified behavior. Full-merchant local MCP credentials now include
 order read/manage; existing restricted credentials are not silently upgraded.
 
 ## Verification and boundaries
@@ -54,8 +57,10 @@ targeted mutation tests for behavioral changes. Record what actually ran, remain
 gaps, and review findings after each coherent batch. Model-free SDK/Inspector tests
 do not establish conversational task quality.
 
-No admin redesign, new frontend library, external model call, or production OAuth
-rollout is implied by starting the first catalog-fidelity increment.
+Frontend libraries are now introduced through the separate, researched receipt
+slice, not as part of catalog-fidelity changes. Admin redesign still waits for
+the founder's screenshots. External model calls and production OAuth remain
+separate setup and authorization gates.
 
 ## Retained MCP evaluation before handoff
 

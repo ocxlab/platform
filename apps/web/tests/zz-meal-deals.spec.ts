@@ -53,6 +53,9 @@ test('meal upgrade keeps size extras and included food in basket and agreed orde
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/meal-customization-mobile.png' });
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  // The customization close event restores the basket asynchronously. Wait for
+  // that intended state instead of racing it by clicking the covered trigger.
+  await expect(page.getByRole('dialog', { name: /Your basket/ })).toBeVisible();
   await reviewBasket(page);
   const basket = page.getByRole('complementary', { name: 'Your basket' });
   await expect(basket).toContainText('Healthy Pizza');

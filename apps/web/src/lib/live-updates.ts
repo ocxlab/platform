@@ -1,44 +1,78 @@
+import { assign, createActor, fromCallback, fromPromise, setup } from 'xstate';
+
 export type LiveStatus = 'connecting' | 'connected' | 'reconnecting' | 'paused';
 type Source = { addEventListener(type: string, listener: () => void): void; close(): void };
+type Event = { type: 'SHOW' | 'HIDE' | 'OPEN' | 'ERROR' | 'HINT' | 'FAILED' };
 
-// One source per visible page, one refresh in flight, and a trailing refresh when
-// changes arrive during a read. There is no timer that polls order state.
-export function liveUpdates(url: string, refresh: () => Promise<unknown>, status: (value: LiveStatus) => void,
+// The actor owns connection/read lifetimes, never the order record. Notifications
+// are hints: serialize authorized reads and retain one trailing read per burst.
+export function liveUpdates(url: string, refresh: (signal: AbortSignal) => Promise<unknown>, status: (value: LiveStatus) => void,
   create: (url: string) => Source = url => new EventSource(url)) {
-  let source: Source | undefined;
-  let refreshing = false;
-  let pending = false;
-  let stopped = false;
-  let retry: ReturnType<typeof setTimeout> | undefined;
-  async function changed() {
-    pending = true;
-    if (refreshing || stopped) return;
-    refreshing = true;
-    try {
-      while (pending && !stopped) { pending = false; await refresh(); }
-    } catch {
-      if (!stopped && source) {
-        status('reconnecting'); source.close(); source = undefined; pending = false;
-        // Retry the broken live connection, not periodic reads. Its initial hint
-        // will request fresh state once the transport is re-established.
-        retry = setTimeout(() => { retry = undefined; connect(); }, 3000);
-      }
-    }
-    finally { refreshing = false; }
-  }
-  function connect() {
-    if (source || stopped || retry) return;
-    status('connecting');
-    const current = source = create(url);
-    current.addEventListener('open', () => { if (source === current) status('connected'); });
-    current.addEventListener('error', () => { if (source === current) status('reconnecting'); });
-    current.addEventListener('invalidate', () => { if (source === current) void changed(); });
-  }
-  return {
-    visible(value: boolean) {
-      if (value) connect();
-      else { clearTimeout(retry); retry = undefined; source?.close(); source = undefined; status('paused'); }
+  const machine = setup({
+    types: { context: {} as { pending: boolean }, events: {} as Event },
+    actors: {
+      connection: fromCallback<Event>(({ sendBack }) => {
+        let source: Source;
+        try { source = create(url); } catch { sendBack({ type: 'FAILED' }); return; }
+        source.addEventListener('open', () => sendBack({ type: 'OPEN' }));
+        source.addEventListener('error', () => sendBack({ type: 'ERROR' }));
+        source.addEventListener('invalidate', () => sendBack({ type: 'HINT' }));
+        return () => source.close();
+      }),
+      read: fromPromise(({ signal }) => refresh(signal)),
     },
-    close() { stopped = true; pending = false; clearTimeout(retry); source?.close(); source = undefined; },
+    actions: {
+      queue: assign({ pending: true }),
+      clear: assign({ pending: false }),
+    },
+    guards: { pending: ({ context }) => context.pending },
+  }).createMachine({
+    id: 'live', initial: 'paused', context: { pending: false },
+    states: {
+      paused: { on: { SHOW: 'active' } },
+      active: {
+        type: 'parallel',
+        invoke: { src: 'connection' },
+        on: { HIDE: 'paused', FAILED: 'retry' },
+        states: {
+          connection: {
+            initial: 'connecting',
+            on: { OPEN: '.connected', ERROR: '.reconnecting' },
+            states: { connecting: {}, connected: {}, reconnecting: {} },
+          },
+          refresh: {
+            initial: 'idle',
+            states: {
+              idle: { on: { HINT: 'reading', OPEN: 'reading' } },
+              reading: {
+                entry: 'clear',
+                invoke: {
+                  src: 'read',
+                  onDone: [{ guard: 'pending', target: 'reading', reenter: true }, { target: 'idle' }],
+                  onError: '#live.retry',
+                },
+                on: { HINT: { actions: 'queue' }, OPEN: { actions: 'queue' } },
+              },
+            },
+          },
+        },
+      },
+      // Retry the connection after a failed read, not periodic status polling.
+      // Native EventSource owns transient transport reconnection inside active.
+      retry: { after: { 3000: 'active' }, on: { HIDE: 'paused' } },
+    },
+  });
+  const actor = createActor(machine);
+  actor.subscribe(snapshot => {
+    if (snapshot.matches('paused')) status('paused');
+    else if (snapshot.matches('retry') || snapshot.matches({ active: { connection: 'reconnecting' } })) status('reconnecting');
+    else if (snapshot.matches({ active: { connection: 'connected' } })) status('connected');
+    else status('connecting');
+  });
+  actor.start();
+  return {
+    visible(value: boolean) { actor.send({ type: value ? 'SHOW' : 'HIDE' }); },
+    refresh() { actor.send({ type: 'HINT' }); },
+    close() { actor.stop(); },
   };
 }

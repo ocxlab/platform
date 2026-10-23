@@ -4,20 +4,22 @@
   import { liveUpdates, type LiveStatus } from '$lib/live-updates';
   import Radio from '@lucide/svelte/icons/radio';
   import RefreshCw from '@lucide/svelte/icons/refresh-cw';
-  let { url, refresh }: { url: string; refresh: string } = $props();
+  let { url, refresh, read }: { url: string; refresh: string; read?: (signal: AbortSignal) => Promise<unknown> } = $props();
   const { t } = useI18n();
   let status = $state<LiveStatus>('connecting');
+  let manual = () => {};
   $effect(() => {
-    const updates = liveUpdates(url, invalidateAll, value => { status = value; });
+    const updates = liveUpdates(url, read ?? invalidateAll, value => { status = value; });
+    manual = updates.refresh;
     const visibility = () => updates.visible(document.visibilityState === 'visible');
     visibility();
     document.addEventListener('visibilitychange', visibility);
-    return () => { document.removeEventListener('visibilitychange', visibility); updates.close(); };
+    return () => { manual = () => {}; document.removeEventListener('visibilitychange', visibility); updates.close(); };
   });
 </script>
 <div class="live-controls">
   <span class="live-status" role="status"><Radio size={16} aria-hidden="true" />{t(`live-${status}`)}</span>
-  <a data-sveltekit-reload href={refresh}><RefreshCw size={17} aria-hidden="true" />{t('orders-refresh')}</a>
+  <a data-sveltekit-reload href={refresh} onclick={event => { if (read) { event.preventDefault(); manual(); } }}><RefreshCw size={17} aria-hidden="true" />{t('orders-refresh')}</a>
 </div>
 <noscript><p>{t('live-noscript')}</p></noscript>
 <style>

@@ -47,6 +47,27 @@ SQL functions, telemetry internals, and browser behavior are not mutated by this
 
 ## Executed results
 
+24 October 2026. A focused Stryker run on the new XState-based
+`src/lib/live-updates.ts` killed **111 of 114 mutations (97.37%)**, with three
+survivors, zero uncovered expressions, timeouts, or errors. The survivors remove
+type-only setup metadata or change the initial pending flag, which is overwritten
+on entry to every read. No mutations were excluded to obtain this result. This
+run added an assertion for an SSE reconnect during an in-flight read. It does not
+mutate Svelte components or the TanStack adapter. Repeat it in the `web-mutation`
+Docker service with `pnpm exec stryker run --mutate src/lib/live-updates.ts`;
+the regular web mutation task now also includes this module. An initial attempt
+in `web-tools` stopped because that lightweight image lacks `ps`; the dedicated
+mutation image already supplies it and completed the run.
+
+24 October 2026. The expanded Food adapter run (`task test:mutation:mcp`)
+killed **193 mutations, with zero survivors and 197 uncovered**: 49.49% mutant
+coverage, with no timeouts, nonviable mutations, or skips. Coverage collection
+took 2.181 seconds and mutation execution 1.370 seconds, excluding task startup.
+This now includes the Customer Food adapter's pure basket-revision rules. Most
+new HTTP/SQL callbacks remain uncovered by this unit-only runner. Its passing
+result is not whole-adapter coverage; PostgreSQL/HTTP integration runs are
+separate evidence and are not counted as mutation kills.
+
 23 October 2026. The expanded `task test:mutation:mcp` includes `meal_offers.go`
 alongside `menu_edits.go`: **139 killed, zero surviving, 38 uncovered** mutations,
 with no timeouts, nonviable mutations, or skips. Efficacy is 100% among exercised

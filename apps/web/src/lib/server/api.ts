@@ -6,10 +6,10 @@ import { errorText, translate } from '$lib/i18n/messages';
 import type { Locale } from '$lib/i18n/locales';
 
 // Server-only: one configured internal origin, never a browser-selected proxy URL.
-export function api(token?: string) {
+export function api(token?: string, signal?: AbortSignal) {
   return createClient<paths>({ baseUrl: env.OCP_API_URL ?? 'http://api:8080',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
-    fetch: (request) => fetch(request, { signal: AbortSignal.timeout(12_000) }),
+    fetch: (request) => fetch(request, { signal: AbortSignal.any([request.signal, ...(signal ? [signal] : []), AbortSignal.timeout(12_000)]) }),
   });
 }
 export function message(error: unknown): string {
