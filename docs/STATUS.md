@@ -1,5 +1,16 @@
 # Development status
 
+## MCP evaluation acceptance criterion
+
+23 October 2026. The [continuation plan](API-MCP-CONTINUATION.md#retained-mcp-evaluation-before-handoff)
+now requires a retained executable model-driven scenario plus deterministic state
+assertions before the API/MCP phase is called complete. The first case is a focused
+merchant size-dependent extra-price edit with no publication. Existing real HTTP/SDK,
+authorization, replay, and database tests remain separate from agent task-quality
+evaluation. Inspector/conformance and mcp-eval/Promptfoo serve different layers;
+runner compatibility with the pinned protocol still needs testing. This planning
+update installs nothing and runs no model, evaluation, or new regression suite.
+
 ## API/MCP continuation: size-dependent extras
 
 23 October 2026. Resumed the API/MCP work with a correction to existing merchant
