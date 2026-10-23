@@ -1,5 +1,23 @@
 # Development status
 
+## Merchant MCP menu setup
+
+23 October 2026. Three new intentions extend the existing Food tools:
+`inspect_menu_structure`, `save_menu_item`, and `organize_menu_categories`.
+Agents can create a first menu, correct individual dish fields, replace size or
+modifier lists, maintain de/en/ar names, and organize categories. Omitted fields
+remain unchanged; supplied lists are explicit replacements. All writes remain
+private drafts and use the shared validated Offering operation, revision guard,
+and retained retry result. Completed image IDs still require existing media
+authorization; these tools do not upload images.
+
+Focused HTTP/PostgreSQL MCP regression passed (6.044 seconds), including first
+creation and retry, field preservation, category assignments, stale edits,
+invalid references/locales/lists/null patches, and no publication. Unit/race
+checks passed before the new fixture was added; the combined full gate and
+expanded mutation checks will run after the three authorized merchant batches.
+Publication and order handling follow as separate commits.
+
 ## API/MCP continuation: meal offers
 
 23 October 2026. Merchant Food MCP now exposes nine tools. The two additions

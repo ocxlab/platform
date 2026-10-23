@@ -20,7 +20,7 @@ func mealFixture(t *testing.T) json.RawMessage {
 	for i := range 21 {
 		id := fmt.Sprintf("size-%d", i)
 		choices = append(choices, mealChoice{"drink", id})
-		variants = append(variants, menuPrice{id, id, 300})
+		variants = append(variants, menuPrice{ID: id, Name: id, Price: 300})
 	}
 	doc := mealMenu{Currency: "EUR", Items: []menuItem{{ID: "main"}, {ID: "other"}, {ID: "drink", Name: "Drink", Available: false, Variants: variants}}}
 	for i := range 21 {

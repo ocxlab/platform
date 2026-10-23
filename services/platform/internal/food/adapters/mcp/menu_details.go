@@ -43,33 +43,39 @@ func extrasInputSchema() *jsonschema.Schema {
 // Read projections retain domain field names and integer minor-unit prices.
 // The menu contract bounds variants to 30, groups to 20, and options to 30/group.
 type menuPrice struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Price int64  `json:"price_minor"`
+	Translations map[string]string `json:"translations,omitempty"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Price        int64             `json:"price_minor"`
 }
 
 type menuGroup struct {
-	Defaults []string    `json:"default_option_ids,omitempty"`
-	ID       string      `json:"id"`
-	Name     string      `json:"name"`
-	Min      int         `json:"min_selected"`
-	Max      int         `json:"max_selected"`
-	Options  []menuExtra `json:"options"`
+	Translations map[string]string `json:"translations,omitempty"`
+	Defaults     []string          `json:"default_option_ids,omitempty"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Min          int               `json:"min_selected"`
+	Max          int               `json:"max_selected"`
+	Options      []menuExtra       `json:"options"`
 }
 
 type menuExtra struct {
-	ID            string           `json:"id"`
-	Name          string           `json:"name"`
-	Price         int64            `json:"price_minor"`
-	VariantPrices map[string]int64 `json:"variant_prices,omitempty"`
+	Translations  map[string]string `json:"translations,omitempty"`
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Price         int64             `json:"price_minor"`
+	VariantPrices map[string]int64  `json:"variant_prices,omitempty"`
 }
 
 type menuItem struct {
-	ID        string      `json:"id"`
-	Name      string      `json:"name"`
-	Available bool        `json:"available"`
-	Variants  []menuPrice `json:"variants"`
-	Groups    []menuGroup `json:"option_groups"`
+	Translations map[string]string `json:"translations,omitempty"`
+	Category     string            `json:"category_id,omitempty"`
+	Image        string            `json:"image_id,omitempty"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Available    bool              `json:"available"`
+	Variants     []menuPrice       `json:"variants"`
+	Groups       []menuGroup       `json:"option_groups"`
 }
 
 func filterMenuItems(items []json.RawMessage, query string) ([]json.RawMessage, error) {
@@ -141,18 +147,19 @@ func (s Merchant) addMenuDetailTools(server *mcp.Server, p persistence.Principal
 			return toolError(err)
 		}
 		type groupSummary struct {
-			Defaults []string `json:"default_option_ids,omitempty"`
-			ID       string   `json:"id"`
-			Name     string   `json:"name"`
-			Min      int      `json:"min_selected"`
-			Max      int      `json:"max_selected"`
-			Count    int      `json:"option_count"`
+			Translations map[string]string `json:"translations,omitempty"`
+			Defaults     []string          `json:"default_option_ids,omitempty"`
+			ID           string            `json:"id"`
+			Name         string            `json:"name"`
+			Min          int               `json:"min_selected"`
+			Max          int               `json:"max_selected"`
+			Count        int               `json:"option_count"`
 		}
 		groups := make([]groupSummary, 0, len(item.Groups))
 		for _, group := range item.Groups {
-			groups = append(groups, groupSummary{Defaults: group.Defaults, ID: group.ID, Name: group.Name, Min: group.Min, Max: group.Max, Count: len(group.Options)})
+			groups = append(groups, groupSummary{Translations: group.Translations, Defaults: group.Defaults, ID: group.ID, Name: group.Name, Min: group.Min, Max: group.Max, Count: len(group.Options)})
 		}
-		return nil, map[string]any{"store": in.Store, "revision": revision, "currency": currency, "state": "private_draft", "item": map[string]any{"id": item.ID, "name": item.Name, "available": item.Available, "variants": item.Variants, "option_groups": groups}}, nil
+		return nil, map[string]any{"store": in.Store, "revision": revision, "currency": currency, "state": "private_draft", "item": map[string]any{"id": item.ID, "name": item.Name, "translations": item.Translations, "category_id": item.Category, "image_id": item.Image, "available": item.Available, "variants": item.Variants, "option_groups": groups}}, nil
 	})
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "inspect_item_extras", Description: "Read options, default selections, base surcharges and variant_prices overrides (including zero/free) for one to three groups of one draft dish. An override replaces the base surcharge for that variant; otherwise the base applies. Includes choice limits. Batch related groups; use exact ids and inspected revision. Read-only.",

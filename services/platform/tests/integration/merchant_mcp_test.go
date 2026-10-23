@@ -101,7 +101,7 @@ func TestMerchantMCP(t *testing.T) {
 		} `json:"tools"`
 	}
 	must(t, json.Unmarshal(listed.Result, &tools))
-	if len(tools.Tools) != 9 {
+	if len(tools.Tools) != 12 {
 		t.Fatalf("tools=%s", listed.Result)
 	}
 	t.Run("released_sdk_client", func(t *testing.T) {
@@ -111,7 +111,7 @@ func TestMerchantMCP(t *testing.T) {
 		defer session.Close()
 		listed, err := session.ListTools(ctx, nil)
 		must(t, err)
-		if len(listed.Tools) != 9 {
+		if len(listed.Tools) != 12 {
 			t.Fatal("SDK tool discovery")
 		}
 		result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "find_my_stores", Arguments: map[string]any{}})

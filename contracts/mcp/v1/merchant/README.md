@@ -168,3 +168,12 @@ Executed tests cover actual SQL tenant isolation, revisions, replay conflicts,
 credential separation/expiry/revocation, menu-field preservation, and bounded
 48-item menu inspection. SDK client and Inspector checks establish compatibility
 with the tested release cohort, not production OAuth or model-driven task success.
+
+## Menu setup additions
+
+`inspect_menu_structure` returns ordered categories and counts, not full dishes.
+`save_menu_item` changes only supplied fields of one exact dish; `create=true`
+is required for new IDs. Supplied size/modifier arrays replace those complete
+lists. `organize_menu_categories` replaces categories and explicit assignments
+atomically. All three use Food's existing model; write results are private
+draft revisions, not publication or customer price promises.
