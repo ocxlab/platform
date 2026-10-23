@@ -1,5 +1,17 @@
 # Development status
 
+## Modular-monolith implementation plan
+
+23 October 2026. The [plan](MODULAR-MONOLITH-PLAN.md) records the reviewed direction:
+explicit ownership and boundary guards, Go-channel wake hints, PostgreSQL-backed
+notification-driven durable work with retry/lease timers and a recovery scan,
+observability, failure tests, and final regression/technical review. Existing SSE
+is retained; no mandatory Watermill, Redis, or additional deployment is planned.
+The plan is not an implementation completion claim. The current catalog worker
+still uses its one-second ticker; ownership safeguards and scheduling changes
+remain to be executed. Subsequent API/MCP, administration, and Beckn work remain
+queued rather than silently replaced by infrastructure work.
+
 ## Commands grouped by purpose
 
 23 October 2026. `services/platform/cmd/` now contains `api/`, `ops/`, `build/`,
