@@ -62,81 +62,89 @@ the latter must return 400, not report a storage outage.
 
 ## sqlc retains application transactions
 
-The adoption now covers 33 queries grouped under the owning
-`services/provider/internal/core/persistence/queries/` and
-`services/provider/internal/food/persistence/queries/` directories: store creation, lookup and
-pagination; offering head locking, append and lookup; publication reads, visibility
-updates, audit and catalog snapshots; durable effect insertion/deduplication;
-Food ordering settings and their audit; quote retrieval and order placement;
-order reads, locking and event history; and development-payment persistence.
-The config reads all Goose migrations in ascending order from `internal/database/migrations`.
-sqlc generates a separate private `sqlgen` package for each query owner;
-it does not own migrations or introduce an ORM, new connection pool or cloud service.
+Application query adoption now covers 103 named statements in seven owner-specific
+`internal/<owner>/persistence/queries/` directories. Related concerns have separate
+files: for example, Shopping separates catalog, checkout sessions, and orders;
+Lodging separates properties, booking sessions, and allocations. Core owns shared
+credentials, stores, publication, media, replay, and durable work access. Food owns
+checkout admission, quotes, orders, and development-payment records.
 
-Handwritten persistence code calls `sqlgen.New(tx)` with its existing tenant-scoped
-transaction. Row-level security, tenant predicates, `FOR UPDATE`, optimistic
-generation checks, audit entries and transactional outbox work remain intact.
-Generated database types stay behind handwritten domain/HTTP types.
+| Query owner | Named statements |
+| --- | ---: |
+| Core | 45 |
+| Food | 25 |
+| Shopping | 12 |
+| Lodging | 13 |
+| Internal UCP transport | 5 |
+| Shared payment | 1 |
+| Network catalog | 2 |
+
+The config reads all Goose migrations in ascending order from
+`internal/database/migrations`. Each owner generates a private, ignored `sqlgen`
+package. No generated type crosses the handwritten application/HTTP boundary.
+This does not introduce an ORM, connection pool, runtime dependency, or deployment.
+
+Handwritten application code still passes its existing transaction to
+`sqlgen.New(tx)`. Tenant context, explicit tenant/customer/guest predicates, row
+locks, optimistic revisions, audit entries, payment obligations, and outbox work
+remain within their original transaction boundaries. Separate public-offering
+read/lock statements preserve store serialization during checkout. Food order
+reads still acquire the operational-row lock before reading payment state; they
+do not replace that sequence with a potentially stale pre-lock join.
+
+Replay uses separate generated statements for merchant, provider, and guest
+tables, selected by the authorized principal. Internal UCP replay stays with its
+transport owner. Advisory-lock identity, fingerprinting, conflict checks, and
+committing the response with its decision remain handwritten orchestration.
+Historical REST grant statements deliberately do not mention the later resource
+column; MCP grant lookup/provisioning remains resource-bound, without REST fallback.
 
 Edit SQL/configuration, then run `task sql:generate` and `task check`. Never edit
-or commit either owner's `persistence/sqlgen/`. Task and clean Docker builds generate
-both themselves. `sqlc vet` here is the local parser/check command; no remote
-analysis or database-backed EXPLAIN rules have been configured. PostgreSQL tests
-remain necessary to establish runtime locking and isolation behavior.
+or commit an owner's `persistence/sqlgen/`. Task and clean Docker builds generate
+all seven packages. Determinism checks recreate every owner in temporary output.
+`sqlc vet` here is the local parser/check command; no remote analysis or
+database-backed EXPLAIN rules are configured.
 
-Nullable JSON uses a configured standard-library `*json.RawMessage` mapping, not
-an additional generated-code runtime dependency. The store-list query uses an
-internal negative count sentinel for non-Food offerings; the handwritten mapper
-preserves the API's null count. Nonnegative counts still describe empty/new or
-Food menus. Runtime tests cover these mappings, including publication withdrawal.
+Nullable JSON uses the standard-library `*json.RawMessage` mapping. Media
+dimensions map database NULL to absent API fields until completion. Food inbox
+queries map the optional development-payment join to the same payment state and
+provider fields as the detailed order read. Lodging date inputs remain validated
+date strings, explicitly cast to PostgreSQL dates; allocation overlap rules and
+deterministic unit locks remain unchanged. Worker claim results require a lease
+token and expiry, and completion retains database-enforced lease fencing.
+Worker domain lists are encoded as JSON and converted to a PostgreSQL array in
+the query, avoiding an additional array-codec dependency.
 
-The order queries retain separate `FOR SHARE OF s` and `FOR UPDATE OF s`
-statements on the mutable operational row. Payment state is read only after that
-lock is acquired; it is not folded into a potentially stale pre-lock join. Guest
-reads keep an explicit guest predicate, while authorized merchant reads use a
-nullable guest filter. Events, payment changes and replay responses still commit
-or roll back together. An integration regression deliberately rejects the final
-payment event, checks that payment attempts and order progress rolled back, then
-retries the same key and checks exactly one committed transition.
-
-The replaced inline SQL, parameter ordering and row-scanning loops are removed
-from handwritten callers. No whole source file became obsolete: those files
-still own transactions, domain validation, error mapping or record conversion.
-Keep these callers and the `queries/*.sql` inputs; only generated output is ignored.
-
-Adoption remains incremental: order pagination, quote creation/pruning, media,
-grants, replay-table selection, worker lease functions, and other persistence paths
-still use handwritten SQL. Generated code reduces parameter and row-scan mismatches; it does not decide
-whether a query is authorized or a business transition is correct. The
-[database workflow](DATABASE-WORKFLOW.md) explains how reviewed Goose migrations,
-pgschema drafts, Squawk, and sqlc fit together.
+The replaced inline statements, positional argument plumbing, and scanning loops
+have been removed from callers, rather than retained as parallel implementations.
+No entire handwritten source file became obsolete: validation, pricing, locking
+order, transaction orchestration, and response mapping still need those files.
+Code generation checks types and SQL structure; behavioral PostgreSQL tests are
+still required for authorization, concurrency, rollback, and agreement semantics.
 
 ### Remaining handwritten SQL inventory
 
-The 23 October 2026 source audit found 66 SQL execution call sites in the
-provider's application/runtime code outside generated packages. This is a
-call-site count, not a count of distinct SQL strings or a coverage percentage.
-Dynamic choices include separate admin listings, REST/MCP grant operations,
-public-offering lock modes, and three replay tables. Shared clock and advisory
-lock statements also occur at several sites.
+The 23 October 2026 follow-up audit finds two normal runtime execution call sites,
+down from 66 before this expansion: transaction-local tenant context and the
+restricted-role startup check, both in `internal/database/database.go`. They are
+connection/security infrastructure, intentionally independent of domain query
+packages. Six administrative demo-data setup calls remain in
+`internal/devsetup/restaurant.go`; they are not customer/merchant runtime paths.
+The SSE listener's pgx `LISTEN` command, executable bootstrap SQL, test fixtures,
+and SQL inside Goose migrations/functions are outside this application-query
+inventory. These are call-site counts, not distinct-query counts or percentages.
 
-| Area | Call sites | Remaining operations |
-| --- | ---: | --- |
-| Shopping | 12 | Catalog reads/writes, stock, checkout sessions and orders |
-| Lodging | 13 | Properties, units, sessions, occupancy checks, bookings and allocations |
-| Food and shared catalog reads | 7 | Public-offering reads/locks, quote creation/pruning and order pagination |
-| Authentication and guest access | 16 | Grant lookup/provisioning, guest sessions, tenant context and runtime-role checks |
-| Media | 4 | Asset reads, quotas, reservations and completion |
-| Idempotency | 6 | Replay advisory locks, lookups and inserts in public and internal commerce |
-| Discovery and administration | 5 | Network catalog acceptance/search, public-store resolution and admin listings |
-| Workers and shared payment | 3 | Effect claim/completion functions and pay-later obligations |
+`internal/architecture/sql_ownership_test.go` rejects direct
+`ExecContext`, `QueryContext`, `QueryRowContext`, and `PrepareContext` calls
+outside generated output, database setup, and development setup. A positive
+control checks calls with variable statements too. The guard covers those
+database/sql call forms; it is not a general proof against every possible SQL
+execution mechanism.
 
-Scope: `services/provider/internal/`, excluding generated code, tests and six
-local development-setup calls in `devsetup/restaurant.go`. The SSE listener's
-separate pgx `LISTEN` command is also excluded. Executable bootstraps and SQL
-inside Goose migrations/functions are not application-query call sites in this
-inventory. These counts describe adoption work, not defects; tenant setup and
-notification plumbing may reasonably stay handwritten.
+See the [database workflow](DATABASE-WORKFLOW.md) for how reviewed Goose
+migrations, pgschema drafts, Squawk, and sqlc fit together. This batch changes
+query access, not migration history or the event/SSE architecture. Go channels,
+Watermill, and modular-monolith event delivery remain a separate discussion.
 
 ## Go linting focuses on correctness
 

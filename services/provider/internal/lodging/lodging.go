@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/lodging/persistence/sqlgen"
 	"ocp.local/platform/internal/payment"
 	"ocp.local/platform/internal/sessionkit"
 )
@@ -121,23 +122,23 @@ func (Service) Catalog(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, 
 	if sessionkit.Decode(raw, &w) != nil || sessionkit.Decode(w.Document, &c) != nil || validate(c) != nil || w.BaseRevision < 0 {
 		return nil, sessionkit.ErrInput
 	}
-	if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, "lodging/property/"+p.MerchantID.String()+"/"+p.StoreID.String()); err != nil {
+	queries := sqlgen.New(tx)
+	if err := queries.LockPropertyKey(ctx, "lodging/property/"+p.MerchantID.String()+"/"+p.StoreID.String()); err != nil {
 		return nil, err
 	}
-	var rev int64
-	err := tx.QueryRowContext(ctx, `SELECT revision FROM lodging.properties WHERE merchant_id=$1 AND store_id=$2 FOR UPDATE`, p.MerchantID, p.StoreID).Scan(&rev)
+	rev, err := queries.LockPropertyRevision(ctx, sqlgen.LockPropertyRevisionParams{MerchantID: p.MerchantID, StoreID: p.StoreID})
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 	if rev != w.BaseRevision {
 		return nil, sessionkit.ErrConflict
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO lodging.properties(merchant_id,store_id,revision,document) VALUES($1,$2,$3,$4) ON CONFLICT(merchant_id,store_id) DO UPDATE SET revision=EXCLUDED.revision,document=EXCLUDED.document`, p.MerchantID, p.StoreID, rev+1, string(sessionkit.JSON(c)))
+	err = queries.SaveProperty(ctx, sqlgen.SavePropertyParams{MerchantID: p.MerchantID, StoreID: p.StoreID, Revision: rev + 1, Document: sessionkit.JSON(c)})
 	if err != nil {
 		return nil, err
 	}
 	for _, u := range c.Units {
-		if _, err = tx.ExecContext(ctx, `INSERT INTO lodging.units(merchant_id,store_id,unit_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING`, p.MerchantID, p.StoreID, u.ID); err != nil {
+		if err = queries.InsertUnit(ctx, sqlgen.InsertUnitParams{MerchantID: p.MerchantID, StoreID: p.StoreID, UnitID: u.ID}); err != nil {
 			return nil, err
 		}
 	}
@@ -155,16 +156,14 @@ func contact(b *Booker) bool {
 }
 func price(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, req Request, now time.Time) (Catalog, []Stay, int64, int64, error) {
 	var c Catalog
-	var doc []byte
-	var rev int64
-	err := tx.QueryRowContext(ctx, `SELECT revision,document FROM lodging.properties WHERE merchant_id=$1 AND store_id=$2 FOR SHARE`, p.MerchantID, p.StoreID).Scan(&rev, &doc)
+	row, err := sqlgen.New(tx).ReadProperty(ctx, sqlgen.ReadPropertyParams{MerchantID: p.MerchantID, StoreID: p.StoreID})
 	if errors.Is(err, sql.ErrNoRows) {
 		return c, nil, 0, 0, sessionkit.ErrNotFound
 	}
 	if err != nil {
 		return c, nil, 0, 0, err
 	}
-	if json.Unmarshal(doc, &c) != nil {
+	if json.Unmarshal(row.Document, &c) != nil {
 		return c, nil, 0, 0, sessionkit.ErrInput
 	}
 	if req.Property.ID != c.Property.ID || req.Property.Name != "" || len(req.Stays) < 1 || len(req.Stays) > 8 {
@@ -228,30 +227,31 @@ func price(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, req Request,
 		chosen.Totals = sessionkit.Totals(cost)
 		stays = append(stays, chosen)
 	}
-	return c, stays, total, rev, nil
+	return c, stays, total, row.Revision, nil
 }
 func (Service) Execute(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, action string, id uuid.UUID, raw json.RawMessage) (sessionkit.Reply, error) {
 	var s Session
 	var revision int64
 	var requestRaw []byte
-	var now time.Time
-	if err := tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
+	queries := sqlgen.New(tx)
+	now, err := queries.DatabaseTime(ctx)
+	if err != nil {
 		return sessionkit.Reply{}, err
 	}
 	if action != "create" {
-		var body []byte
-		err := tx.QueryRowContext(ctx, `SELECT revision,body,request FROM lodging.sessions WHERE merchant_id=$1 AND store_id=$2 AND customer_id=$3 AND id=$4 FOR UPDATE`, p.MerchantID, p.StoreID, p.CustomerID, id).Scan(&revision, &body, &requestRaw)
+		row, err := queries.LockSession(ctx, sqlgen.LockSessionParams{MerchantID: p.MerchantID, StoreID: p.StoreID, CustomerID: p.CustomerID, ID: id})
 		if errors.Is(err, sql.ErrNoRows) {
 			return sessionkit.Reply{}, sessionkit.ErrNotFound
 		}
 		if err != nil {
 			return sessionkit.Reply{}, err
 		}
-		if json.Unmarshal(body, &s) != nil {
+		revision, requestRaw = row.Revision, row.Request
+		if json.Unmarshal(row.Body, &s) != nil {
 			return sessionkit.Reply{}, sessionkit.ErrInput
 		}
 		if action == "get" || s.Status == "completed" || s.Status == "canceled" {
-			return sessionkit.Reply{Status: 200, Body: body}, nil
+			return sessionkit.Reply{Status: 200, Body: row.Body}, nil
 		}
 		if !s.ExpiresAt.After(now) {
 			s.Block("session_expired", "Create a new booking session.")
@@ -321,17 +321,16 @@ func (Service) Execute(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, 
 	}
 	sort.Strings(units)
 	for _, unit := range units {
-		if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, "lodging/unit/"+p.MerchantID.String()+"/"+p.StoreID.String()+"/"+unit); err != nil {
+		if err := queries.LockUnitKey(ctx, "lodging/unit/"+p.MerchantID.String()+"/"+p.StoreID.String()+"/"+unit); err != nil {
 			return sessionkit.Reply{}, err
 		}
-		var selected string
-		if err := tx.QueryRowContext(ctx, `SELECT unit_id FROM lodging.units WHERE merchant_id=$1 AND store_id=$2 AND unit_id=$3`, p.MerchantID, p.StoreID, unit).Scan(&selected); err != nil {
+		if _, err := queries.ReadUnit(ctx, sqlgen.ReadUnitParams{MerchantID: p.MerchantID, StoreID: p.StoreID, UnitID: unit}); err != nil {
 			return sessionkit.Reply{}, err
 		}
 	}
 	for _, stay := range s.Stays {
-		var occupied bool
-		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT FROM lodging.allocations WHERE merchant_id=$1 AND store_id=$2 AND unit_id=$3 AND check_in<$5::date AND check_out>$4::date)`, p.MerchantID, p.StoreID, stay.Unit.ID, stay.Dates.Start, stay.Dates.End).Scan(&occupied); err != nil {
+		occupied, err := queries.StayOccupied(ctx, sqlgen.StayOccupiedParams{MerchantID: p.MerchantID, StoreID: p.StoreID, UnitID: stay.Unit.ID, CheckIn: stay.Dates.Start, CheckOut: stay.Dates.End})
+		if err != nil {
 			return sessionkit.Reply{}, err
 		}
 		if occupied {
@@ -349,11 +348,11 @@ func (Service) Execute(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, 
 	s.Messages = nil
 	s.Confirmation = &Confirmation{booking}
 	terms := sessionkit.JSON(map[string]any{"session": s, "payment_condition": "pay_later", "payment_subject": subject})
-	if _, err := tx.ExecContext(ctx, `INSERT INTO lodging.bookings(merchant_id,store_id,id,session_id,terms) VALUES($1,$2,$3,$4,$5)`, p.MerchantID, p.StoreID, booking, s.ID, string(terms)); err != nil {
+	if err := queries.InsertBooking(ctx, sqlgen.InsertBookingParams{MerchantID: p.MerchantID, StoreID: p.StoreID, ID: booking, SessionID: s.ID, Terms: terms}); err != nil {
 		return sessionkit.Reply{}, err
 	}
 	for _, stay := range s.Stays {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO lodging.allocations(merchant_id,store_id,unit_id,booking_id,check_in,check_out) VALUES($1,$2,$3,$4,$5,$6)`, p.MerchantID, p.StoreID, stay.Unit.ID, booking, stay.Dates.Start, stay.Dates.End); err != nil {
+		if err := queries.InsertAllocation(ctx, sqlgen.InsertAllocationParams{MerchantID: p.MerchantID, StoreID: p.StoreID, UnitID: stay.Unit.ID, BookingID: booking, CheckIn: stay.Dates.Start, CheckOut: stay.Dates.End}); err != nil {
 			return sessionkit.Reply{}, err
 		}
 	}
@@ -361,6 +360,6 @@ func (Service) Execute(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, 
 }
 func save(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, s Session, rev int64, request []byte, status int) (sessionkit.Reply, error) {
 	body := sessionkit.JSON(s)
-	_, err := tx.ExecContext(ctx, `INSERT INTO lodging.sessions(merchant_id,store_id,customer_id,id,revision,body,request) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(merchant_id,store_id,id) DO UPDATE SET revision=EXCLUDED.revision,body=EXCLUDED.body,request=EXCLUDED.request`, p.MerchantID, p.StoreID, p.CustomerID, s.ID, rev, string(body), string(request))
+	err := sqlgen.New(tx).SaveSession(ctx, sqlgen.SaveSessionParams{MerchantID: p.MerchantID, StoreID: p.StoreID, CustomerID: p.CustomerID, ID: s.ID, Revision: rev, Body: body, Request: request})
 	return sessionkit.Reply{Status: status, Body: body}, err
 }

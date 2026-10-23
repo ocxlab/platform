@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/sessionkit"
+	"ocp.local/platform/internal/ucpinternal/persistence/sqlgen"
 )
 
 type Profile struct {
@@ -85,30 +86,30 @@ func Provision(ctx context.Context, admin *sql.DB, p sessionkit.Principal, profi
 	token := "ocp_internal_" + base64.RawURLEncoding.EncodeToString(secret)
 	digest := sha256.Sum256([]byte(token))
 	p.ID = uuid.New()
-	_, err := admin.ExecContext(ctx, `INSERT INTO commerce_internal.grants(id,merchant_id,store_id,customer_id,domain,audience,token_hash,profile_uri,profile,expires_at,management) VALUES($1,$2,$3,$4,$5,'ucp-internal',$6,$7,$8,$9,$10)`, p.ID, p.MerchantID, p.StoreID, p.CustomerID, p.Domain, digest[:], p.Profile, string(sessionkit.JSON(profile)), expires, management)
+	err := sqlgen.New(admin).InsertGrant(ctx, sqlgen.InsertGrantParams{ID: p.ID, MerchantID: p.MerchantID, StoreID: p.StoreID, CustomerID: p.CustomerID, Domain: string(p.Domain), TokenHash: digest[:], ProfileUri: p.Profile, Profile: sessionkit.JSON(profile), ExpiresAt: expires, Management: management})
 	return p, token, err
 }
 func authenticate(ctx context.Context, db *sql.DB, authorization string) (sessionkit.Principal, Profile, bool, error) {
 	var p sessionkit.Principal
 	var profile Profile
-	var raw []byte
-	var management bool
 	token, ok := strings.CutPrefix(authorization, "Bearer ")
 	if !ok || len(token) < 32 || len(token) > 256 {
 		return p, profile, false, sessionkit.ErrNotFound
 	}
 	digest := sha256.Sum256([]byte(token))
-	err := db.QueryRowContext(ctx, `SELECT id,merchant_id,store_id,customer_id,domain,profile_uri,profile,management FROM commerce_internal.lookup_grant($1)`, digest[:]).Scan(&p.ID, &p.MerchantID, &p.StoreID, &p.CustomerID, &p.Domain, &p.Profile, &raw, &management)
+	row, err := sqlgen.New(db).LookupGrant(ctx, digest[:])
 	if errors.Is(err, sql.ErrNoRows) {
 		err = sessionkit.ErrNotFound
 	}
 	if err != nil {
 		return p, profile, false, err
 	}
-	if p.Profile != ControlledProfileURI || json.Unmarshal(raw, &profile) != nil || !allowedProfile(profile, p.Domain) {
+	p.ID, p.MerchantID, p.StoreID, p.CustomerID = row.ID, row.MerchantID, row.StoreID, row.CustomerID
+	p.Domain, p.Profile = capability.Domain(row.Domain), row.ProfileUri
+	if p.Profile != ControlledProfileURI || json.Unmarshal(row.Profile, &profile) != nil || !allowedProfile(profile, p.Domain) {
 		return p, profile, false, sessionkit.ErrInput
 	}
-	return p, profile, management, nil
+	return p, profile, row.Management, nil
 }
 
 // ControlledProfile is a static, allowlisted fixture. Requests never trigger a

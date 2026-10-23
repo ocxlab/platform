@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
 	"ocp.local/platform/internal/database"
 	"time"
 
@@ -38,9 +39,19 @@ func (a MediaAsset) ImageKey() string {
 
 func mediaAsset(ctx context.Context, tx *sql.Tx, merchant, store, id uuid.UUID) (MediaAsset, error) {
 	a := MediaAsset{ID: id, MerchantID: merchant, StoreID: store}
-	err := tx.QueryRowContext(ctx, `SELECT content_type,size_bytes,checksum,state,width,height,created_at,expires_at FROM commerce.media_assets WHERE merchant_id=$1 AND store_id=$2 AND id=$3`, merchant, store, id).Scan(&a.ContentType, &a.Size, &a.Checksum, &a.State, &a.Width, &a.Height, &a.CreatedAt, &a.ExpiresAt)
+	row, err := sqlgen.New(tx).GetMediaAsset(ctx, sqlgen.GetMediaAssetParams{MerchantID: merchant, StoreID: store, ID: id})
 	if errors.Is(err, sql.ErrNoRows) {
 		return a, ErrNotFound
+	}
+	a.ContentType, a.Size, a.Checksum, a.State = row.ContentType, row.SizeBytes, row.Checksum, row.State
+	a.CreatedAt, a.ExpiresAt = row.CreatedAt, row.ExpiresAt
+	if row.Width.Valid {
+		width := int(row.Width.Int32)
+		a.Width = &width
+	}
+	if row.Height.Valid {
+		height := int(row.Height.Int32)
+		a.Height = &height
 	}
 	return a, err
 }
@@ -61,25 +72,25 @@ func CreateMedia(ctx context.Context, tx *sql.Tx, p Principal, store uuid.UUID, 
 	if _, err := publication(ctx, tx, p.MerchantID, store, true); err != nil {
 		return MediaAsset{}, err
 	}
-	var count int
-	var allocated int64
-	if err := tx.QueryRowContext(ctx, `SELECT count(*),coalesce(sum(size_bytes),0) FROM commerce.media_assets WHERE merchant_id=$1 AND store_id=$2`, p.MerchantID, store).Scan(&count, &allocated); err != nil {
+	queries := sqlgen.New(tx)
+	allocation, err := queries.GetMediaAllocation(ctx, sqlgen.GetMediaAllocationParams{MerchantID: p.MerchantID, StoreID: store})
+	if err != nil {
 		return MediaAsset{}, err
 	}
 	// Explicit bounded development policy. No silent reclamation of referenced
 	// history; lifecycle cleanup requires a separate retention policy.
-	if count >= 500 || allocated+size > 200*1024*1024 {
+	if allocation.Assets >= 500 || allocation.Allocated+size > 200*1024*1024 {
 		return MediaAsset{}, ErrMediaCapacity
 	}
 	id := uuid.New()
-	_, err := tx.ExecContext(ctx, `INSERT INTO commerce.media_assets(merchant_id,store_id,id,content_type,size_bytes,checksum,actor_id) VALUES($1,$2,$3,$4,$5,$6,$7)`, p.MerchantID, store, id, kind, size, checksum, p.ID)
+	err = queries.InsertMediaAsset(ctx, sqlgen.InsertMediaAssetParams{MerchantID: p.MerchantID, StoreID: store, ID: id, ContentType: kind, SizeBytes: size, Checksum: checksum, ActorID: p.ID})
 	if err != nil {
 		return MediaAsset{}, err
 	}
 	return mediaAsset(ctx, tx, p.MerchantID, store, id)
 }
 func CompleteMedia(ctx context.Context, tx *sql.Tx, p Principal, store, id uuid.UUID, w, h int) (MediaAsset, error) {
-	_, err := tx.ExecContext(ctx, `UPDATE commerce.media_assets SET state='ready',width=$4,height=$5,completed_at=coalesce(completed_at,clock_timestamp()) WHERE merchant_id=$1 AND store_id=$2 AND id=$3`, p.MerchantID, store, id, w, h)
+	err := sqlgen.New(tx).CompleteMediaAsset(ctx, sqlgen.CompleteMediaAssetParams{MerchantID: p.MerchantID, StoreID: store, ID: id, Width: int64(w), Height: int64(h)})
 	if err != nil {
 		return MediaAsset{}, err
 	}

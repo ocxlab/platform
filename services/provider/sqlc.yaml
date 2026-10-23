@@ -24,3 +24,38 @@ sql:
       go:
         <<: *go
         out: internal/food/persistence/sqlgen
+  - engine: postgresql
+    schema: internal/database/migrations
+    queries: internal/shopping/persistence/queries
+    gen:
+      go:
+        <<: *go
+        out: internal/shopping/persistence/sqlgen
+  - engine: postgresql
+    schema: internal/database/migrations
+    queries: internal/lodging/persistence/queries
+    gen:
+      go:
+        <<: *go
+        out: internal/lodging/persistence/sqlgen
+  - engine: postgresql
+    schema: internal/database/migrations
+    queries: internal/ucpinternal/persistence/queries
+    gen:
+      go:
+        <<: *go
+        out: internal/ucpinternal/persistence/sqlgen
+  - engine: postgresql
+    schema: internal/database/migrations
+    queries: internal/payment/persistence/queries
+    gen:
+      go:
+        <<: *go
+        out: internal/payment/persistence/sqlgen
+  - engine: postgresql
+    schema: internal/database/migrations
+    queries: internal/networkcatalog/persistence/queries
+    gen:
+      go:
+        <<: *go
+        out: internal/networkcatalog/persistence/sqlgen

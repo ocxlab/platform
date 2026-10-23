@@ -14,6 +14,13 @@ request validation → Offering or store operation → transaction-scoped SQL.
 query owner has its own ignored sqlc output. The Food validator does not create
 purchases or model every future kind of offering.
 
+All business SQL uses owner-specific `persistence/queries/` inputs and generated
+query methods: core, Food, Shopping, Lodging, internal UCP, payment, and network
+catalog. Core/Food have separate transaction-oriented application operations;
+Shopping/Lodging retain their domain operations and private generated packages.
+Only tenant/role setup and local demo provisioning retain direct database/sql
+execution in handwritten internal code. See [quality tooling](../../docs/QUALITY-TOOLING.md).
+
 `cmd/api` uses `OCP_DATABASE_URL` and rejects a privileged database role.
 Its `-service` flag selects `combined` (the default), `core`, `food`, `shopping`,
 or `lodging`. Core/Food can therefore share a cheap initial process and later

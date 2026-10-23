@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/networkcatalog/persistence/sqlgen"
 	"ocp.local/platform/internal/offering"
 )
 
@@ -81,7 +82,7 @@ func (i Index) Accept(ctx context.Context, c Catalog) error {
 	if err != nil {
 		return err
 	}
-	_, err = i.DB.ExecContext(ctx, `SELECT discovery.accept_catalog($1,$2,$3,$4,$5,$6,$7,$8)`, b.ProviderID, b.MerchantID, b.StoreID, b.APIBase, b.PublicKey, p.Generation, hash[:], string(raw))
+	err = sqlgen.New(i.DB).AcceptCatalog(ctx, sqlgen.AcceptCatalogParams{Provider: b.ProviderID, Merchant: b.MerchantID, Store: b.StoreID, Endpoint: b.APIBase, Key: b.PublicKey, Version: p.Generation, Hash: hash[:], Document: raw})
 	return err
 }
 
@@ -108,29 +109,23 @@ func (i Index) Search(ctx context.Context, query string) ([]Result, error) {
 	if len(query) > 160 {
 		return nil, errors.New("query too long")
 	}
-	rows, err := i.DB.QueryContext(ctx, `SELECT body,observed_at FROM discovery.catalogs WHERE (body->>'visible')::boolean AND observed_at>clock_timestamp()-interval '24 hours' AND position(lower($1) in lower(body->>'display_name'))>0 ORDER BY store_id LIMIT 100`, strings.TrimSpace(query))
+	rows, err := sqlgen.New(i.DB).SearchCatalogs(ctx, strings.TrimSpace(query))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	results := []Result{}
-	for rows.Next() {
+	for _, row := range rows {
 		var p Projection
-		var raw []byte
-		var observed time.Time
-		if err = rows.Scan(&raw, &observed); err != nil {
-			return nil, err
-		}
-		if err = json.Unmarshal(raw, &p); err != nil {
+		if err = json.Unmarshal(row.Body, &p); err != nil {
 			return nil, err
 		}
 		b, ok := i.Bindings[p.StoreID]
 		if !ok || p.Binding != b {
 			continue
 		}
-		results = append(results, Result{b, p.Generation, p.Model, p.DisplayName, p.Document, observed})
+		results = append(results, Result{b, p.Generation, p.Model, p.DisplayName, p.Document, row.ObservedAt})
 	}
-	return results, rows.Err()
+	return results, nil
 }
 
 // PushHandler belongs only on the isolated crawler ingress, not public API mux.

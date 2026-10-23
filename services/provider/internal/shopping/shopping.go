@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"ocp.local/platform/internal/capability"
 	"ocp.local/platform/internal/payment"
 	"ocp.local/platform/internal/sessionkit"
+	"ocp.local/platform/internal/shopping/persistence/sqlgen"
 )
 
 type Service struct{ OrderBaseURL string }
@@ -97,25 +97,25 @@ func (Service) Catalog(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, 
 		return nil, sessionkit.ErrInput
 	}
 	// Serialize first insert too; all catalog mutations use the same scoped lock.
-	if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, "shopping/catalog/"+p.MerchantID.String()+"/"+p.StoreID.String()); err != nil {
+	queries := sqlgen.New(tx)
+	if err := queries.LockCatalogKey(ctx, "shopping/catalog/"+p.MerchantID.String()+"/"+p.StoreID.String()); err != nil {
 		return nil, err
 	}
-	var current int64
-	err := tx.QueryRowContext(ctx, `SELECT revision FROM shopping.catalogs WHERE merchant_id=$1 AND store_id=$2 FOR UPDATE`, p.MerchantID, p.StoreID).Scan(&current)
+	current, err := queries.LockCatalogRevision(ctx, sqlgen.LockCatalogRevisionParams{MerchantID: p.MerchantID, StoreID: p.StoreID})
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 	if current != write.BaseRevision {
 		return nil, sessionkit.ErrConflict
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO shopping.catalogs(merchant_id,store_id,revision,document) VALUES($1,$2,$3,$4) ON CONFLICT(merchant_id,store_id) DO UPDATE SET revision=EXCLUDED.revision,document=EXCLUDED.document`, p.MerchantID, p.StoreID, current+1, string(sessionkit.JSON(c)))
+	err = queries.SaveCatalog(ctx, sqlgen.SaveCatalogParams{MerchantID: p.MerchantID, StoreID: p.StoreID, Revision: current + 1, Document: sessionkit.JSON(c)})
 	if err != nil {
 		return nil, err
 	}
 	for _, product := range c.Products {
 		for _, v := range product.Variants {
 			// Stock is an explicit authoritative replacement, never inferred from menu use.
-			_, err = tx.ExecContext(ctx, `INSERT INTO shopping.stock(merchant_id,store_id,sku,available) VALUES($1,$2,$3,$4) ON CONFLICT(merchant_id,store_id,sku) DO UPDATE SET available=EXCLUDED.available`, p.MerchantID, p.StoreID, v.ID, v.Stock)
+			err = queries.SaveStock(ctx, sqlgen.SaveStockParams{MerchantID: p.MerchantID, StoreID: p.StoreID, Sku: v.ID, Available: v.Stock})
 			if err != nil {
 				return nil, err
 			}
@@ -127,9 +127,7 @@ func price(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, req Request)
 	if len(req.Lines) < 1 || len(req.Lines) > 50 {
 		return nil, 0, 0, sessionkit.ErrInput
 	}
-	var doc []byte
-	var revision int64
-	err := tx.QueryRowContext(ctx, `SELECT revision,document FROM shopping.catalogs WHERE merchant_id=$1 AND store_id=$2 FOR SHARE`, p.MerchantID, p.StoreID).Scan(&revision, &doc)
+	row, err := sqlgen.New(tx).ReadCatalog(ctx, sqlgen.ReadCatalogParams{MerchantID: p.MerchantID, StoreID: p.StoreID})
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, 0, 0, sessionkit.ErrNotFound
 	}
@@ -137,7 +135,7 @@ func price(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, req Request)
 		return nil, 0, 0, err
 	}
 	var c Catalog
-	if json.Unmarshal(doc, &c) != nil {
+	if json.Unmarshal(row.Document, &c) != nil {
 		return nil, 0, 0, sessionkit.ErrInput
 	}
 	skus := map[string]Variant{}
@@ -163,46 +161,46 @@ func price(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, req Request)
 		unitPrice := v.Price
 		lines = append(lines, Line{ID: fmt.Sprint(len(lines) + 1), Item: Item{ID: v.ID, Title: v.Title, Price: &unitPrice}, Quantity: line.Quantity, Totals: sessionkit.Totals(cost)})
 	}
-	return lines, amount, revision, nil
+	return lines, amount, row.Revision, nil
 }
 func (svc Service) Execute(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, action string, id uuid.UUID, raw json.RawMessage) (sessionkit.Reply, error) {
+	queries := sqlgen.New(tx)
 	if action == "order" {
-		var terms []byte
-		var checkout uuid.UUID
-		err := tx.QueryRowContext(ctx, `SELECT o.session_id,o.terms FROM shopping.orders o JOIN shopping.sessions s ON s.merchant_id=o.merchant_id AND s.store_id=o.store_id AND s.id=o.session_id WHERE o.merchant_id=$1 AND o.store_id=$2 AND s.customer_id=$3 AND o.id=$4`, p.MerchantID, p.StoreID, p.CustomerID, id).Scan(&checkout, &terms)
+		row, err := queries.ReadCustomerOrder(ctx, sqlgen.ReadCustomerOrderParams{MerchantID: p.MerchantID, StoreID: p.StoreID, CustomerID: p.CustomerID, ID: id})
 		if errors.Is(err, sql.ErrNoRows) {
 			err = sessionkit.ErrNotFound
 		}
 		if err != nil {
 			return sessionkit.Reply{}, err
 		}
-		return sessionkit.Reply{Status: 200, Body: sessionkit.JSON(map[string]any{"id": id, "checkout_id": checkout, "terms": json.RawMessage(terms)})}, nil
+		return sessionkit.Reply{Status: 200, Body: sessionkit.JSON(map[string]any{"id": id, "checkout_id": row.SessionID, "terms": row.Terms})}, nil
 	}
 	var state Session
 	var revision int64
 	var requestRaw []byte
-	var now time.Time
-	if err := tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
+	now, err := queries.DatabaseTime(ctx)
+	if err != nil {
 		return sessionkit.Reply{}, err
 	}
 	// Separate typed load keeps stored request distinct from authoritative response.
 	if action != "create" {
-		var body []byte
-		err := tx.QueryRowContext(ctx, `SELECT revision,body,request FROM shopping.sessions WHERE merchant_id=$1 AND store_id=$2 AND customer_id=$3 AND id=$4 FOR UPDATE`, p.MerchantID, p.StoreID, p.CustomerID, id).Scan(&revision, &body, &requestRaw)
+		row, err := queries.LockSession(ctx, sqlgen.LockSessionParams{MerchantID: p.MerchantID, StoreID: p.StoreID, CustomerID: p.CustomerID, ID: id})
 		if errors.Is(err, sql.ErrNoRows) {
 			return sessionkit.Reply{}, sessionkit.ErrNotFound
 		}
 		if err != nil {
 			return sessionkit.Reply{}, err
 		}
-		if json.Unmarshal(body, &state) != nil {
+		revision, requestRaw = row.Revision, row.Request
+		// Retain the stored request separately from the authoritative response.
+		if json.Unmarshal(row.Body, &state) != nil {
 			return sessionkit.Reply{}, sessionkit.ErrInput
 		}
 		if action == "get" {
-			return sessionkit.Reply{Status: 200, Body: body}, nil
+			return sessionkit.Reply{Status: 200, Body: row.Body}, nil
 		}
 		if state.Status == "completed" || state.Status == "canceled" {
-			return sessionkit.Reply{Status: 200, Body: body}, nil
+			return sessionkit.Reply{Status: 200, Body: row.Body}, nil
 		}
 		if !state.ExpiresAt.After(now) {
 			state.Block("session_expired", "Create a new checkout session.")
@@ -260,8 +258,8 @@ func (svc Service) Execute(ctx context.Context, tx *sql.Tx, p sessionkit.Princip
 	lines := append([]Line(nil), state.Lines...)
 	sort.Slice(lines, func(i, j int) bool { return lines[i].Item.ID < lines[j].Item.ID })
 	for _, line := range lines {
-		var available int64
-		if err := tx.QueryRowContext(ctx, `SELECT available FROM shopping.stock WHERE merchant_id=$1 AND store_id=$2 AND sku=$3 FOR UPDATE`, p.MerchantID, p.StoreID, line.Item.ID).Scan(&available); err != nil {
+		available, err := queries.LockStock(ctx, sqlgen.LockStockParams{MerchantID: p.MerchantID, StoreID: p.StoreID, Sku: line.Item.ID})
+		if err != nil {
 			return sessionkit.Reply{}, err
 		}
 		if available < line.Quantity {
@@ -276,7 +274,7 @@ func (svc Service) Execute(ctx context.Context, tx *sql.Tx, p sessionkit.Princip
 		return sessionkit.Reply{}, err
 	}
 	for _, line := range lines {
-		if _, err := tx.ExecContext(ctx, `UPDATE shopping.stock SET available=available-$4 WHERE merchant_id=$1 AND store_id=$2 AND sku=$3`, p.MerchantID, p.StoreID, line.Item.ID, line.Quantity); err != nil {
+		if err := queries.AllocateStock(ctx, sqlgen.AllocateStockParams{MerchantID: p.MerchantID, StoreID: p.StoreID, Sku: line.Item.ID, Available: line.Quantity}); err != nil {
 			return sessionkit.Reply{}, err
 		}
 	}
@@ -284,7 +282,7 @@ func (svc Service) Execute(ctx context.Context, tx *sql.Tx, p sessionkit.Princip
 	state.Messages = nil
 	state.Order = &Confirmation{order, strings.TrimSuffix(svc.OrderBaseURL, "/") + "/orders/" + order.String()}
 	terms := sessionkit.JSON(map[string]any{"session": state, "payment_condition": "pay_later", "payment_subject": subject})
-	if _, err := tx.ExecContext(ctx, `INSERT INTO shopping.orders(merchant_id,store_id,id,session_id,terms) VALUES($1,$2,$3,$4,$5)`, p.MerchantID, p.StoreID, order, state.ID, string(terms)); err != nil {
+	if err := queries.InsertOrder(ctx, sqlgen.InsertOrderParams{MerchantID: p.MerchantID, StoreID: p.StoreID, ID: order, SessionID: state.ID, Terms: terms}); err != nil {
 		return sessionkit.Reply{}, err
 	}
 	return save(ctx, tx, p, state, revision, requestRaw, 200)
@@ -292,6 +290,6 @@ func (svc Service) Execute(ctx context.Context, tx *sql.Tx, p sessionkit.Princip
 
 func save(ctx context.Context, tx *sql.Tx, p sessionkit.Principal, s Session, rev int64, req []byte, status int) (sessionkit.Reply, error) {
 	body := sessionkit.JSON(s)
-	_, err := tx.ExecContext(ctx, `INSERT INTO shopping.sessions(merchant_id,store_id,customer_id,id,revision,body,request) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(merchant_id,store_id,id) DO UPDATE SET revision=EXCLUDED.revision,body=EXCLUDED.body,request=EXCLUDED.request`, p.MerchantID, p.StoreID, p.CustomerID, s.ID, rev, string(body), string(req))
+	err := sqlgen.New(tx).SaveSession(ctx, sqlgen.SaveSessionParams{MerchantID: p.MerchantID, StoreID: p.StoreID, CustomerID: p.CustomerID, ID: s.ID, Revision: rev, Body: body, Request: req})
 	return sessionkit.Reply{Status: status, Body: body}, err
 }

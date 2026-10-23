@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
 )
 
 var ErrPublicStoreCursor = errors.New("invalid public store cursor")
@@ -20,11 +21,11 @@ func GetPublicStoreByHandle(ctx context.Context, db *sql.DB, handle string) (Pub
 	if err != nil || number < 1 || handle != "store-"+strconv.FormatInt(number, 10) {
 		return store, ErrNotFound
 	}
-	err = db.QueryRowContext(ctx, `SELECT merchant_id,id,display_name,handle FROM commerce.public_store_by_number($1)`, number).Scan(&store.MerchantID, &store.ID, &store.DisplayName, &store.Handle)
+	row, err := sqlgen.New(db).GetPublicStoreByNumber(ctx, number)
 	if errors.Is(err, sql.ErrNoRows) {
 		return store, ErrNotFound
 	}
-	return store, err
+	return PublicStore{MerchantID: row.MerchantID, ID: row.ID, DisplayName: row.DisplayName, Handle: row.Handle}, err
 }
 
 type PublicStore struct {
@@ -43,7 +44,7 @@ func ListPublicStores(ctx context.Context, db *sql.DB, query string, after *stri
 	query = strings.TrimSpace(query)
 	digest := sha256.Sum256([]byte(query))
 	queryKey := hex.EncodeToString(digest[:])
-	var merchant, store *uuid.UUID
+	var merchant, store uuid.NullUUID
 	if after != nil {
 		parts := strings.Split(*after, ":")
 		if len(parts) != 3 || parts[0] != queryKey {
@@ -54,25 +55,17 @@ func ListPublicStores(ctx context.Context, db *sql.DB, query string, after *stri
 		if e1 != nil || e2 != nil {
 			return page, ErrPublicStoreCursor
 		}
-		merchant, store = &m, &s
+		merchant, store = uuid.NullUUID{UUID: m, Valid: true}, uuid.NullUUID{UUID: s, Valid: true}
 	}
 	if limit < 1 || limit > 100 {
 		return page, ErrPublicStoreCursor
 	}
-	rows, err := db.QueryContext(ctx, `SELECT merchant_id,id,display_name,handle FROM commerce.list_public_stores($1,$2,$3,$4)`, strings.TrimSpace(query), merchant, store, limit+1)
+	rows, err := sqlgen.New(db).ListPublicStores(ctx, sqlgen.ListPublicStoresParams{Query: query, AfterMerchant: merchant, AfterStore: store, PageLimit: int32(limit + 1)})
 	if err != nil {
 		return page, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var entry PublicStore
-		if err = rows.Scan(&entry.MerchantID, &entry.ID, &entry.DisplayName, &entry.Handle); err != nil {
-			return page, err
-		}
-		page.Items = append(page.Items, entry)
-	}
-	if err = rows.Err(); err != nil {
-		return page, err
+	for _, row := range rows {
+		page.Items = append(page.Items, PublicStore{MerchantID: row.MerchantID, ID: row.ID, DisplayName: row.DisplayName, Handle: row.Handle})
 	}
 	if len(page.Items) > limit {
 		page.Items = page.Items[:limit]

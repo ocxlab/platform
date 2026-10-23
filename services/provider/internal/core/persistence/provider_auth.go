@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
 )
 
 // Provider grants deliberately have no merchant identity or merchant credential audience.
@@ -20,15 +21,15 @@ func AuthenticateProvider(ctx context.Context, db *sql.DB, token string) (Princi
 	}
 	digest := sha256.Sum256([]byte(token))
 	p := Principal{Provider: true}
-	var scopes string
-	err := db.QueryRowContext(ctx, `SELECT id,array_to_json(scopes)::text FROM auth.lookup_provider_grant($1)`, digest[:]).Scan(&p.ID, &scopes)
+	row, err := sqlgen.New(db).LookupProviderGrant(ctx, digest[:])
 	if errors.Is(err, sql.ErrNoRows) {
 		return Principal{}, ErrUnauthenticated
 	}
 	if err != nil {
 		return Principal{}, err
 	}
-	err = json.Unmarshal([]byte(scopes), &p.Scopes)
+	p.ID = row.ID
+	err = json.Unmarshal([]byte(row.ScopesJson), &p.Scopes)
 	return p, err
 }
 
@@ -42,6 +43,6 @@ func ProvisionProvider(ctx context.Context, db *sql.DB, scopes []string, expiry 
 	digest := sha256.Sum256([]byte(token))
 	p := Principal{ID: uuid.New(), Provider: true, Scopes: scopes}
 	encoded, _ := json.Marshal(scopes)
-	_, err := db.ExecContext(ctx, `INSERT INTO auth.provider_grants(id,token_hash,scopes,expires_at) VALUES($1,$2,ARRAY(SELECT jsonb_array_elements_text($3::jsonb)),$4)`, p.ID, digest[:], string(encoded), expiry)
+	err := sqlgen.New(db).InsertProviderGrant(ctx, sqlgen.InsertProviderGrantParams{ID: p.ID, TokenHash: digest[:], ScopesJson: encoded, ExpiresAt: expiry})
 	return p, token, err
 }

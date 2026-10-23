@@ -57,6 +57,9 @@ func TestMediaOwnershipReplayAndPublication(t *testing.T) {
 	f.request(t, "POST", path+"/media", f.token, "media-upload-start01", `{"content_type":"image/png","size_bytes":100,"sha256":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="}`, 409)
 	var a persistence.MediaAsset
 	must(t, json.Unmarshal(body, &a))
+	if a.Width != nil || a.Height != nil || a.State != "pending" {
+		t.Fatalf("pending asset lost nullable dimensions: %+v", a)
+	}
 	asset := path + "/media/" + a.ID.String()
 	f.request(t, "GET", asset, "", "", "", 401)
 	f.request(t, "GET", asset, f.token, "", "", 200)
@@ -76,6 +79,11 @@ func TestMediaOwnershipReplayAndPublication(t *testing.T) {
 	item["image_id"] = a.ID.String()
 	f.request(t, "PUT", path+"/offering", f.token, "image-pending-draft1", offeringBody(t, 0, doc, "ocp.food.menu"), 422)
 	ready := f.request(t, "POST", asset+"/completion", f.token, "media-completion-001", "", 201)
+	var completed persistence.MediaAsset
+	must(t, json.Unmarshal(ready, &completed))
+	if completed.Width == nil || completed.Height == nil || *completed.Width != 640 || *completed.Height != 480 || completed.State != "ready" {
+		t.Fatalf("completed asset lost dimensions: %+v", completed)
+	}
 	if !bytes.Equal(ready, f.request(t, "POST", asset+"/completion", f.token, "media-completion-001", "", 201)) {
 		t.Fatal("completion replay changed")
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/payment/persistence/sqlgen"
 )
 
 // RecordPayLater persists a financial obligation in the caller's decision
@@ -13,6 +14,5 @@ func RecordPayLater(ctx context.Context, tx *sql.Tx, t Terms) error {
 		return ErrTerms
 	}
 	s := t.Subject
-	_, err := tx.ExecContext(ctx, `INSERT INTO payments.obligations(merchant_id,store_id,domain,subject_id,amount_minor,currency,condition,state) VALUES($1,$2,$3,$4,$5,$6,'pay_later','outstanding')`, s.MerchantID, s.StoreID, s.Domain, s.ID, t.AmountMinor, t.Currency)
-	return err
+	return sqlgen.New(tx).InsertPayLaterObligation(ctx, sqlgen.InsertPayLaterObligationParams{MerchantID: s.MerchantID, StoreID: s.StoreID, Domain: string(s.Domain), SubjectID: s.ID, AmountMinor: t.AmountMinor, Currency: t.Currency})
 }

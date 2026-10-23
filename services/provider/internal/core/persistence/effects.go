@@ -90,23 +90,24 @@ func ClaimEffects(ctx context.Context, db *sql.DB, domains []capability.Domain, 
 		names = append(names, string(d))
 	}
 	token := uuid.New()
-	rows, err := db.QueryContext(ctx, `SELECT id,merchant_id,store_id,domain,kind,subject_id,effect_key,payload,lease_token,lease_generation,attempts,lease_until FROM runtime.claim_effects($1,$2,$3,$4)`, names, token, batch, int(lease/time.Second))
+	domainsJSON, err := json.Marshal(names)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	rows, err := sqlgen.New(db).ClaimEffects(ctx, sqlgen.ClaimEffectsParams{DomainsJson: domainsJSON, Token: token, BatchSize: int64(batch), LeaseSeconds: int64(lease / time.Second)})
+	if err != nil {
+		return nil, err
+	}
 	result := []Effect{}
-	for rows.Next() {
-		var e Effect
-		if err := rows.Scan(&e.ID, &e.MerchantID, &e.StoreID, &e.Domain, &e.Kind, &e.SubjectID, &e.Key, &e.Payload, &e.Token, &e.Generation, &e.Attempts, &e.LeaseUntil); err != nil {
-			return nil, err
+	for _, row := range rows {
+		if !row.LeaseToken.Valid || !row.LeaseUntil.Valid {
+			return nil, errors.New("claimed effect has no lease")
 		}
+		e := Effect{ID: row.ID, MerchantID: row.MerchantID, StoreID: row.StoreID, Domain: capability.Domain(row.Domain), Kind: row.Kind, SubjectID: row.SubjectID, Key: row.EffectKey, Payload: row.Payload, Token: row.LeaseToken.UUID, Generation: row.LeaseGeneration, Attempts: int(row.Attempts), LeaseUntil: row.LeaseUntil.Time}
 		result = append(result, e)
 	}
-	return result, rows.Err()
+	return result, nil
 }
 func FinishEffect(ctx context.Context, db *sql.DB, e Effect, success bool, retry time.Duration) (bool, error) {
-	var done bool
-	err := db.QueryRowContext(ctx, `SELECT runtime.finish_effect($1,$2,$3,$4,$5)`, e.ID, e.Token, e.Generation, success, int(retry/time.Second)).Scan(&done)
-	return done, err
+	return sqlgen.New(db).FinishEffect(ctx, sqlgen.FinishEffectParams{Effect: e.ID, Token: e.Token, Generation: e.Generation, Success: success, RetrySeconds: int64(retry / time.Second)})
 }

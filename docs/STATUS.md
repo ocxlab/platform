@@ -1,5 +1,40 @@
 # Development status
 
+## Business SQL generation covers every current owner
+
+23 October 2026. Step 2 expands sqlc from 33 to 103 named statements across core,
+Food, Shopping, Lodging, internal UCP, shared payment, and network catalog. Inputs
+remain in owner-specific `persistence/queries/` directories, split by concern;
+each generates its own ignored private package. Task/Docker and deterministic
+generation checks cover all seven packages. No schema migration, API change,
+new dependency, or deployment was introduced.
+
+Replaced handwritten query execution and scanners were removed. Retained Go
+owns validation, pricing, authorization, transaction orchestration, and response
+mapping; no whole source file became obsolete. The follow-up audit finds two
+direct normal-runtime SQL calls (tenant context and role checks), plus six local
+demo-setup calls. A source guard rejects direct database/sql execution elsewhere.
+See [query ownership and residual scope](QUALITY-TOOLING.md).
+
+Existing lock ordering, scoped replay, tenant/customer/guest predicates, quote
+quotas and cleanup, stock allocation, lodging date overlaps, payment obligations,
+and fenced worker leases are preserved. New regression assertions check nullable
+image dimensions and merchant-inbox payment state against the detailed order read.
+Verification passed: full `task check` (Spectral, generation guards, ten migration
+workflow tests, zero Go lint issues, vet/race, PostgreSQL integration in 55.783
+seconds, 94 frontend tests, zero Svelte diagnostics, and API/web builds).
+`task sql:check` also passed after the final query/configuration edits.
+`task test:domains` passed in 24.256 seconds, exercising actual core/Food replicas,
+Shopping/Lodging process isolation and recovery, and worker restart against a
+test receiver. The pinned UCP source-schema checks passed within that suite.
+`task test:contracts` validated 258 selected REST responses successfully.
+Combined `task smoke` passed; the rebuilt ordinary development API remains
+running, with development data preserved and temporary test services stopped.
+These are bounded local checks, not full UCP conformance, native ONIX, real payment,
+cloud-cost, or production failover evidence. No new browser or mutation run and
+no independent review are claimed. Channels, Watermill, and event/SSE design
+remain deferred to the requested discussion.
+
 ## Core and commerce domains have separate runtime compositions
 
 23 October 2026. Step 1 of the cleanup plan separates shared persistence under

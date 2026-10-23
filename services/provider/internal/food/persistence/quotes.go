@@ -7,6 +7,7 @@ import (
 	"errors"
 	corestore "ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/database"
+	"ocp.local/platform/internal/food/persistence/sqlgen"
 	"time"
 
 	"github.com/google/uuid"
@@ -51,12 +52,13 @@ func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 		return q, err
 	}
 	defer tx.Rollback()
-	var guestID any
+	queries := sqlgen.New(tx)
+	var guestID uuid.NullUUID
 	if guest != nil {
 		if err := corestore.CheckGuest(ctx, tx, *guest); err != nil {
 			return q, err
 		}
-		guestID = guest.ID
+		guestID = uuid.NullUUID{UUID: guest.ID, Valid: true}
 	}
 	p, err := corestore.PublicOfferingTx(ctx, tx, merchant, store, true)
 	if err != nil {
@@ -72,8 +74,8 @@ func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 	if p.Generation != expected {
 		return q, &corestore.PublicationConflict{Current: p.Generation}
 	}
-	var evaluatedAt time.Time
-	if err = tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&evaluatedAt); err != nil {
+	evaluatedAt, err := queries.DatabaseTime(ctx)
+	if err != nil {
 		return q, err
 	}
 	p.EvaluatedAt = evaluatedAt
@@ -83,12 +85,11 @@ func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 	}
 	// Bound ephemeral anonymous writes per store. Expired snapshots are not purchase
 	// history. A later placement transaction must reject expired terms regardless.
-	if _, err = tx.ExecContext(ctx, `DELETE FROM commerce.food_quotes WHERE merchant_id=$1 AND store_id=$2 AND id IN
- (SELECT id FROM commerce.food_quotes WHERE merchant_id=$1 AND store_id=$2 AND expires_at<=clock_timestamp() ORDER BY expires_at LIMIT 1000)`, merchant, store); err != nil {
+	if err = queries.PruneExpiredFoodQuotes(ctx, sqlgen.PruneExpiredFoodQuotesParams{MerchantID: merchant, StoreID: store}); err != nil {
 		return q, err
 	}
-	var active int
-	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM commerce.food_quotes WHERE merchant_id=$1 AND store_id=$2 AND expires_at>clock_timestamp()`, merchant, store).Scan(&active); err != nil {
+	active, err := queries.CountActiveFoodQuotes(ctx, sqlgen.CountActiveFoodQuotesParams{MerchantID: merchant, StoreID: store})
+	if err != nil {
 		return q, err
 	}
 	if active >= 1000 {
@@ -107,7 +108,7 @@ func createFoodQuote(ctx context.Context, db *sql.DB, merchant, store uuid.UUID,
 	if err != nil {
 		return q, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO commerce.food_quotes(merchant_id,store_id,id,body,expires_at,guest_id) VALUES($1,$2,$3,$4,$5,$6)`, merchant, store, q.ID, string(body), q.ExpiresAt, guestID)
+	err = queries.InsertFoodQuote(ctx, sqlgen.InsertFoodQuoteParams{MerchantID: merchant, StoreID: store, ID: q.ID, Body: body, ExpiresAt: q.ExpiresAt, GuestID: guestID})
 	if err != nil {
 		return q, err
 	}

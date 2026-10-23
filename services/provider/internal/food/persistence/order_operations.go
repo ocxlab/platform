@@ -187,61 +187,48 @@ func ListFoodOrders(ctx context.Context, db *sql.DB, p corestore.Principal, stor
 	if limit < 1 || limit > 100 {
 		return page, errors.New("order page limit outside bounds")
 	}
-	var at *time.Time
-	var id *uuid.UUID
+	var at sql.NullTime
+	var id uuid.NullUUID
 	if after != nil {
 		value, key, err := parseOrderCursor(*after)
 		if err != nil {
 			return page, err
 		}
-		at, id = &value, &key
+		at, id = sql.NullTime{Time: value, Valid: true}, uuid.NullUUID{UUID: key, Valid: true}
 	}
 	tx, err := database.TenantTransaction(ctx, db, p.MerchantID)
 	if err != nil {
 		return page, err
 	}
 	defer tx.Rollback()
-	var exists bool
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT FROM commerce.stores WHERE merchant_id=$1 AND id=$2)`, p.MerchantID, store).Scan(&exists); err != nil {
+	queries := sqlgen.New(tx)
+	exists, err := queries.FoodStoreExists(ctx, sqlgen.FoodStoreExistsParams{MerchantID: p.MerchantID, ID: store})
+	if err != nil {
 		return page, err
 	}
 	if !exists {
 		return page, corestore.ErrNotFound
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT o.body,s.revision,s.acceptance,s.resolution,o.display_number,coalesce(p.state,'not_started'),p.state IS NOT NULL,s.fulfilment_progress FROM commerce.food_orders o
- JOIN commerce.food_order_operations s ON (s.merchant_id,s.store_id,s.order_id)=(o.merchant_id,o.store_id,o.id)
- LEFT JOIN payment.development_operations p ON (p.merchant_id,p.store_id,p.order_id)=(o.merchant_id,o.store_id,o.id)
- WHERE o.merchant_id=$1 AND o.store_id=$2 AND ($3::timestamptz IS NULL OR (o.created_at,o.id)<($3,$4::uuid)) ORDER BY o.created_at DESC,o.id DESC LIMIT $5`, p.MerchantID, store, at, id, limit+1)
+	rows, err := queries.ListFoodOrders(ctx, sqlgen.ListFoodOrdersParams{MerchantID: p.MerchantID, StoreID: store, AfterCreatedAt: at, AfterID: id, PageLimit: int32(limit + 1)})
 	if err != nil {
 		return page, err
 	}
-	defer rows.Close()
-	for rows.Next() {
+	for _, row := range rows {
 		var order FoodOrder
-		var body []byte
-		var revision int64
-		var number int64
-		var acceptance, resolution string
-		var paymentState string
-		var development bool
-		var progress string
-		if err = rows.Scan(&body, &revision, &acceptance, &resolution, &number, &paymentState, &development, &progress); err != nil {
+		if !row.DisplayNumber.Valid {
+			return page, errors.New("food order has no display number")
+		}
+		if err = json.Unmarshal(row.Body, &order); err != nil {
 			return page, err
 		}
-		if err = json.Unmarshal(body, &order); err != nil {
-			return page, err
-		}
-		order.Revision, order.Acceptance, order.Resolution = revision, acceptance, resolution
-		order.FulfilmentProgress = progress
-		order.Reference = orderReference(number)
-		order.Payment = paymentState
-		if development {
+		order.Revision, order.Acceptance, order.Resolution = row.Revision, row.Acceptance, row.Resolution
+		order.FulfilmentProgress = row.FulfilmentProgress
+		order.Reference = orderReference(row.DisplayNumber.Int64)
+		order.Payment = row.PaymentState
+		if row.Development {
 			order.PaymentProvider = "development"
 		}
 		page.Items = append(page.Items, order)
-	}
-	if err = rows.Err(); err != nil {
-		return page, err
 	}
 	if len(page.Items) > limit {
 		page.Items = page.Items[:limit]

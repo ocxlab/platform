@@ -30,3 +30,13 @@ FOR UPDATE;
 UPDATE commerce.stores
 SET publication_suspended = $3, publication_generation = publication_generation + 1
 WHERE merchant_id = $1 AND id = $2;
+
+-- name: ReadPublicOffering :one
+SELECT s.display_name,s.publication_generation,r.revision,r.model_id,r.model_version,s.public_document
+FROM commerce.stores s JOIN commerce.offering_revisions r ON (s.merchant_id,s.id,s.published_revision)=(r.merchant_id,r.store_id,r.revision)
+WHERE s.merchant_id=$1 AND s.id=$2 AND NOT s.publication_suspended;
+
+-- name: LockPublicOffering :one
+SELECT s.display_name,s.publication_generation,r.revision,r.model_id,r.model_version,s.public_document
+FROM commerce.stores s JOIN commerce.offering_revisions r ON (s.merchant_id,s.id,s.published_revision)=(r.merchant_id,r.store_id,r.revision)
+WHERE s.merchant_id=$1 AND s.id=$2 AND NOT s.publication_suspended FOR UPDATE OF s;

@@ -189,16 +189,28 @@ type PublicOffering struct {
 // callers must retain the transaction until their own decision has committed.
 func PublicOfferingTx(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, lock bool) (PublicOffering, error) {
 	p := PublicOffering{MerchantID: merchant, StoreID: store}
-	query := `SELECT s.display_name,s.publication_generation,s.published_revision,r.model_id,r.model_version,s.public_document
- FROM commerce.stores s JOIN commerce.offering_revisions r ON (s.merchant_id,s.id,s.published_revision)=(r.merchant_id,r.store_id,r.revision)
- WHERE s.merchant_id=$1 AND s.id=$2 AND NOT s.publication_suspended`
+	queries := sqlgen.New(tx)
+	var row sqlgen.ReadPublicOfferingRow
+	var err error
 	if lock {
-		query += ` FOR UPDATE OF s`
+		var locked sqlgen.LockPublicOfferingRow
+		locked, err = queries.LockPublicOffering(ctx, sqlgen.LockPublicOfferingParams{MerchantID: merchant, ID: store})
+		row = sqlgen.ReadPublicOfferingRow(locked)
+	} else {
+		row, err = queries.ReadPublicOffering(ctx, sqlgen.ReadPublicOfferingParams{MerchantID: merchant, ID: store})
 	}
-	err := tx.QueryRowContext(ctx, query, merchant, store).Scan(&p.DisplayName, &p.Generation, &p.Revision, &p.Model.ID, &p.Model.Version, &p.Document)
 	if errors.Is(err, sql.ErrNoRows) {
 		return p, ErrNotFound
 	}
+	if err != nil {
+		return p, err
+	}
+	if row.PublicDocument == nil {
+		return p, errors.New("published offering has no public document")
+	}
+	p.DisplayName, p.Generation, p.Revision = row.DisplayName, row.PublicationGeneration, row.Revision
+	p.Model = offering.Model{ID: row.ModelID, Version: row.ModelVersion}
+	p.Document = *row.PublicDocument
 	return p, err
 }
 func GetPublicOffering(ctx context.Context, db *sql.DB, merchant, store uuid.UUID) (PublicOffering, error) {

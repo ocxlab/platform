@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
 )
 
 func AuthenticateGuest(ctx context.Context, db *sql.DB, token string) (Principal, error) {
@@ -15,10 +15,11 @@ func AuthenticateGuest(ctx context.Context, db *sql.DB, token string) (Principal
 	}
 	digest := sha256.Sum256([]byte(token))
 	p := Principal{Guest: true, Scopes: []string{"quote:create", "order:create", "order:read", "order:cancel"}}
-	err := db.QueryRowContext(ctx, `SELECT id,merchant_id,store_id FROM auth.lookup_guest_grant($1)`, digest[:]).Scan(&p.ID, &p.MerchantID, &p.StoreID)
+	row, err := sqlgen.New(db).LookupGuestGrant(ctx, digest[:])
 	if errors.Is(err, sql.ErrNoRows) {
 		return Principal{}, ErrUnauthenticated
 	}
+	p.ID, p.MerchantID, p.StoreID = row.ID, row.MerchantID, row.StoreID
 	return p, err
 }
 
@@ -27,8 +28,7 @@ func CheckGuest(ctx context.Context, tx *sql.Tx, p Principal) error {
 	if !p.Guest {
 		return ErrUnauthenticated
 	}
-	var id uuid.UUID
-	err := tx.QueryRowContext(ctx, `SELECT id FROM commerce.guest_grants WHERE merchant_id=$1 AND store_id=$2 AND id=$3 AND NOT revoked AND expires_at>clock_timestamp() FOR SHARE`, p.MerchantID, p.StoreID, p.ID).Scan(&id)
+	_, err := sqlgen.New(tx).LockActiveGuestGrant(ctx, sqlgen.LockActiveGuestGrantParams{MerchantID: p.MerchantID, StoreID: p.StoreID, ID: p.ID})
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrUnauthenticated
 	}

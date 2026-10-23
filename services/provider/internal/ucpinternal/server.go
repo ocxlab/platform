@@ -26,6 +26,7 @@ import (
 	"ocp.local/platform/internal/shopping"
 	"ocp.local/platform/internal/telemetry"
 	"ocp.local/platform/internal/ucpcontract"
+	"ocp.local/platform/internal/ucpinternal/persistence/sqlgen"
 )
 
 type Config struct {
@@ -306,6 +307,7 @@ func (s *server) transaction(ctx context.Context, p sessionkit.Principal, adapte
 		return sessionkit.Reply{}, err
 	}
 	defer tx.Rollback()
+	queries := sqlgen.New(tx)
 	var digest [32]byte
 	var replayKey uuid.UUID
 	if action != "get" && action != "order" {
@@ -315,17 +317,16 @@ func (s *server) transaction(ctx context.Context, p sessionkit.Principal, adapte
 		}
 		digest = sha256.Sum256(raw)
 		lock := sessionkit.JSON([]string{p.ID.String(), string(p.Domain), action, id.String(), replayKey.String()})
-		if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, string(lock)); err != nil {
+		if err = queries.LockReplayKey(ctx, string(lock)); err != nil {
 			return sessionkit.Reply{}, err
 		}
-		var stored []byte
-		var previous sessionkit.Reply
-		err = tx.QueryRowContext(ctx, `SELECT digest,response_status,response_body FROM commerce_internal.replays WHERE merchant_id=$1 AND grant_id=$2 AND domain=$3 AND operation=$4 AND resource=$5 AND replay_key=$6`, p.MerchantID, p.ID, p.Domain, action, id.String(), replayKey).Scan(&stored, &previous.Status, &previous.Body)
+		previous, readErr := queries.ReadReplay(ctx, sqlgen.ReadReplayParams{MerchantID: p.MerchantID, GrantID: p.ID, Domain: string(p.Domain), Operation: action, Resource: id.String(), ReplayKey: replayKey})
+		err = readErr
 		if err == nil {
-			if !bytes.Equal(stored, digest[:]) {
+			if !bytes.Equal(previous.Digest, digest[:]) {
 				return sessionkit.Reply{}, sessionkit.ErrConflict
 			}
-			return previous, tx.Commit()
+			return sessionkit.Reply{Status: int(previous.ResponseStatus), Body: previous.ResponseBody}, tx.Commit()
 		}
 		if !errors.Is(err, sql.ErrNoRows) {
 			return sessionkit.Reply{}, err
@@ -342,7 +343,7 @@ func (s *server) transaction(ctx context.Context, p sessionkit.Principal, adapte
 		return result, err
 	}
 	if action != "get" && action != "order" {
-		_, err = tx.ExecContext(ctx, `INSERT INTO commerce_internal.replays(merchant_id,grant_id,domain,operation,resource,replay_key,digest,response_status,response_body) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`, p.MerchantID, p.ID, p.Domain, action, id.String(), replayKey, digest[:], result.Status, []byte(result.Body))
+		err = queries.InsertReplay(ctx, sqlgen.InsertReplayParams{MerchantID: p.MerchantID, GrantID: p.ID, Domain: string(p.Domain), Operation: action, Resource: id.String(), ReplayKey: replayKey, Digest: digest[:], ResponseStatus: int32(result.Status), ResponseBody: result.Body})
 		if err != nil {
 			return result, err
 		}

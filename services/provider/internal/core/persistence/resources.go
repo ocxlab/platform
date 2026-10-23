@@ -67,25 +67,30 @@ func Mutate(ctx context.Context, db *sql.DB, principal Principal, operation, res
 	}
 	digest := sha256.Sum256(fingerprint)
 	lock, _ := json.Marshal([]string{principal.MerchantID.String(), principal.ID.String(), operation, resource, key})
-	if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, string(lock)); err != nil {
+	queries := sqlgen.New(tx)
+	if err = queries.LockReplayKey(ctx, string(lock)); err != nil {
 		return Result{}, err
 	}
-	var previous []byte
 	var result Result
-	table := "commerce.request_replays"
-	if principal.Provider {
-		table = "commerce.provider_request_replays"
-	}
+	args := sqlgen.ReadMerchantReplayParams{MerchantID: principal.MerchantID, GrantID: principal.ID, Operation: operation, Resource: resource, ReplayKey: key}
+	var previous sqlgen.ReadMerchantReplayRow
 	if principal.Guest {
-		table = "commerce.guest_request_replays"
+		var row sqlgen.ReadGuestReplayRow
+		row, err = queries.ReadGuestReplay(ctx, sqlgen.ReadGuestReplayParams(args))
+		previous = sqlgen.ReadMerchantReplayRow(row)
+	} else if principal.Provider {
+		var row sqlgen.ReadProviderReplayRow
+		row, err = queries.ReadProviderReplay(ctx, sqlgen.ReadProviderReplayParams(args))
+		previous = sqlgen.ReadMerchantReplayRow(row)
+	} else {
+		previous, err = queries.ReadMerchantReplay(ctx, args)
 	}
-	err = tx.QueryRowContext(ctx, `SELECT request_hash,response_status,response_body
-  FROM `+table+` WHERE merchant_id=$1 AND grant_id=$2 AND operation=$3 AND resource=$4 AND replay_key=$5`, principal.MerchantID, principal.ID, operation, resource, key).Scan(&previous, &result.Status, &result.Body)
 	if err == nil {
-		if !bytes.Equal(previous, digest[:]) {
+		if !bytes.Equal(previous.RequestHash, digest[:]) {
 			return Result{}, ErrReplayConflict
 		}
 		result.Replayed = true
+		result.Status, result.Body = int(previous.ResponseStatus), previous.ResponseBody
 		if err := tx.Commit(); err != nil {
 			return Result{}, err
 		}
@@ -103,9 +108,15 @@ func Mutate(ctx context.Context, db *sql.DB, principal Principal, operation, res
 	if err != nil {
 		return Result{}, err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO `+table+`
- (merchant_id,grant_id,operation,resource,replay_key,request_hash,response_status,response_body)
- VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, principal.MerchantID, principal.ID, operation, resource, key, digest[:], result.Status, []byte(result.Body)); err != nil {
+	write := sqlgen.InsertMerchantReplayParams{MerchantID: principal.MerchantID, GrantID: principal.ID, Operation: operation, Resource: resource, ReplayKey: key, RequestHash: digest[:], ResponseStatus: int32(result.Status), ResponseBody: result.Body}
+	if principal.Guest {
+		err = queries.InsertGuestReplay(ctx, sqlgen.InsertGuestReplayParams(write))
+	} else if principal.Provider {
+		err = queries.InsertProviderReplay(ctx, sqlgen.InsertProviderReplayParams(write))
+	} else {
+		err = queries.InsertMerchantReplay(ctx, write)
+	}
+	if err != nil {
 		return Result{}, err
 	}
 	if err := tx.Commit(); err != nil {

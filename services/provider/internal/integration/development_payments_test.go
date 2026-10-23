@@ -31,6 +31,19 @@ func TestDevelopmentPaymentWorkflow(t *testing.T) {
 	if order.Reference == "" || store.Handle == "" {
 		t.Fatal("missing human references")
 	}
+	checkInbox := func(paymentState, provider string, revision int64) {
+		t.Helper()
+		var page foodstore.FoodOrderPage
+		must(t, json.Unmarshal(f.request(t, "GET", private+"/food/orders", f.token, "", "", 200), &page))
+		if len(page.Items) != 1 {
+			t.Fatalf("unexpected inbox size: %d", len(page.Items))
+		}
+		item := page.Items[0]
+		if item.ID != order.ID || item.Reference != order.Reference || item.Payment != paymentState || item.PaymentProvider != provider || item.Revision != revision {
+			t.Fatalf("inbox lost payment state or readable reference: %+v", item)
+		}
+	}
+	checkInbox("not_started", "", 1)
 	act("start", 1, "payment-before-accept-001", 409)
 	f.request(t, "POST", private+"/food/orders/"+order.ID.String()+"/decisions", f.token, "payment-merchant-accept-001", `{"expected_revision":1,"decision":"accept"}`, 201)
 	started := act("start", 2, "payment-start-replay-001", 201)
@@ -47,6 +60,7 @@ func TestDevelopmentPaymentWorkflow(t *testing.T) {
 	if got.Payment != "paid" || got.PaymentProvider != "development" || got.Reference != order.Reference || got.Revision != 8 || got.FulfilmentProgress != "not_started" {
 		t.Fatalf("unexpected paid state: %+v", got)
 	}
+	checkInbox("paid", "development", 8)
 	var amount int64
 	var currency string
 	must(t, f.admin.QueryRow(`SELECT amount_minor,currency FROM payment.development_operations WHERE order_id=$1`, order.ID).Scan(&amount, &currency))
@@ -76,6 +90,7 @@ func TestDevelopmentPaymentWorkflow(t *testing.T) {
 	if got.Payment != "refunded" || got.Resolution != "cancelled" || got.Revision != 9 || got.History[len(got.History)-1].Event != "cancelled_refunded" {
 		t.Fatalf("missing simulated refund: %+v", got)
 	}
+	checkInbox("refunded", "development", 9)
 	if string(act("succeed", 7, "payment-success-key-001", 201)) != string(paid) {
 		t.Fatal("historical success replay changed")
 	}

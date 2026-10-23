@@ -61,8 +61,15 @@ tasks:
   sql:generate:
     desc: Generate ignored Go queries from owned SQL and Goose migrations
     deps: [tools:build]
-    sources: [services/provider/sqlc.yaml, services/provider/internal/core/persistence/queries/*.sql, services/provider/internal/food/persistence/queries/*.sql, services/provider/internal/database/migrations/*.sql]
-    generates: [services/provider/internal/core/persistence/sqlgen/*.go, services/provider/internal/food/persistence/sqlgen/*.go]
+    sources: [services/provider/sqlc.yaml, services/provider/internal/**/persistence/queries/*.sql, services/provider/internal/database/migrations/*.sql]
+    generates:
+      - services/provider/internal/core/persistence/sqlgen/*.go
+      - services/provider/internal/food/persistence/sqlgen/*.go
+      - services/provider/internal/shopping/persistence/sqlgen/*.go
+      - services/provider/internal/lodging/persistence/sqlgen/*.go
+      - services/provider/internal/ucpinternal/persistence/sqlgen/*.go
+      - services/provider/internal/payment/persistence/sqlgen/*.go
+      - services/provider/internal/networkcatalog/persistence/sqlgen/*.go
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools sqlc generate'
 

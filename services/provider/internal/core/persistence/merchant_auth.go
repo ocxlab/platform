@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
 	"time"
 )
 
@@ -63,24 +64,26 @@ func AuthenticateResource(ctx context.Context, db *sql.DB, token, resource strin
 	}
 	digest := sha256.Sum256([]byte(token))
 	var p Principal
-	// pgx's array codec is used through its SQL driver.
-	var scopesJSON string
 	// Keep REST compatible with historical migrations and the original restricted
 	// lookup. MCP uses a separate resource filter, never a fallback lookup.
-	query := `SELECT id, merchant_id, array_to_json(scopes)::text FROM auth.lookup_grant($1)`
-	args := []any{digest[:]}
+	queries := sqlgen.New(db)
+	var row sqlgen.LookupMerchantGrantRow
+	var err error
 	if resource == MerchantMCP {
-		query = `SELECT id, merchant_id, array_to_json(scopes)::text FROM auth.lookup_resource_grant($1,$2)`
-		args = append(args, resource)
+		var bound sqlgen.LookupMerchantResourceGrantRow
+		bound, err = queries.LookupMerchantResourceGrant(ctx, sqlgen.LookupMerchantResourceGrantParams{Candidate: digest[:], RequestedResource: resource})
+		row = sqlgen.LookupMerchantGrantRow(bound)
+	} else {
+		row, err = queries.LookupMerchantGrant(ctx, digest[:])
 	}
-	err := db.QueryRowContext(ctx, query, args...).Scan(&p.ID, &p.MerchantID, &scopesJSON)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Principal{}, ErrUnauthenticated
 	}
 	if err != nil {
 		return Principal{}, fmt.Errorf("credential lookup unavailable: %w", err)
 	}
-	if err := json.Unmarshal([]byte(scopesJSON), &p.Scopes); err != nil {
+	p.ID, p.MerchantID = row.ID, row.MerchantID
+	if err := json.Unmarshal([]byte(row.ScopesJson), &p.Scopes); err != nil {
 		return Principal{}, err
 	}
 	return p, nil
@@ -99,12 +102,12 @@ func Provision(ctx context.Context, db *sql.DB, name string, scopes []string, ex
 		return Principal{}, "", err
 	}
 	defer tx.Rollback()
-	if _, err = tx.ExecContext(ctx, `INSERT INTO auth.merchants(id, display_name) VALUES ($1,$2)`, p.MerchantID, name); err != nil {
+	queries := sqlgen.New(tx)
+	if err = queries.InsertMerchant(ctx, sqlgen.InsertMerchantParams{ID: p.MerchantID, DisplayName: name}); err != nil {
 		return Principal{}, "", err
 	}
 	encoded, _ := json.Marshal(scopes)
-	if _, err = tx.ExecContext(ctx, `INSERT INTO auth.grants(id, merchant_id, token_hash, scopes, expires_at)
-  VALUES ($1,$2,$3,ARRAY(SELECT jsonb_array_elements_text($4::jsonb)),$5)`, p.ID, p.MerchantID, digest[:], string(encoded), expiry); err != nil {
+	if err = queries.InsertMerchantGrant(ctx, sqlgen.InsertMerchantGrantParams{ID: p.ID, MerchantID: p.MerchantID, TokenHash: digest[:], ScopesJson: encoded, ExpiresAt: expiry}); err != nil {
 		return Principal{}, "", err
 	}
 	if err = tx.Commit(); err != nil {
@@ -137,19 +140,13 @@ func provisionMerchantGrant(ctx context.Context, db *sql.DB, merchant uuid.UUID,
 		return Principal{}, "", err
 	}
 	// Preserve the REST bootstrap for historical migration integration tests.
-	query := `INSERT INTO auth.grants(id,merchant_id,token_hash,scopes,expires_at)
-	 SELECT $1,id,$3,ARRAY(SELECT jsonb_array_elements_text($4::jsonb)),$5 FROM auth.merchants WHERE id=$2`
-	args := []any{p.ID, merchant, digest[:], string(encoded), expiry}
+	queries := sqlgen.New(db)
+	var count int64
 	if resource == MerchantMCP {
-		query = `INSERT INTO auth.grants(id,merchant_id,token_hash,scopes,expires_at,resource)
-	 SELECT $1,id,$3,ARRAY(SELECT jsonb_array_elements_text($4::jsonb)),$5,$6 FROM auth.merchants WHERE id=$2`
-		args = append(args, resource)
+		count, err = queries.ProvisionMerchantResourceGrant(ctx, sqlgen.ProvisionMerchantResourceGrantParams{ID: p.ID, MerchantID: merchant, TokenHash: digest[:], ScopesJson: encoded, ExpiresAt: expiry, Resource: resource})
+	} else {
+		count, err = queries.ProvisionMerchantGrant(ctx, sqlgen.ProvisionMerchantGrantParams{ID: p.ID, MerchantID: merchant, TokenHash: digest[:], ScopesJson: encoded, ExpiresAt: expiry})
 	}
-	result, err := db.ExecContext(ctx, query, args...)
-	if err != nil {
-		return Principal{}, "", err
-	}
-	count, err := result.RowsAffected()
 	if err != nil {
 		return Principal{}, "", err
 	}
