@@ -19,6 +19,7 @@ import (
 	"ocp.local/platform/internal/core/offering"
 	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/food/offering"
+	foodstore "ocp.local/platform/internal/food/persistence"
 	"ocp.local/platform/internal/infra/telemetry"
 )
 
@@ -282,6 +283,7 @@ func (s Merchant) server(p persistence.Principal) *mcp.Server {
 	s.addMealOfferTools(server, p)
 	s.addMenuSetupTools(server, p)
 	s.addPublicationTools(server, p)
+	s.addOrderTools(server, p)
 	if p.AuthorizesMerchant(p.MerchantID, "offering:read", "offering:write") {
 		mcp.AddTool(server, &mcp.Tool{Name: "set_item_availability", Description: "Save one item's availability in a private menu draft. Requires a reviewed revision and retry key; preserves all other menu fields. Does not change the published menu until the merchant publishes it.", Annotations: &mcp.ToolAnnotations{IdempotentHint: true, DestructiveHint: &closed, OpenWorldHint: &closed}}, func(ctx context.Context, _ *mcp.CallToolRequest, in availabilityInput) (*mcp.CallToolResult, map[string]any, error) {
 			if !p.AuthorizesMerchant(p.MerchantID, "offering:read", "offering:write") {
@@ -366,6 +368,7 @@ func toolError(err error) (*mcp.CallToolResult, map[string]any, error) {
 	code, next := "unavailable", "Retry the same request key if this was a mutation."
 	var conflict *persistence.RevisionConflict
 	var publicationConflict *persistence.PublicationConflict
+	var orderConflict *foodstore.OrderRevisionConflict
 	switch {
 	case errors.Is(err, commerce.ErrForbidden):
 		code, next = "forbidden", "Request the required merchant permission."
@@ -379,6 +382,12 @@ func toolError(err error) (*mcp.CallToolResult, map[string]any, error) {
 		code, next = "revision_conflict", "Inspect the latest draft and review changes before using a new request key."
 	case errors.As(err, &publicationConflict):
 		code, next = "publication_conflict", "Preview the publication again and obtain approval before a new request key."
+	case errors.As(err, &orderConflict):
+		code, next = "order_revision_conflict", "Inspect the current order before choosing a new action and request key."
+	case errors.Is(err, foodstore.ErrOrderTransition):
+		code, next = "order_transition_conflict", "Inspect current order states; do not skip stages or assume payment."
+	case errors.Is(err, foodstore.ErrOrderCursor):
+		code, next = "invalid_request", "Use the returned order continuation unchanged or refresh the first page."
 	case errors.Is(err, offering.ErrUnsupported):
 		code, next = "unsupported_model", "This tool supports food menus only."
 	case errors.Is(err, offering.ErrInvalid):
@@ -394,6 +403,9 @@ func toolError(err error) (*mcp.CallToolResult, map[string]any, error) {
 	}
 	if publicationConflict != nil {
 		out["current_generation"] = publicationConflict.Current
+	}
+	if orderConflict != nil {
+		out["current_order_revision"] = orderConflict.Current
 	}
 	data, _ := json.Marshal(out)
 	return &mcp.CallToolResult{IsError: true, Content: []mcp.Content{&mcp.TextContent{Text: string(data)}}}, nil, nil

@@ -1,5 +1,41 @@
 # Development status
 
+## Merchant MCP batches completed
+
+24 October 2026. The three authorized merchant batches are implemented: focused
+menu setup/corrections, exact reviewed-revision publication, and Food order
+handling. Full scope exposes eighteen tools; discovery omits tools outside the
+grant's permissions. Order access requires its own read/manage scopes, not just
+catalog access. New local MCP credentials include those scopes; existing grants
+are not silently upgraded. No new deployment or mandatory broker was added.
+
+Food order reads, decisions, and pickup progress now have shared authorized
+application operations used by both REST and MCP. The existing locked persistence
+state machine, immutable agreed terms, durable work, audit events, and replay
+remain authoritative. MCP returns summaries first, paginated item detail next,
+and history only on request. Simulated guest payment remains a separate guest
+operation; merchant tools cannot claim payment or kitchen dispatch.
+
+The focused HTTP/PostgreSQL run passed (9.124 seconds), including acceptance,
+simulated payment followed by all pickup stages, historical retries, stale
+revisions, skipped/unpaid stage rejection, catalog-only/read-only denial,
+cross-merchant denial, and agreement with REST without changing order terms.
+Full `task check` passed: source-only generation checks, formatting, Spectral,
+sqlc, migration/Squawk checks, zero Go lint issues, vet and race tests,
+PostgreSQL integration (68.088 seconds), 94 frontend tests, zero Svelte errors
+or warnings, and API/web builds. `task smoke` passed liveness, database-backed
+credential rejection, and SQL connectivity. It rebuilt/restarted the local API
+without resetting development data; it is not a commerce/payment readiness test.
+
+Scoped Gremlins testing killed 180 mutations with zero survivors and 120 uncovered
+(60.00% mutant coverage); uncovered HTTP/SQL callback expressions are not counted
+as killed by integration tests. See [scope and evidence](MUTATION-TESTING.md).
+Disposable test/migration databases are stopped; generated code remains ignored.
+No new browser/Inspector run, independent review, real payment, or model-driven
+task evaluation is claimed. Next are customer Food MCP and Core account
+capabilities, followed by the committed XState/TanStack slice and provider admin;
+the retained live-model evaluation remains a separate handoff requirement.
+
 ## Merchant MCP reviewed publication
 
 23 October 2026. `preview_menu_publication` and `publish_menu_revision` add

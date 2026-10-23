@@ -13,7 +13,8 @@ Focused price edits can change a base surcharge or a named size override without
 replacing the rest of the menu. Meal offers have a compact overview/detail read
 and a focused create/update tool, including eligibility, add-on choices, and
 upgrade surcharges. Focused dish/category setup and reviewed publication are
-also implemented. Order/account intentions remain in the
+also implemented. Merchant order inbox/detail, decisions, and pickup progression
+use the same authorized Food application operations as REST. Account intentions remain in the
 [continuation plan](API-MCP-CONTINUATION.md).
 
 ## Try it locally
@@ -23,6 +24,9 @@ one-hour development MCP credential with `task dev:mcp-credential STORE=store-2`
 (substitute your handle). This prints the token explicitly for local use, not to
 ordinary API logs. It covers that store's owning merchant, including their other
 stores, using the current scope-filtered tools. It is not a UI login or REST credential.
+New credentials include order read/manage in addition to catalog scopes, exposing
+eighteen tools. Existing restricted grants are not upgraded automatically; issue
+a fresh development credential when testing the expanded merchant workflow.
 
 Connect your client to `http://127.0.0.1:18180/mcp/merchant`, select Streamable
 HTTP, and supply `Authorization: Bearer <token>`. The Compose stack enables
@@ -76,7 +80,7 @@ mutation totals, durable audit records, model token usage, or retained admin sta
 
 The [intent and information-disclosure design](MCP-TOOL-DESIGN.md) describes
 the implemented read path and the broader catalog still to build.
-The next slices are broader merchant setup/review tools, the separately designed
+The next slices are the separately designed
 customer MCP, and the **MCPs** provider-admin area for management and bounded
 operational summaries. Merchant/customer account tools require their corresponding
 account capabilities first. The embedded assistant and live model tests also

@@ -63,7 +63,7 @@ func main() {
 			os.Exit(1)
 		}
 		if *mcp {
-			scopes = []string{"store:read", "offering:read", "offering:write"}
+			scopes = []string{"store:read", "offering:read", "offering:write", "order:read", "order:manage"}
 			p, token, err = persistence.ProvisionMerchantMCPGrant(ctx, db, id, scopes, time.Now().Add(time.Hour))
 		} else {
 			p, token, err = persistence.ProvisionMerchantGrant(ctx, db, id, scopes, time.Now().Add(24*time.Hour))

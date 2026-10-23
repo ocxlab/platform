@@ -1,10 +1,10 @@
 # Merchant tool contract
 
-The merchant MCP helps owners find a managed store, inspect its menu, change
-availability, prices, and meal offers in a private draft, and review retained
-changes. It is an intention-oriented interface, not an export of every REST
-operation. Publication remains a separate
-separate confirmed publication action, so a draft edit cannot change the live menu.
+The merchant MCP helps owners find a managed store, inspect its menu, edit
+dishes, categories, prices, and meal offers in a private draft, review and publish
+an exact revision, and handle Food orders. It is an intention-oriented interface, not an
+export of every REST operation. Publication requires separate confirmation,
+so a draft edit cannot change the live menu.
 
 The endpoint is `/mcp/merchant`. Its local implementation uses the released Go
 SDK's Streamable HTTP transport. This developer slice is not a public OAuth
@@ -23,6 +23,15 @@ resource server. See [setup and boundaries](../../../../docs/MCP.md).
 | `review_menu_changes` | `offering:read` | `store`, positive `from_revision` and `to_revision` at or after it; optional `offset` | Up to 20 before/after field changes, total count, explicit revision pair, and optional `next_offset` |
 | `inspect_meal_offers` | `offering:read` | `store`; optional exact main `item` filter or exact `offer` detail selector; `revision` and `offset` | Up to 20 offer summaries, or one offer's terms and up to 20 named add-on choices with draft availability; optional `next_offset` |
 | `save_meal_offer` | `offering:read`, `offering:write` | `store`, positive `expected_revision`, `request_key`, complete `offer`; explicit `create: true` for a new ID | Base and saved draft revisions, offer ID, replay flag, and review instruction; no menu echo |
+| `inspect_menu_structure` | `offering:read` | `store`; optional retained `revision` | Ordered categories, translations, item counts, uncategorized count, and revision |
+| `save_menu_item` | `offering:read`, `offering:write` | `store`, exact `item`, `fields`, inspected `expected_revision`, `request_key`; explicit `create` for new dishes | Saved draft revision and replay flag; no full menu echo |
+| `organize_menu_categories` | `offering:read`, `offering:write` | Complete ordered `categories`, optional explicit dish `assignments`, revision and retry key | Saved draft revision and replay flag |
+| `preview_menu_publication` | `offering:read` | Exact positive `revision`; optional `offset` and pinned `expected_generation` | Up to 20 published-baseline changes, generation, suspension, and selection token |
+| `publish_menu_revision` | `offering:read`, `offering:write` | Exact revision, expected generation, review token, explicit confirmation, retry key | Retained publication revision/generation, suspension, and replay flag |
+| `list_food_orders` | `order:read` | `store`; optional `after` | Up to 20 newest-first summaries; optional continuation |
+| `inspect_food_order` | `order:read` | Exact order handle; optional operational revision, item offset, and history flag | States/totals/notes and up to 20 agreed item lines; optional history |
+| `decide_food_order` | `order:read`, `order:manage` | Exact order, inspected revision, accept/reject decision, retry key | Retained states/revision, receipt reference, and replay flag |
+| `advance_pickup_order` | `order:read`, `order:manage` | Exact order, inspected revision, preparation/ready/collection action, retry key | Retained states/revision, receipt reference, and replay flag |
 
 Scopes are checked in discovery and invocation. Every HTTP request authenticates
 the grant again, including expiry and revocation. Store handles select records;
@@ -36,6 +45,8 @@ Focused edits and comparison inputs are in
 [`menu_edits.go`](../../../../services/platform/internal/food/adapters/mcp/menu_edits.go).
 Meal-offer inputs and projections are in
 [`meal_offers.go`](../../../../services/platform/internal/food/adapters/mcp/meal_offers.go).
+Menu setup, publication, and order inputs live in sibling `menu_setup.go`,
+`publication.go`, and `orders.go`, respectively.
 The pinned SDK derives and validates JSON Schemas, exposed by `tools/list`.
 The extras input uses a narrow schema refinement to advertise a non-null array;
 field definitions and descriptions still derive from its typed input.
@@ -115,9 +126,9 @@ Continue with the same revision pair and `next_offset`; no changes yields
 `changes: []`. Reviewing a new draft against its base shows only that edit;
 reviewing against an earlier revision shows the accumulated changes. Review all
 pages before judging the complete difference. No review call records human
-approval, changes publication, or certifies readiness. The merchant workspace
-remains the publication surface, with its existing explicit revision and
-publication-generation checks.
+approval, changes publication, or certifies readiness. Publication is separate,
+through the merchant workspace or the confirmed publication tools below, with
+the same explicit revision and publication-generation checks.
 
 ### Meal offers
 
@@ -192,3 +203,21 @@ must follow explicit merchant instruction. The digest is not authorization or
 proof that a human reviewed the pages. The shared publication operation retains
 audit/replay atomically and cannot clear provider suspension. Successful retries
 return historical results; read again to learn current visibility.
+
+## Merchant Food orders
+
+Order tools require `order:read`; writes additionally require `order:manage`.
+Catalog authority alone grants no order access. `list_food_orders` returns up to
+20 newest-first summaries with receipt references, states, totals, and exact
+order handles. `inspect_food_order` adds up to 20 agreed item lines and notes;
+history is opt-in. Item-page continuation requires the operational revision.
+Live inbox pages are not snapshots; refresh without a continuation for arrivals.
+
+`decide_food_order` accepts or rejects a pending order. `advance_pickup_order`
+reports preparation, ready-for-pickup, and collection in order, after acceptance
+and payment. Neither collects money nor dispatches a kitchen device. The tools
+share Food application operations with REST, including locks, transitions,
+events, durable work, and retained retries. They never change agreed terms.
+Mutation summaries are historical on replay; use detail reads for current state.
+Cross-audience and cross-merchant reads/writes remain denied. No guest tokens,
+payment credentials, or full private quote envelopes appear in tool results.

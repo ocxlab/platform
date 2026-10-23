@@ -144,6 +144,18 @@ Do not remove useful guards or suppress these mutants merely to obtain 100%.
 
 ## Limits
 
+The 23 October merchant expansion ran `task test:mutation:mcp` against the Food
+adapter's price/offer/diff helpers plus menu setup, publication selection digest,
+and order detail projections. Gremlins v0.6.0 killed 180, left zero survivors,
+and reported 120 uncovered mutants (60.00% mutant coverage), with no timeouts,
+nonviable mutants, or skips. The mutation phase took 1.496 seconds after a
+2.935-second coverage pass; command/container startup is additional. Registration
+and HTTP/SQL callbacks account for most uncovered expressions. Real HTTP/SQL
+integration checks cover those paths separately, but do not turn uncovered
+mutants into killed ones. This run does not mutate Food application/persistence
+transactions or prove model-driven task quality. The retained CSV records both
+the earlier narrower scope and this expanded scope.
+
 SQL persistence, HTTP handlers, Svelte components, and generated contracts are
 not mutation-tested by these bounded tasks. Their normal database, component,
 contract, and browser tests are separate. In particular, a 100% transition-rule

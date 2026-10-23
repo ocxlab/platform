@@ -1,2 +1,3 @@
 date,tool,version,scope,killed,survived,uncovered,timed_out,nonviable,skipped,efficacy_percent,mutant_coverage_percent,elapsed_seconds
 2026-10-23,Gremlins,v0.6.0,food/adapters/mcp menu_edits.go and meal_offers.go,139,0,38,0,0,0,100.00,78.53,2.109481506
+2026-10-23,Gremlins,v0.6.0,food/adapters/mcp excluding merchant.go and menu_details.go expanded merchant scope,180,0,120,0,0,0,100.00,60.00,1.496

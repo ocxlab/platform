@@ -57,6 +57,9 @@ func TestToolDiscoveryAndSchema(t *testing.T) {
 		{"none", nil, 0}, {"store", []string{"store:read"}, 1}, {"menu", []string{"offering:read"}, 7},
 		{"write_without_read", []string{"offering:write"}, 0},
 		{"full", []string{"store:read", "offering:read", "offering:write"}, 14},
+		{"orders_read", []string{"order:read"}, 2},
+		{"orders_manage_without_read", []string{"order:manage"}, 0},
+		{"all", []string{"store:read", "offering:read", "offering:write", "order:read", "order:manage"}, 18},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()

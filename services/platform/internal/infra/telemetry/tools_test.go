@@ -16,6 +16,9 @@ func TestMerchantToolSignalsAreBounded(t *testing.T) {
 		{"inspect_menu_item", ""}, {"inspect_item_extras", "not_found"},
 		{"update_item_prices", "revision_conflict"}, {"review_menu_changes", ""},
 		{"inspect_meal_offers", ""}, {"save_meal_offer", "invalid_offering"},
+		{"inspect_menu_structure", ""}, {"save_menu_item", ""}, {"organize_menu_categories", "invalid_offering"},
+		{"preview_menu_publication", ""}, {"publish_menu_revision", "publication_conflict"},
+		{"list_food_orders", ""}, {"inspect_food_order", "order_revision_conflict"}, {"decide_food_order", "order_transition_conflict"}, {"advance_pickup_order", ""},
 	} {
 		ctx, finish := o.StartMerchantTool(context.Background(), tc.name)
 		if ctx == nil {
@@ -24,7 +27,7 @@ func TestMerchantToolSignalsAreBounded(t *testing.T) {
 		finish(tc.code)
 	}
 	spans := exporter.GetSpans()
-	if len(spans) != 10 {
+	if len(spans) != 19 {
 		t.Fatal(len(spans))
 	}
 	if attrs(spans[1].Attributes)["ocp.outcome"] != "rejected" || attrs(spans[3].Attributes)["ocp.mcp.tool"] != "_OTHER" {
@@ -38,6 +41,16 @@ func TestMerchantToolSignalsAreBounded(t *testing.T) {
 	}
 	if attrs(spans[8].Attributes)["ocp.mcp.tool"] != "inspect_meal_offers" || attrs(spans[9].Attributes)["ocp.mcp.tool"] != "save_meal_offer" {
 		t.Fatal("meal tools missing from bounded labels")
+	}
+	for _, span := range spans[10:] {
+		if attrs(span.Attributes)["ocp.mcp.tool"] == "_OTHER" {
+			t.Fatal("registered tool lost telemetry label")
+		}
+	}
+	for _, i := range []int{14, 16, 17} {
+		if attrs(spans[i].Attributes)["ocp.outcome"] != "rejected" {
+			t.Fatal("business conflict classified as internal error")
+		}
 	}
 	var data metricdata.ResourceMetrics
 	if err := reader.Collect(context.Background(), &data); err != nil {

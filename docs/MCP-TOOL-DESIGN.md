@@ -24,6 +24,12 @@ The current merchant endpoint supports this progression:
 | Mark a dish available or unavailable | `set_item_availability` | A focused private-draft change with a revision and replay flag |
 | Correct size prices or extra surcharges | `update_item_prices` | One atomic private-draft edit for up to 20 distinct prices on a dish, with base/saved revisions and replay flag |
 | Review the difference before publishing | `review_menu_changes` | Up to 20 exact field changes per page between explicit retained revisions, with before/after values |
+| Organize categories | `inspect_menu_structure`, `organize_menu_categories` | Ordered names, translations and counts; atomic explicit assignments |
+| Add or correct a dish | `save_menu_item` | Only supplied fields change; complete size/group replacements when supplied |
+| Inspect or revise meal upgrades | `inspect_meal_offers`, `save_meal_offer` | Summary/detail disclosure and focused offer writes |
+| Publish a reviewed revision | `preview_menu_publication`, `publish_menu_revision` | Paginated published-baseline difference, bound selection, and separate explicit confirmation |
+| Review incoming Food orders | `list_food_orders`, `inspect_food_order` | Up to 20 summaries or agreed item lines; optional history |
+| Decide and progress pickup orders | `decide_food_order`, `advance_pickup_order` | Compact states and revision; shared authorized transitions and retries |
 
 This is progressive disclosure of **information**, not progressive loading of
 tool definitions. A client may go straight to an item when it already has its

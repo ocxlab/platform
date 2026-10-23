@@ -37,9 +37,13 @@ domain gains tools; do not add empty Shopping/Lodging MCPs now.
 
 The first increment now preserves size-dependent extras and defaults. Meal-offer
 support adds bounded summaries/details and focused create/update commands using
-the same Food model validation and Offering write as REST. Offer deletion, broader
-menu setup, order handling, customer tools, and account tools remain subsequent
-work; completing these two merchant tools does not complete the API/MCP phase.
+the same Food model validation and Offering write as REST. The three merchant
+batches now add focused dish/category setup, exact reviewed publication, and
+order inbox/detail, decisions, and pickup progression. Food owns shared order
+application operations for REST and MCP. Offer deletion, ordering-policy setup,
+customer tools, and account tools remain further work; these merchant batches
+do not complete the API/MCP phase. Full-merchant local MCP credentials now include
+order read/manage; existing restricted credentials are not silently upgraded.
 
 ## Verification and boundaries
 

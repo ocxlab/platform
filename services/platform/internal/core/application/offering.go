@@ -17,6 +17,9 @@ var ErrForbidden = errors.New("merchant action denied")
 var ErrInvalid = errors.New("invalid application request")
 var replayKey = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$`)
 
+// ValidRequestKey applies the shared mutation contract before database work.
+func ValidRequestKey(key string) bool { return replayKey.MatchString(key) }
+
 type Offerings struct {
 	DB     *sql.DB
 	Models *offering.Registry
