@@ -40,6 +40,13 @@ not fuzzy search, translation, transliteration, or recommendation. Keep the same
 query and explicit revision while following `next_offset`. Results stay in
 document order. An empty search is `items: []`, not a failed read.
 
+The 23 October continuation preserves default option IDs in both detail levels,
+and size-specific `variant_prices` in selected extras. Overrides replace the base
+surcharge for the named size, including an explicit zero. Price edits can change
+base surcharges and size overrides in one atomic command without losing other
+sizes. Meal-offer inspection and other current-model coverage remain to implement;
+this correction does not establish full menu-model support in MCP.
+
 An item read accepts the returned draft revision; extras require a positive
 revision. This keeps the details consistent even if a different client saves a
 new draft between calls. The 200-item model bound limits the source document;

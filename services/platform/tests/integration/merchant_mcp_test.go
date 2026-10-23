@@ -123,6 +123,26 @@ func TestMerchantMCP(t *testing.T) {
 	call := func(name string, args map[string]any) json.RawMessage {
 		return mcpRequest(t, server, token, "tools/call", map[string]any{"name": name, "arguments": args}, 200).Result
 	}
+	t.Run("defaults_and_size_pricing", func(t *testing.T) {
+		var target persistence.Store
+		must(t, json.Unmarshal(f.request(t, "POST", f.merchantPath, f.token, "mcp-size-store-00001", `{"display_name":"Size pricing"}`, 201), &target))
+		document := menu(t)
+		dish := document["items"].([]any)[0].(map[string]any)
+		group := dish["option_groups"].([]any)[0].(map[string]any)
+		group["default_option_ids"] = []string{"garlic"}
+		group["options"].([]any)[0].(map[string]any)["variant_prices"] = map[string]int64{"regular": 0}
+		f.request(t, "PUT", f.merchantPath+"/"+target.ID.String()+"/offering", f.token, "mcp-size-menu-00001", offeringBody(t, 0, document, "ocp.food.menu"), 201)
+		args := map[string]any{"store": target.Handle, "item": dish["id"], "revision": 1}
+		item := call("inspect_menu_item", args)
+		if !strings.Contains(string(item), `"default_option_ids":["garlic"]`) || strings.Contains(string(item), `"options"`) {
+			t.Fatalf("bad default summary: %s", item)
+		}
+		args["groups"] = []string{"sauce"}
+		extras := call("inspect_item_extras", args)
+		if !strings.Contains(string(extras), `"variant_prices":{"regular":0}`) || !strings.Contains(string(extras), `"default_option_ids":["garlic"]`) {
+			t.Fatalf("incomplete configuration: %s", extras)
+		}
+	})
 	assertCode := func(raw json.RawMessage, want string) {
 		t.Helper()
 		var r struct {
@@ -275,6 +295,7 @@ func TestMerchantMCP(t *testing.T) {
 		args := map[string]any{"store": store.Handle, "item": firstItem, "expected_revision": 2, "request_key": "mcp-price-update-0001", "changes": []any{
 			map[string]any{"variant": "regular", "price_minor": 750},
 			map[string]any{"group": "sauce", "option": "garlic", "price_minor": 100},
+			map[string]any{"group": "sauce", "option": "garlic", "extra_variant": "regular", "price_minor": 0},
 		}}
 		changed := call("update_item_prices", args)
 		if !strings.Contains(string(changed), `"draft_revision":3`) || strings.Contains(string(changed), `"isError":true`) {
@@ -282,6 +303,10 @@ func TestMerchantMCP(t *testing.T) {
 		}
 		if replayed := call("update_item_prices", args); !strings.Contains(string(replayed), `"replayed":true`) {
 			t.Fatalf("retry=%s", replayed)
+		}
+		extras := call("inspect_item_extras", map[string]any{"store": store.Handle, "item": firstItem, "revision": 3, "groups": []string{"sauce"}})
+		if !strings.Contains(string(extras), `"variant_prices":{"regular":0}`) || !strings.Contains(string(extras), `"price_minor":100`) {
+			t.Fatalf("missing base/zero override: %s", extras)
 		}
 		args["changes"].([]any)[0].(map[string]any)["price_minor"] = 800
 		assertCode(call("update_item_prices", args), "idempotency_conflict")
@@ -317,6 +342,7 @@ func TestMerchantMCP(t *testing.T) {
 		dish["available"] = false
 		dish["variants"].([]any)[0].(map[string]any)["price_minor"] = float64(750)
 		dish["option_groups"].([]any)[0].(map[string]any)["options"].([]any)[0].(map[string]any)["price_minor"] = float64(100)
+		dish["option_groups"].([]any)[0].(map[string]any)["options"].([]any)[0].(map[string]any)["variant_prices"] = map[string]any{"regular": float64(0)}
 		a, _ := json.Marshal(document)
 		b, _ := json.Marshal(want)
 		if string(a) != string(b) {
@@ -334,11 +360,11 @@ func TestMerchantMCP(t *testing.T) {
 			} `json:"structuredContent"`
 		}
 		must(t, json.Unmarshal(review, &result))
-		if result.Structured.Total != 3 || len(result.Structured.Changes) != 3 || result.Structured.Changes[0].Path != "/items/0/available" {
+		if result.Structured.Total != 4 || len(result.Structured.Changes) != 4 || result.Structured.Changes[0].Path != "/items/0/available" {
 			t.Fatalf("review=%s", review)
 		}
 		assertCode(call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 3, "to_revision": 1}), "invalid_request")
-		assertCode(call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 1, "to_revision": 3, "offset": 4}), "invalid_request")
+		assertCode(call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 1, "to_revision": 3, "offset": 5}), "invalid_request")
 		assertCode(call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 1, "to_revision": 999}), "not_found")
 		empty := call("review_menu_changes", map[string]any{"store": store.Handle, "from_revision": 3, "to_revision": 3})
 		if !strings.Contains(string(empty), `"changes":[]`) {

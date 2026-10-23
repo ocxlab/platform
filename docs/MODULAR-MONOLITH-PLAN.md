@@ -154,5 +154,7 @@ the pending API/MCP work (including Core account management and intent-oriented
 Food tools), then provider administration, followed by the planned Beckn/ONIX work.
 Existing catalog/network behavior must remain working throughout.
 
-Frontend state-management ideas involving XState/TanStack are deferred for a
-separate user discussion; this worker plan does not adopt them or change the UI.
+XState/TanStack is committed follow-up work, not an optional deferred idea. The
+[API/MCP continuation plan](API-MCP-CONTINUATION.md) places frontend state/data
+management before provider administration. This completed worker batch did not
+adopt those libraries or change the UI.

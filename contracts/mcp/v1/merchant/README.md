@@ -15,8 +15,8 @@ resource server. See [setup and boundaries](../../../../docs/MCP.md).
 | --- | --- | --- | --- |
 | `find_my_stores` | `store:read` | Optional `after` continuation | Up to 20 names, handles, draft revisions, and item counts; optional `next_after` |
 | `inspect_menu` | `offering:read` | `store` handle; optional literal `query`, `revision`, and `offset` | Up to 20 matching item summaries, currency, revision, whole-menu `total_items`, `matching_items`, and optional `next_offset` |
-| `inspect_menu_item` | `offering:read` | `store`, exact `item`; optional `revision` | One dish's availability, all variant IDs/names/prices, and extras-group IDs/names/limits/counts, not option lists |
-| `inspect_item_extras` | `offering:read` | `store`, exact `item`, positive `revision`, one to three distinct `groups` IDs | The selected groups with choice limits and all option IDs/names/surcharges, preserving requested group order |
+| `inspect_menu_item` | `offering:read` | `store`, exact `item`; optional `revision` | One dish's availability, all variant IDs/names/prices, and extras-group IDs/names/limits/defaults/counts, not option lists |
+| `inspect_item_extras` | `offering:read` | `store`, exact `item`, positive `revision`, one to three distinct `groups` IDs | The selected groups with choice limits/defaults and all option IDs/names/base and size-specific surcharges, preserving requested group order |
 | `set_item_availability` | `offering:read`, `offering:write` | `store`, exact `item` ID, boolean `available`, positive `expected_revision`, `request_key` | Saved draft revision, item availability, replay flag, and next action; no full menu echo |
 | `update_item_prices` | `offering:read`, `offering:write` | `store`, exact `item`, positive `expected_revision`, `request_key`, and 1–20 distinct `changes` | Base and saved draft revisions, replay flag, and next action; no menu echo |
 | `review_menu_changes` | `offering:read` | `store`, positive `from_revision` and `to_revision` at or after it; optional `offset` | Up to 20 before/after field changes, total count, explicit revision pair, and optional `next_offset` |
@@ -71,6 +71,11 @@ read's positive revision and fails as a whole if any selected group is missing.
 No partial success or silent omission is implied. This batches related details
 without echoing every other dish; see the [design and remaining coverage](../../../../docs/MCP-TOOL-DESIGN.md).
 
+Both detail levels preserve `default_option_ids`. Selected groups also return each
+option's optional `variant_prices` map. Its values replace `price_minor` for those
+size IDs; other sizes use the base surcharge. Zero is an explicit free override,
+not a missing value. These are configuration prices, not a customer purchase quote.
+
 ### Dish prices and draft comparison
 
 `update_item_prices` batches full size prices and extra surcharges for one dish.
@@ -81,6 +86,13 @@ selectors, missing targets, fractional/negative amounts, and oversized batches
 are rejected. The entire batch is one validated Offering write: it advances
 one revision or changes nothing. Other fields and other dishes are preserved.
 Its expected-base and retry-key behavior is the same as availability edits.
+
+For a size-dependent extra surcharge, supply `group`, `option`, and
+`extra_variant`, with `price_minor` as the replacement surcharge. The size must
+exist on the dish. Omitting `extra_variant` changes only the base surcharge and
+preserves existing overrides. Base and distinct size overrides may share one
+atomic batch; repeating the same target is rejected. Removing an override is not
+supported by this tool yet.
 
 `review_menu_changes` compares immutable revisions, including edits made through
 REST/UI. Each change gives an RFC 6901 JSON Pointer `path` and its `before` and/or

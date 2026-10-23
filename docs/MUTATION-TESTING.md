@@ -13,6 +13,7 @@ Run Docker and use the root Task interface:
 task test:mutation:web
 task test:mutation:go
 task test:mutation:work
+task test:mutation:mcp
 ```
 
 The web runner pins Stryker core/Vitest runner **10.0.0** and uses a dedicated
@@ -32,6 +33,7 @@ Reports are local ignored artifacts:
 - `apps/web/reports/mutation/mutation.html` and `mutation.json`;
 - `reports/mutation/go/payment.json` and `food.json`.
 - `reports/mutation/go/work.json` for the separate worker task.
+- `reports/mutation/go/mcp.json` for merchant price-edit/diff rules.
 
 Sandbox directories and reports are also excluded from Docker build context.
 
@@ -44,6 +46,17 @@ The corrected task's report lists only the two intended files. Architecture guar
 SQL functions, telemetry internals, and browser behavior are not mutated by this task.
 
 ## Executed results
+
+23 October 2026. `task test:mutation:mcp` targeted only `menu_edits.go` in the
+Food merchant adapter: **75 killed, zero surviving, 25 uncovered** mutations;
+100% efficacy among exercised mutations and 75% mutant coverage. No timeouts,
+nonviable mutations, or skips were reported. Mutation execution took 1.447 seconds
+after 4.401 seconds gathering coverage (not total Docker/task wall time).
+The uncovered expressions belong to tool registration/schema refinement and
+HTTP/SQL callbacks, which this unit-only mutation run does not execute. Real
+HTTP/PostgreSQL integration tests exercise the tool path separately; passing
+them does not mean those 25 mutations were killed. `merchant.go` and
+`menu_details.go` are excluded; this is not whole-MCP mutation coverage.
 
 23 October 2026. `task test:mutation:work` completed with **54 killed, four
 surviving, and two uncovered** mutations: **93.10% efficacy** (54/58 exercised)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -57,5 +58,27 @@ func TestItemReadRejectsWithoutDatabaseAccess(t *testing.T) {
 		if !errors.Is(err, tc.want) {
 			t.Fatalf("error=%v want=%v", err, tc.want)
 		}
+	}
+}
+
+func TestExtrasProjectionPreservesDefaultsAndVariantPrices(t *testing.T) {
+	raw := []byte(`{"id":"sauce","name":"Sauce","min_selected":1,"max_selected":1,"default_option_ids":["garlic"],"options":[{"id":"garlic","name":"Garlic","price_minor":100,"variant_prices":{"large":200,"small":0}}]}`)
+	var group menuGroup
+	if err := json.Unmarshal(raw, &group); err != nil {
+		t.Fatal(err)
+	}
+	encoded, err := json.Marshal(group)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want, got any
+	if err := json.Unmarshal(raw, &want); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(encoded, &got); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("projection dropped pricing/defaults: %s", encoded)
 	}
 }

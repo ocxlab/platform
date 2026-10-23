@@ -49,11 +49,19 @@ type menuPrice struct {
 }
 
 type menuGroup struct {
-	ID      string      `json:"id"`
-	Name    string      `json:"name"`
-	Min     int         `json:"min_selected"`
-	Max     int         `json:"max_selected"`
-	Options []menuPrice `json:"options"`
+	Defaults []string    `json:"default_option_ids,omitempty"`
+	ID       string      `json:"id"`
+	Name     string      `json:"name"`
+	Min      int         `json:"min_selected"`
+	Max      int         `json:"max_selected"`
+	Options  []menuExtra `json:"options"`
+}
+
+type menuExtra struct {
+	ID            string           `json:"id"`
+	Name          string           `json:"name"`
+	Price         int64            `json:"price_minor"`
+	VariantPrices map[string]int64 `json:"variant_prices,omitempty"`
 }
 
 type menuItem struct {
@@ -133,20 +141,21 @@ func (s Merchant) addMenuDetailTools(server *mcp.Server, p persistence.Principal
 			return toolError(err)
 		}
 		type groupSummary struct {
-			ID    string `json:"id"`
-			Name  string `json:"name"`
-			Min   int    `json:"min_selected"`
-			Max   int    `json:"max_selected"`
-			Count int    `json:"option_count"`
+			Defaults []string `json:"default_option_ids,omitempty"`
+			ID       string   `json:"id"`
+			Name     string   `json:"name"`
+			Min      int      `json:"min_selected"`
+			Max      int      `json:"max_selected"`
+			Count    int      `json:"option_count"`
 		}
 		groups := make([]groupSummary, 0, len(item.Groups))
 		for _, group := range item.Groups {
-			groups = append(groups, groupSummary{group.ID, group.Name, group.Min, group.Max, len(group.Options)})
+			groups = append(groups, groupSummary{Defaults: group.Defaults, ID: group.ID, Name: group.Name, Min: group.Min, Max: group.Max, Count: len(group.Options)})
 		}
 		return nil, map[string]any{"store": in.Store, "revision": revision, "currency": currency, "state": "private_draft", "item": map[string]any{"id": item.ID, "name": item.Name, "available": item.Available, "variants": item.Variants, "option_groups": groups}}, nil
 	})
 	mcp.AddTool(server, &mcp.Tool{
-		Name: "inspect_item_extras", Description: "Read options and surcharges (including free extras) for one to three selected groups of one draft dish. Includes required/maximum choice counts. Batch related groups to avoid needless round trips. Use exact ids and the inspected revision; does not change a menu.",
+		Name: "inspect_item_extras", Description: "Read options, default selections, base surcharges and variant_prices overrides (including zero/free) for one to three groups of one draft dish. An override replaces the base surcharge for that variant; otherwise the base applies. Includes choice limits. Batch related groups; use exact ids and inspected revision. Read-only.",
 		InputSchema: extrasInputSchema(),
 		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true, OpenWorldHint: &closed},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in extrasInput) (*mcp.CallToolResult, map[string]any, error) {

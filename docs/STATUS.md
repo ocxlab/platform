@@ -1,5 +1,35 @@
 # Development status
 
+## API/MCP continuation: size-dependent extras
+
+23 October 2026. Resumed the API/MCP work with a correction to existing merchant
+Food tools. Both item/group detail responses retain default option IDs. Extras
+responses retain size-specific surcharge maps, including explicit zero overrides.
+`update_item_prices` can atomically edit base surcharges and distinct size
+overrides, checks size existence, and preserves unrelated fields/overrides.
+It still writes a private draft through the shared Offering application operation;
+no agent publication or payment behavior was added.
+
+The [continuation plan](API-MCP-CONTINUATION.md) records merchant/customer Food
+intentions and Core account management. XState/TanStack is committed frontend
+work before provider administration, not an optional deferred idea. No frontend
+library is installed by this increment. Meal-offer coverage, broader MCP workflows,
+public OAuth, admin redesign, and subsequent Beckn/ONIX work remain unfinished.
+
+Focused race tests and the HTTP/PostgreSQL MCP suite passed. The scoped Gremlins
+run killed all 75 exercised mutations, with 25 uncovered expressions in registration
+and HTTP/SQL callbacks; see [scope and limits](MUTATION-TESTING.md).
+Full `task check` passed: source-only generation guards, Spectral, SQL generation,
+migration-tooling tests, Squawk/historical hashes, zero Go lint issues, vet/race,
+PostgreSQL integration (108.202 seconds), 94 frontend tests, zero Svelte diagnostics,
+and API/web builds. The focused real HTTP/SQL MCP run also passed (4.360 seconds),
+including defaults, zero overrides, replay, conflicts, and private-draft behavior.
+`task smoke` passed its liveness, database-backed credential-rejection, and SQL
+checks; that is not end-to-end commerce/network/payment readiness. The local API
+was rebuilt/restarted without resetting development data. Disposable test databases
+are stopped. No new browser, Inspector, dual-review, or conversational evaluation
+is claimed for this bounded correction. Generated outputs remain untracked.
+
 ## Worker review and mutation handoff
 
 23 October 2026. All four batches of the
@@ -32,7 +62,9 @@ backoff/test-only follow-up. No new browser or frontend mutation run is claimed.
 Generated code remains ignored, development data is preserved, and disposable test
 databases are stopped. No broker, extra deployment, frontend library, or SSE change
 was added. Next is the pending API/MCP work, then provider administration and the
-planned Beckn/ONIX work. XState/TanStack remains a separate discussion.
+planned Beckn/ONIX work. The founder subsequently confirmed XState/TanStack as
+committed frontend work before the admin redesign; see the
+[continuation plan](API-MCP-CONTINUATION.md).
 
 ## Worker observability and recovery evidence
 

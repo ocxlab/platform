@@ -277,6 +277,12 @@ tasks:
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/mutation-work.sh'
 
+  test:mutation:mcp:
+    desc: Mutate merchant price edits and retained diffs in an isolated source copy
+    deps: [generate:go]
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/mutation-mcp.sh'
+
   vet:
     desc: Run Go static checks inside Docker
     deps: [generate:go]

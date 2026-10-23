@@ -7,6 +7,11 @@ write operation with REST; it does not forward arbitrary API calls or let an
 agent publish a menu. The [tool contract](../contracts/mcp/v1/merchant/README.md)
 records inputs, permissions, retries, compact outputs, and errors.
 
+Extras inspection preserves default choices and size-dependent surcharge overrides.
+Focused price edits can change a base surcharge or a named size override without
+replacing the rest of the menu. Meal-offer tools and broader setup/order/account
+intentions remain in the [continuation plan](API-MCP-CONTINUATION.md).
+
 ## Try it locally
 
 Run `task dev`, then `task dev:stores` to find an existing store handle. Obtain a

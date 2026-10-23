@@ -93,3 +93,52 @@ func TestMenuChanges(t *testing.T) {
 		}
 	}
 }
+
+func TestExtraVariantPrices(t *testing.T) {
+	in := pricesInput{Item: "pizza", ExpectedRevision: 1, Changes: []itemPriceChange{
+		{Group: "extras", Option: "cheese", ExtraVariant: "large", Price: 200},
+		{Group: "extras", Option: "cheese", ExtraVariant: "small", Price: 0},
+		{Group: "extras", Option: "cheese", Price: 150},
+	}}
+	raw, err := editItemPrices(json.RawMessage(priceMenu), in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Items []menuItem `json:"items"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	option := doc.Items[0].Groups[0].Options[0]
+	if option.Price != 150 || !reflect.DeepEqual(option.VariantPrices, map[string]int64{"large": 200, "small": 0}) {
+		t.Fatalf("lost base or size-specific surcharge: %+v", option)
+	}
+	// Updating an existing override preserves the other sizes and all other fields.
+	in.Changes = []itemPriceChange{{Group: "extras", Option: "cheese", ExtraVariant: "large", Price: 250}}
+	updated, err := editItemPrices(raw, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes, err := menuChanges(raw, updated)
+	if err != nil || len(changes) != 1 || changes[0].Path != "/items/0/option_groups/0/options/0/variant_prices/large" || string(changes[0].After) != "250" {
+		t.Fatalf("changed unrelated fields: %+v %v", changes, err)
+	}
+	for _, tc := range []struct {
+		changes []itemPriceChange
+		want    error
+	}{
+		{[]itemPriceChange{{ExtraVariant: "large", Price: 1}}, commerce.ErrInvalid},
+		{[]itemPriceChange{{Variant: "large", ExtraVariant: "large", Price: 1}}, commerce.ErrInvalid},
+		{[]itemPriceChange{{Group: "extras", Option: "cheese", ExtraVariant: strings.Repeat("x", 65), Price: 1}}, commerce.ErrInvalid},
+		{[]itemPriceChange{{Group: "extras", Option: "cheese", ExtraVariant: "large", Price: 1}, {Group: "extras", Option: "cheese", ExtraVariant: "large", Price: 2}}, commerce.ErrInvalid},
+		{[]itemPriceChange{{Group: "extras", Option: "cheese", ExtraVariant: "absent", Price: 1}}, persistence.ErrNotFound},
+		{[]itemPriceChange{{Variant: "large", Price: 1}, {Group: "extras", Option: "cheese", ExtraVariant: "absent", Price: 1}}, persistence.ErrNotFound},
+	} {
+		in.Changes = tc.changes
+		out, err := editItemPrices(raw, in)
+		if out != nil || !errors.Is(err, tc.want) {
+			t.Fatalf("invalid override succeeded: %s %v", out, err)
+		}
+	}
+}

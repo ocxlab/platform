@@ -16,10 +16,11 @@ import (
 )
 
 type itemPriceChange struct {
-	Variant string `json:"variant,omitempty" jsonschema:"Exact variant id for a full size price; omit when changing an extra"`
-	Group   string `json:"group,omitempty" jsonschema:"Exact extras group id; use together with option and omit variant"`
-	Option  string `json:"option,omitempty" jsonschema:"Exact extra option id within group"`
-	Price   int64  `json:"price_minor" jsonschema:"New non-negative price in minor currency units, including zero for free extras"`
+	ExtraVariant string `json:"extra_variant,omitempty" jsonschema:"Exact size id when setting an extra surcharge override; only with group and option. Omit to change the base extra surcharge. Overrides replace the base for that size."`
+	Variant      string `json:"variant,omitempty" jsonschema:"Exact variant id for a full size price; omit when changing an extra"`
+	Group        string `json:"group,omitempty" jsonschema:"Exact extras group id; use together with option and omit variant"`
+	Option       string `json:"option,omitempty" jsonschema:"Exact extra option id within group"`
+	Price        int64  `json:"price_minor" jsonschema:"New non-negative price in minor currency units, including zero for free extras"`
 }
 
 type pricesInput struct {
@@ -138,15 +139,15 @@ func validatePriceChanges(in pricesInput) error {
 	}
 	seen := map[string]bool{}
 	for _, change := range in.Changes {
-		if change.Price < 0 || change.Price > 1_000_000_000 || len(change.Variant) > 64 || len(change.Group) > 64 || len(change.Option) > 64 {
+		if change.Price < 0 || change.Price > 1_000_000_000 || len(change.Variant) > 64 || len(change.Group) > 64 || len(change.Option) > 64 || len(change.ExtraVariant) > 64 {
 			return commerce.ErrInvalid
 		}
-		variant := change.Variant != "" && change.Group == "" && change.Option == ""
+		variant := change.Variant != "" && change.Group == "" && change.Option == "" && change.ExtraVariant == ""
 		extra := change.Variant == "" && change.Group != "" && change.Option != ""
 		if !variant && !extra {
 			return commerce.ErrInvalid
 		}
-		key := change.Variant + "\x00" + change.Group + "\x00" + change.Option
+		key := change.Variant + "\x00" + change.Group + "\x00" + change.Option + "\x00" + change.ExtraVariant
 		if seen[key] {
 			return commerce.ErrInvalid
 		}
@@ -182,6 +183,18 @@ func editItemPrices(raw json.RawMessage, in pricesInput) (json.RawMessage, error
 			return nil, offering.ErrInvalid
 		}
 		for _, change := range in.Changes {
+			if change.ExtraVariant != "" {
+				known := false
+				for _, v := range variants {
+					if rawString(v["id"]) == change.ExtraVariant {
+						known = true
+						break
+					}
+				}
+				if !known {
+					return nil, persistence.ErrNotFound
+				}
+			}
 			found := false
 			if change.Variant != "" {
 				for _, v := range variants {
@@ -202,7 +215,19 @@ func editItemPrices(raw json.RawMessage, in pricesInput) (json.RawMessage, error
 					}
 					for _, option := range options {
 						if rawString(option["id"]) == change.Option {
-							option["price_minor"], _ = json.Marshal(change.Price)
+							if change.ExtraVariant == "" {
+								option["price_minor"], _ = json.Marshal(change.Price)
+							} else {
+								prices := map[string]int64{}
+								if prior, ok := option["variant_prices"]; ok && json.Unmarshal(prior, &prices) != nil {
+									return nil, offering.ErrInvalid
+								}
+								if prices == nil {
+									return nil, offering.ErrInvalid
+								}
+								prices[change.ExtraVariant] = change.Price
+								option["variant_prices"], _ = json.Marshal(prices)
+							}
 							found = true
 							break
 						}
