@@ -1,0 +1,40 @@
+{
+  "tables": {
+    "auth.merchants": "core", "auth.grants": "core", "auth.provider_grants": "core",
+    "commerce.stores": "core", "commerce.offering_revisions": "core",
+    "commerce.request_replays": "core", "commerce.publication_audit": "core",
+    "commerce.provider_request_replays": "core", "commerce.guest_grants": "core",
+    "commerce.guest_request_replays": "core", "commerce.media_assets": "core",
+    "commerce.food_quotes": "food", "commerce.food_orders": "food",
+    "commerce.food_order_events": "food", "commerce.food_order_operations": "food",
+    "commerce.food_ordering_audit": "food", "payment.development_operations": "payment",
+    "runtime.effects": "core", "discovery.bindings": "discovery", "discovery.catalogs": "discovery",
+    "commerce_internal.grants": "core", "commerce_internal.replays": "core",
+    "shopping.catalogs": "shopping", "shopping.stock": "shopping",
+    "shopping.sessions": "shopping", "shopping.orders": "shopping",
+    "lodging.properties": "lodging", "lodging.units": "lodging", "lodging.sessions": "lodging",
+    "lodging.bookings": "lodging", "lodging.allocations": "lodging", "payments.obligations": "payment"
+  },
+  "functions": {
+    "auth.lookup_grant": "core", "auth.lookup_resource_grant": "core",
+    "auth.lookup_provider_grant": "core", "auth.lookup_guest_grant": "core",
+    "commerce.list_public_stores": "core", "commerce.public_store_by_number": "core",
+    "commerce.admin_stores": "core", "commerce.admin_orders": "core",
+    "commerce.notify_food_order_change": "food", "commerce.notify_public_offering_change": "core",
+    "runtime.claim_effects": "core", "runtime.finish_effect": "core",
+    "discovery.accept_catalog": "discovery", "commerce_internal.lookup_grant": "core"
+  },
+  "exceptions": [
+    {"path":"internal/food/persistence/queries/checkout.sql","query":"PruneAbandonedGuestGrants","object":"commerce.guest_grants","access":"write","reason":"Food checkout owns bounded guest-capacity cleanup; Core credential table remains shared until guest admission has an owned application boundary."},
+    {"path":"internal/food/persistence/queries/checkout.sql","query":"PruneAbandonedGuestGrants","object":"commerce.guest_request_replays","access":"read","reason":"Do not remove guest grants with retained authorized replay outcomes."},
+    {"path":"internal/food/persistence/queries/checkout.sql","query":"CountActiveGuestGrants","object":"commerce.guest_grants","access":"read","reason":"Store-scoped guest checkout capacity in the existing admission transaction."},
+    {"path":"internal/food/persistence/queries/checkout.sql","query":"InsertGuestGrant","object":"commerce.guest_grants","access":"write","reason":"Guest credential creation is atomic with Food checkout admission today; not a remote identity-service interface."},
+    {"path":"internal/food/persistence/queries/development_payments.sql","query":"GetDevelopmentPayment","object":"payment.development_operations","access":"read","reason":"Development simulator only; serialized with the Food order lock."},
+    {"path":"internal/food/persistence/queries/development_payments.sql","query":"SaveDevelopmentPayment","object":"payment.development_operations","access":"write","reason":"Development simulator only; no PSP request occurs in this shared transaction. Remove this exception when replacing the simulator persistence boundary."},
+    {"path":"internal/food/persistence/queries/food_ordering.sql","query":"GetFoodOrdering","object":"commerce.stores","access":"read","reason":"Food ordering configuration currently resides on Core stores."},
+    {"path":"internal/food/persistence/queries/food_ordering.sql","query":"LockFoodOrdering","object":"commerce.stores","access":"read","reason":"Food ordering configuration and admission serialize on the existing store row."},
+    {"path":"internal/food/persistence/queries/food_ordering.sql","query":"UpdateFoodOrdering","object":"commerce.stores","access":"write","reason":"Only ordering_revision, accepting_orders, acceptance_mode, ordering_actor_id belong to Food here; split storage before database extraction. Column scope is code-reviewed, not enforced by this guard."},
+    {"path":"internal/food/persistence/queries/food_orders.sql","query":"FoodStoreExists","object":"commerce.stores","access":"read","reason":"Existing tenant/store existence check before listing Food orders."},
+    {"path":"internal/food/persistence/queries/food_orders.sql","query":"ListFoodOrders","object":"payment.development_operations","access":"read","reason":"Merchant order list includes the development payment projection; replace with an owned payment read projection on extraction."}
+  ]
+}

@@ -58,6 +58,12 @@ func forbiddenDependency(owner, dependency string) bool {
 		return true
 	}
 	dependency = strings.TrimPrefix(dependency, root)
+	// A domain may call an owned application interface, but must never bypass
+	// it by importing another owner's generated persistence implementation.
+	parts := strings.Split(dependency, "/")
+	if len(parts) > 1 && parts[0] != owner && slices.Contains(parts[1:], "sqlgen") {
+		return true
+	}
 	// Telemetry consumes shared route/error classifications, not core behavior.
 	if owner == "infra" && !strings.HasPrefix(dependency, "infra/") && dependency != "core/capability" && dependency != "core/problems" {
 		return true
@@ -129,6 +135,10 @@ func TestDependencyGuardRejectsReverseAndForeignImports(t *testing.T) {
 		{"infra", "ocp.local/platform/internal/core/capability", false},
 		{"food", "ocp.local/platform/internal/core/offering", false},
 		{"discovery", "ocp.local/platform/internal/core/persistence", false},
+		{"food", "ocp.local/platform/internal/core/persistence/sqlgen", true},
+		{"shopping", "ocp.local/platform/internal/payment/persistence/sqlgen", true},
+		{"core", "ocp.local/platform/internal/discovery/persistence/sqlgen", true},
+		{"payment", "ocp.local/platform/internal/payment/persistence/sqlgen", false},
 	} {
 		if got := forbiddenDependency(tc.owner, tc.dependency); got != tc.forbidden {
 			t.Errorf("%s -> %s: forbidden = %v, want %v", tc.owner, tc.dependency, got, tc.forbidden)

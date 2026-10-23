@@ -1,5 +1,38 @@
 # Development status
 
+## Module ownership safeguards
+
+23 October 2026. Batch 1 of the modular-monolith plan is verified. The
+[ownership inventory](MODULE-OWNERSHIP.md) identifies logical owners for 32 tables,
+14 database functions, and all 103 named sqlc inputs. Its executable manifest
+records eleven exact query/object/access exceptions, with reasons. Architecture
+tests reject additional foreign access, stale/duplicate exceptions, unregistered
+write targets, unsupported write forms, and imports of another owner's generated
+SQL implementation. Negative fixtures exercise writes inside CTEs, quoted names,
+comments/literals, function calls, and exceptions that must not become blanket
+access. These are bounded source guards, not a full PostgreSQL parser.
+
+The inventory also records transitive Core/Food publication locks and guest/replay
+transactions, the development payment simulator, Shopping/Lodging pay-later
+obligations, privileged admin projections, and remaining extraction-facing type
+coupling. No empty application interface or remote call was introduced. Stable
+subject/effect identities were audited; production capture/refund identities are
+not implemented by this batch.
+
+Verification passed: focused architecture tests and full `task check`, including
+Spectral, reproducible generated SQL, ten migration-workflow tests, all 18 unchanged
+historical hashes, zero Go lint issues, vet/race, PostgreSQL integration (50.899
+seconds), 94 frontend tests, zero Svelte diagnostics, and API/web image builds.
+Generated files remain untracked. Runtime code, SQL inputs, schemas, APIs, SSE,
+and deployment composition are unchanged; development data was not reset.
+No new smoke, native ONIX, browser, mutation, or independent reviewer run is claimed.
+The final engineering/protocol implementation reviews remain in batch 4.
+
+Batch 2 is next: notification-driven catalog scheduling with durable retry/lease
+timers and a safety scan. The worker still uses its one-second ticker today.
+OpenAPI remains the HTTP contract; AsyncAPI adoption is deferred in favor of
+reusable message schemas when message changes are implemented.
+
 ## Modular-monolith implementation plan
 
 23 October 2026. The [plan](MODULAR-MONOLITH-PLAN.md) records the reviewed direction:
@@ -8,8 +41,8 @@ notification-driven durable work with retry/lease timers and a recovery scan,
 observability, failure tests, and final regression/technical review. Existing SSE
 is retained; no mandatory Watermill, Redis, or additional deployment is planned.
 The plan is not an implementation completion claim. The current catalog worker
-still uses its one-second ticker; ownership safeguards and scheduling changes
-remain to be executed. Subsequent API/MCP, administration, and Beckn work remain
+still uses its one-second ticker; ownership safeguards are now recorded above,
+while scheduling changes remain to be executed. Subsequent API/MCP, administration, and Beckn work remain
 queued rather than silently replaced by infrastructure work.
 
 ## Commands grouped by purpose

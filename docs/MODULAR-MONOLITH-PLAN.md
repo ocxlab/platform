@@ -1,6 +1,6 @@
 # Modular monolith and notification-driven work
 
-23 October 2026. Status: planned, not implemented. This plan turns the engineering,
+23 October 2026. Status: batch 1 verified; batches 2–4 pending. This plan turns the engineering,
 protocol, and Astra design reviews into bounded implementation batches. Review
 record: sibling `ocp-lab/runs/notification-driven-work-review.md`.
 
@@ -22,22 +22,31 @@ decision. PostgreSQL notifications wake workers; they do not carry durable work 
 prove completion. Keep the existing cross-process SSE bridge and authorized state
 reads. Do not introduce browser polling.
 
+Keep HTTP contracts in OpenAPI. Define reusable message payload schemas separately
+when implementing message changes; defer AsyncAPI itself until channel/operation
+documentation or generation has concrete value. This supersedes the research
+evaluation's earlier recommendation to adopt a thin AsyncAPI document immediately.
+
 ## Batch 1: Ownership and extraction boundaries
 
-- [ ] Inventory query inputs, table readers/writers, application interfaces, and
+- [x] Inventory query inputs, table readers/writers, application interfaces, and
   existing cross-owner transactions. Distinguish schema names from logical owners.
-- [ ] Record table/write ownership and explicit, narrowly scoped exceptions in a
+- [x] Record table/write ownership and explicit, narrowly scoped exceptions in a
   maintainable ownership manifest and a short explanation.
-- [ ] Add architecture tests rejecting newly introduced cross-owner SQL writes
+- [x] Add architecture tests rejecting newly introduced cross-owner SQL writes
   and forbidden implementation imports. Add negative fixtures proving the guards
   detect violations; document limitations rather than claiming a complete SQL parser.
-- [ ] Check existing payment calls and stable operation identities. Keep the
+- [x] Check existing payment calls and stable operation identities. Keep the
   development payment simulator's shared transaction as an explicit temporary
   exception, not the production payment integration template.
-- [ ] Define small owned application interfaces at the boundaries touched by this
+- [x] Audit small owned application interfaces at the boundaries touched by this
   work. Avoid transaction handles and persistence structs in extraction-facing
   interfaces. Do not rewrite all existing persistence code or add empty abstractions.
-- [ ] Record where immediate atomicity requires capabilities to stay together.
+- [x] Record where immediate atomicity requires capabilities to stay together.
+
+Inventory and guard limitations: [Module ownership](MODULE-OWNERSHIP.md). No runtime
+boundary is changed in batch 1, so no empty interface is introduced. Worker store
+and wake interfaces belong to batch 2, where their implementation will be exercised.
 
 Exit: ownership is visible, existing exceptions are bounded, and tests prevent
 new coupling from silently accumulating. Existing behavior and deployment stay
