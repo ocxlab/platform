@@ -2,8 +2,8 @@
 set -eu
 trial_dir=$(mktemp -d)
 trap 'rm -r "$trial_dir"' EXIT
-mkdir -p "$trial_dir/internal/database"
-cp -R internal/database/migrations "$trial_dir/internal/database/"
+mkdir -p "$trial_dir/internal/infra/database"
+cp -R internal/infra/database/migrations "$trial_dir/internal/infra/database/"
 for owner in core food shopping lodging ucpinternal payment networkcatalog; do
   mkdir -p "$trial_dir/internal/$owner/persistence"
   cp -R "internal/$owner/persistence/queries" "$trial_dir/internal/$owner/persistence/"

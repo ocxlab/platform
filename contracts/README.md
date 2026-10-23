@@ -108,11 +108,11 @@ task check
 Generation validates source references, bundles them, reloads the serialized bundle
 as a fresh consumer, and validates it again. Generated models, client, server
 interfaces/routing, and embedded contract live in
-`services/provider/internal/httpapi/generated.go`. This file is ignored, never
+`services/platform/internal/httpapi/generated.go`. This file is ignored, never
 committed or hand-edited. TypeScript types in `apps/web/src/lib/api/generated.d.ts`
 and the derived Go/TypeScript error catalogs follow the same policy. Commit their
 source definitions, generator configuration, and exact tool versions instead.
-Go's generator version is fixed in `services/provider/go.mod`; the TypeScript
+Go's generator version is fixed in `services/platform/go.mod`; the TypeScript
 generator is fixed in `apps/web/package.json` and its lockfile.
 
 `task generate` prepares all outputs. Build/test/development Tasks generate their

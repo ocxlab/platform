@@ -27,7 +27,7 @@ This tooling choice does not constrain the application runtime's architecture.
    using stale desired SQL after migration history changes; export a new NAME
    and merge your intended edits in that case.
 3. Turn the draft into a reviewed, numbered Goose migration under
-   `services/provider/internal/database/migrations/`. Drafts are ignored local
+   `services/platform/internal/infra/database/migrations/`. Drafts are ignored local
    work; only reviewed migration SQL belongs in Git. There is deliberately no
    automatic promotion or pgschema apply command. pgschema's JSON wait directives
    are review information, not executable Goose SQL.
@@ -95,7 +95,7 @@ the isolated review database. Both checks are included in `task check`.
 
 Consulted 23 October 2026. These describe tool behavior, not guarantees about our
 migrations. Pins live in `scripts/migrations/Dockerfile`; Goose uses the same
-library version as `services/provider/go.mod` (currently 3.26.0).
+library version as `services/platform/go.mod` (currently 3.26.0).
 
 - [Goose SQL annotations](https://pressly.github.io/goose/documentation/annotations/): transaction boundaries and statement blocks.
 - [Squawk CLI](https://squawkhq.com/docs/cli): findings and narrowly scoped suppressions; pinned 2.70.0.

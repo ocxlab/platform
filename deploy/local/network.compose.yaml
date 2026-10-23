@@ -19,7 +19,7 @@ services:
   network-lab:
     profiles: [network]
     image: ocp-platform-tools
-    working_dir: /workspace/services/provider
+    working_dir: /workspace/services/platform
     command: [/workspace/working/native-onix/ocp-network-lab, -mode, serve]
     volumes:
       - .:/workspace

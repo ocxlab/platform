@@ -9,6 +9,12 @@ does not install code or establish UCP compatibility.
 
 ## Source ownership and deployment composition
 
+The owned Go module lives in `services/platform/`, alongside `services/onix/`.
+`internal/infra/` groups technical adapters: database setup/migrations, telemetry,
+HTTP runtime utilities, and object-storage/image processing. Commerce behavior
+and public catalog projections remain in their business modules. This hierarchy
+does not introduce extra Go modules, containers, brokers, or remote calls.
+
 | Source package | Responsibility |
 | --- | --- |
 | `internal/core/persistence` | Merchant/provider grants, store records, catalog revisions/publication, media records, authorized replay, and durable catalog intents |
@@ -17,7 +23,7 @@ does not install code or establish UCP compatibility.
 | `internal/lodging` | Property catalog, stay pricing, booking sessions, and allocation |
 | `internal/payment` | Shared typed payment subjects/terms, payment transition rules, and pay-later obligations |
 | `internal/networkcatalog` | Public catalog delivery, discovery projections, and search |
-| `internal/database` | Connection budgets, tenant transaction setup, restricted-role checks, and the ordered Goose migration history |
+| `internal/infra/database` | Connection budgets, tenant transaction setup, restricted-role checks, and the ordered Goose migration history |
 
 The existing Offering registry and its Food model implement menu validation,
 pricing, and public projection. Core's model-bound catalog API uses that installed
@@ -26,9 +32,10 @@ adapter remain transport compositions over these packages. Future merchant and
 customer account operations belong to core, including their eventual MCP tools;
 this refactor does not implement those operations.
 
-Existing sqlc inputs and ignored outputs are now separate under
-`core/persistence/{queries,sqlgen}` and `food/persistence/{queries,sqlgen}`. Both
-read the same ordered Goose history. They do not share generated Go types.
+All seven query owners keep separate `persistence/{queries,sqlgen}` directories,
+including core, Food, Shopping, Lodging, internal UCP, payment, and network catalog.
+They read the same ordered Goose history under `infra/database/migrations` and
+do not share generated Go types.
 Handwritten application types and an explicitly passed SQL transaction remain
 the boundary. Food reads a published catalog through core's transaction-scoped
 helper, preserving the store lock that coordinates publication and placement.

@@ -61,15 +61,15 @@ tasks:
   sql:generate:
     desc: Generate ignored Go queries from owned SQL and Goose migrations
     deps: [tools:build]
-    sources: [services/provider/sqlc.yaml, services/provider/internal/**/persistence/queries/*.sql, services/provider/internal/database/migrations/*.sql]
+    sources: [services/platform/sqlc.yaml, services/platform/internal/**/persistence/queries/*.sql, services/platform/internal/infra/database/migrations/*.sql]
     generates:
-      - services/provider/internal/core/persistence/sqlgen/*.go
-      - services/provider/internal/food/persistence/sqlgen/*.go
-      - services/provider/internal/shopping/persistence/sqlgen/*.go
-      - services/provider/internal/lodging/persistence/sqlgen/*.go
-      - services/provider/internal/ucpinternal/persistence/sqlgen/*.go
-      - services/provider/internal/payment/persistence/sqlgen/*.go
-      - services/provider/internal/networkcatalog/persistence/sqlgen/*.go
+      - services/platform/internal/core/persistence/sqlgen/*.go
+      - services/platform/internal/food/persistence/sqlgen/*.go
+      - services/platform/internal/shopping/persistence/sqlgen/*.go
+      - services/platform/internal/lodging/persistence/sqlgen/*.go
+      - services/platform/internal/ucpinternal/persistence/sqlgen/*.go
+      - services/platform/internal/payment/persistence/sqlgen/*.go
+      - services/platform/internal/networkcatalog/persistence/sqlgen/*.go
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools sqlc generate'
 
@@ -165,7 +165,7 @@ tasks:
     cmds:
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
-        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/provider/internal/httpapi/generated.go services/provider/internal/ucpcontract/generated.go ":(glob)services/provider/internal/**/sqlgen/**" services/provider/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
+        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/platform/internal/httpapi/generated.go services/platform/internal/ucpcontract/generated.go ":(glob)services/platform/internal/**/sqlgen/**" services/platform/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
 
   media:start:
     desc: Start optional local S3-compatible storage without changing application data
@@ -249,7 +249,7 @@ tasks:
     desc: Check safe OTel signals, streaming, and local OTLP/HTTP export without Grafana
     deps: [generate:go]
     cmds:
-      - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./internal/telemetry ./internal/agenttools ./internal/httpapi ./cmd/api'
+      - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./internal/infra/telemetry ./internal/agenttools ./internal/httpapi ./cmd/api'
 
   test:mutation:web:
     desc: Run Stryker on basket, checkout and session TypeScript rules and write local reports
@@ -390,9 +390,9 @@ tasks:
     deps: [tools:build]
     sources:
       - contracts/openapi/v1/**/*
-      - services/provider/cmd/contracts/*.go
-      - services/provider/go.mod
-      - services/provider/go.sum
+      - services/platform/cmd/contracts/*.go
+      - services/platform/go.mod
+      - services/platform/go.sum
     generates: [contracts/build/provider.openapi.json]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/contracts'
@@ -415,7 +415,7 @@ tasks:
     desc: Generate Go and TypeScript error catalogs from module-owned contract files
     sources: [contracts/errors/*.json, scripts/generate-errors.mjs]
     generates:
-      - services/provider/internal/problems/catalog.generated.json
+      - services/platform/internal/problems/catalog.generated.json
       - apps/web/src/lib/i18n/errors.generated.ts
     cmds:
       - '{{.COMPOSE}} build web-tools'
@@ -433,9 +433,9 @@ tasks:
     sources:
       - contracts/build/provider.openapi.json
       - contracts/tooling/go.yaml
-      - services/provider/go.mod
-      - services/provider/go.sum
-    generates: [services/provider/internal/httpapi/generated.go]
+      - services/platform/go.mod
+      - services/platform/go.sum
+    generates: [services/platform/internal/httpapi/generated.go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go tool oapi-codegen --config ../../contracts/tooling/go.yaml ../../contracts/build/provider.openapi.json'
 
@@ -454,7 +454,7 @@ tasks:
   contracts:internal:bundle:
     desc: Validate and bundle the isolated internal UCP cohort contract
     deps: [tools:build]
-    sources: [contracts/openapi/internal/**/*, services/provider/cmd/contracts/*.go]
+    sources: [contracts/openapi/internal/**/*, services/platform/cmd/contracts/*.go]
     generates: [contracts/build/internal.openapi.json]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/contracts -source ../../contracts/openapi/internal/openapi.yaml -output ../../contracts/build/internal.openapi.json'
@@ -462,8 +462,8 @@ tasks:
   contracts:internal:generate:
     desc: Generate ignored internal UCP cohort models and client
     deps: [contracts:internal:bundle]
-    sources: [contracts/build/internal.openapi.json, contracts/tooling/internal-go.yaml, services/provider/go.mod, services/provider/go.sum]
-    generates: [services/provider/internal/ucpcontract/generated.go]
+    sources: [contracts/build/internal.openapi.json, contracts/tooling/internal-go.yaml, services/platform/go.mod, services/platform/go.sum]
+    generates: [services/platform/internal/ucpcontract/generated.go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go tool oapi-codegen --config ../../contracts/tooling/internal-go.yaml ../../contracts/build/internal.openapi.json'
 

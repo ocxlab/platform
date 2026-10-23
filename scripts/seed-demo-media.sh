@@ -26,7 +26,7 @@ cors_md5=$(openssl dgst -md5 -binary /workspace/deploy/local/media-cors.xml | op
 signed --fail -X PUT --data-binary @/workspace/deploy/local/media-cors.xml -H "Content-MD5: $cors_md5" \
   "$endpoint/$bucket?cors" >/dev/null
 # Actual image bytes use the client-side presigned URL path, not a provider upload.
-OCP_TEST_LOCAL_MEDIA=1 go test -race -count=1 -v ./internal/media -run TestLocalPresigned
+OCP_TEST_LOCAL_MEDIA=1 go test -race -count=1 -v ./internal/infra/media -run TestLocalPresigned
 status=$(curl --silent --show-error --max-time 30 -o "$work/response" -w '%{http_code}' "$endpoint/$bucket")
 test "$status" = 403
 printf 'Verified anonymous bucket listing denied; development menus unchanged\n'

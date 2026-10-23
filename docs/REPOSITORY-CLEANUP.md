@@ -2,13 +2,13 @@
 
 Inspected and cleaned 23 October 2026, with explicit user approval. The
 clearest candidates are empty remnants of the original root-level Go layout;
-the maintained provider module now lives under `services/provider/`.
+the maintained provider module now lives under `services/platform/`.
 
 | Path relative to repository root | Observation | Recommendation |
 | --- | --- | --- |
 | `backend/` | No files, including hidden files; empty `cmd/` and `internal/` descendants; no tracked files | Removed empty tree |
-| `cmd/` | No files; empty `api/` descendant; no tracked files | Removed empty tree; retained `services/provider/cmd/` |
-| `internal/` | No files; empty `runtimehttp/` descendant; no tracked files | Removed empty tree; retained `services/provider/internal/` |
+| `cmd/` | No files; empty `api/` descendant; no tracked files | Removed empty tree; retained `services/platform/cmd/` |
+| `internal/` | No files; empty `runtimehttp/` descendant; no tracked files | Removed empty tree; retained `services/platform/internal/` |
 | `tools/` | No files; empty `check-local/` descendant; no tracked files | Removed empty tree |
 
 No active build/configuration reference to those old root directories was found.

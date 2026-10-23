@@ -12,7 +12,7 @@ take payment, or implement a storefront. Those remain the next connected slices.
 
 | Boundary | Foundation decision |
 | --- | --- |
-| Runtime | Owned Go implementation under `services/provider/`; retained ONIX integration under `services/onix/`; no replacement local-only network |
+| Runtime | Owned Go implementation under `services/platform/`; retained ONIX integration under `services/onix/`; no replacement local-only network |
 | Wire format | JSON request/response bodies; OpenAPI source in modular YAML; generated bundles are build artifacts, not editing sources |
 | Contract ownership | Provider entry document composes account, offering, and operational paths; reusable parameters, responses, and resource schemas have their own files |
 | Contract tooling | OpenAPI 3.0.3, oapi-codegen v2.6.0, runtime v1.4.1, and kin-openapi v0.133.0; generated Go types, HTTP interfaces, embedded contract, and client |

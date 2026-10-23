@@ -1,0 +1,227 @@
+package persistence
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"ocp.local/platform/internal/infra/database"
+	"time"
+
+	"github.com/google/uuid"
+	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/persistence/sqlgen"
+	"ocp.local/platform/internal/offering"
+)
+
+type Publication struct {
+	MerchantID uuid.UUID `json:"merchant_id"`
+	StoreID    uuid.UUID `json:"store_id"`
+	Generation int64     `json:"generation"`
+	Revision   *int64    `json:"revision"`
+	Suspended  bool      `json:"suspended"`
+}
+type PublicationConflict struct{ Current int64 }
+
+func (e *PublicationConflict) Error() string { return "publication generation conflict" }
+
+func publication(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, lock bool) (Publication, error) {
+	p := Publication{MerchantID: merchant, StoreID: store}
+	queries := sqlgen.New(tx)
+	var revision sql.NullInt64
+	var err error
+	if lock {
+		var row sqlgen.LockPublicationRow
+		row, err = queries.LockPublication(ctx, sqlgen.LockPublicationParams{MerchantID: merchant, ID: store})
+		p.Generation, revision, p.Suspended = row.PublicationGeneration, row.PublishedRevision, row.PublicationSuspended
+	} else {
+		var row sqlgen.ReadPublicationRow
+		row, err = queries.ReadPublication(ctx, sqlgen.ReadPublicationParams{MerchantID: merchant, ID: store})
+		p.Generation, revision, p.Suspended = row.PublicationGeneration, row.PublishedRevision, row.PublicationSuspended
+	}
+	if revision.Valid {
+		p.Revision = &revision.Int64
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return p, ErrNotFound
+	}
+	return p, err
+}
+func GetPublication(ctx context.Context, db *sql.DB, merchant, store uuid.UUID) (Publication, error) {
+	tx, err := database.TenantTransaction(ctx, db, merchant)
+	if err != nil {
+		return Publication{}, err
+	}
+	defer tx.Rollback()
+	p, err := publication(ctx, tx, merchant, store, false)
+	if err != nil {
+		return p, err
+	}
+	return p, tx.Commit()
+}
+
+// ChangePublication serializes all visibility changes on the store's existing lock.
+// Projection is a model-owned conversion, never an unfiltered draft copy.
+func ChangePublication(ctx context.Context, tx *sql.Tx, actor Principal, store uuid.UUID, expected int64, revision *int64, suspension *bool, reason string, requestID uuid.UUID, project func(offering.Model, json.RawMessage) (json.RawMessage, error)) (Publication, error) {
+	p, err := publication(ctx, tx, actor.MerchantID, store, true)
+	if err != nil {
+		return p, err
+	}
+	if p.Generation != expected {
+		return p, &PublicationConflict{p.Generation}
+	}
+	previousRevision := p.Revision
+	action, kind := "withdraw", "merchant"
+	if suspension != nil {
+		if !actor.Provider {
+			return p, errors.New("provider principal required")
+		}
+		kind = "provider"
+		action = "restore"
+		if *suspension {
+			action = "suspend"
+		}
+		p.Suspended = *suspension
+		err = sqlgen.New(tx).SetPublicationSuspended(ctx, sqlgen.SetPublicationSuspendedParams{MerchantID: actor.MerchantID, ID: store, PublicationSuspended: p.Suspended})
+	} else {
+		if actor.Provider {
+			return p, errors.New("merchant principal required")
+		}
+		var projected *json.RawMessage
+		var publishedRevision sql.NullInt64
+		if revision != nil {
+			row, readErr := sqlgen.New(tx).GetPublicationSource(ctx, sqlgen.GetPublicationSourceParams{MerchantID: actor.MerchantID, StoreID: store, Revision: *revision})
+			err = readErr
+			if errors.Is(err, sql.ErrNoRows) {
+				return p, ErrNotFound
+			}
+			if err != nil {
+				return p, err
+			}
+			public, err := project(offering.Model{ID: row.ModelID, Version: row.ModelVersion}, row.Document)
+			if err != nil {
+				return p, err
+			}
+			projected = &public
+			publishedRevision = sql.NullInt64{Int64: *revision, Valid: true}
+			action = "publish"
+		}
+		p.Revision = revision
+		err = sqlgen.New(tx).UpdatePublishedOffering(ctx, sqlgen.UpdatePublishedOfferingParams{MerchantID: actor.MerchantID, StoreID: store, Revision: publishedRevision, Document: projected})
+	}
+	if err != nil {
+		return p, err
+	}
+	p.Generation++
+	var auditRevision sql.NullInt64
+	if p.Revision != nil {
+		auditRevision = sql.NullInt64{Int64: *p.Revision, Valid: true}
+	}
+	err = sqlgen.New(tx).InsertPublicationAudit(ctx, sqlgen.InsertPublicationAuditParams{MerchantID: actor.MerchantID, StoreID: store, Generation: p.Generation, ActorID: actor.ID, ActorKind: kind, Action: action, Reason: reason, Revision: auditRevision, Suspended: p.Suspended, RequestID: requestID})
+	if err != nil {
+		return p, err
+	}
+	modelRevision := p.Revision
+	if modelRevision == nil {
+		modelRevision = previousRevision
+	}
+	if modelRevision != nil {
+		row, err := sqlgen.New(tx).GetCatalogSnapshot(ctx, sqlgen.GetCatalogSnapshotParams{MerchantID: actor.MerchantID, StoreID: store, Revision: *modelRevision})
+		if err != nil {
+			return p, err
+		}
+		model := offering.Model{ID: row.ModelID, Version: row.ModelVersion}
+		public := row.Document
+		var domain capability.Domain
+		switch model.ID {
+		case "ocp.food.menu":
+			domain = capability.Food
+		case "ocp.shopping.catalog":
+			domain = capability.Shopping
+		case "ocp.lodging.property":
+			domain = capability.Lodging
+		default:
+			return p, offering.ErrUnsupported
+		}
+		visible := p.Revision != nil && !p.Suspended
+		if !visible {
+			public = json.RawMessage(`null`)
+		}
+		payload, marshalErr := json.Marshal(CatalogIntent{Action: action, Visible: visible, Generation: p.Generation, Revision: modelRevision, Model: model, DisplayName: row.DisplayName, Document: public})
+		if marshalErr != nil {
+			return p, marshalErr
+		}
+		if _, err = EnqueueEffect(ctx, tx, Effect{MerchantID: actor.MerchantID, StoreID: store, Domain: domain, Kind: "catalog.publish", SubjectID: store, Key: fmt.Sprint(p.Generation), Payload: payload}); err != nil {
+			return p, err
+		}
+	}
+	return p, err
+}
+
+// CatalogIntent is a public-only, immutable snapshot made in the visibility
+// transaction. Delivery never needs to read another tenant's mutable store.
+// Action describes the actor's change; Visible is the resulting public state.
+// A merchant can publish while provider-suspended, producing a hidden publish.
+type CatalogIntent struct {
+	Action      string          `json:"action"`
+	Visible     bool            `json:"visible"`
+	Generation  int64           `json:"generation"`
+	Revision    *int64          `json:"revision"`
+	Model       offering.Model  `json:"model"`
+	DisplayName string          `json:"display_name"`
+	Document    json.RawMessage `json:"document"`
+}
+
+type PublicOffering struct {
+	EvaluatedAt time.Time       `json:"-"`
+	MerchantID  uuid.UUID       `json:"merchant_id"`
+	StoreID     uuid.UUID       `json:"store_id"`
+	DisplayName string          `json:"display_name"`
+	Generation  int64           `json:"publication_generation"`
+	Revision    int64           `json:"revision"`
+	Model       offering.Model  `json:"model"`
+	Document    json.RawMessage `json:"document"`
+}
+
+// PublicOfferingTx is the shared catalog read boundary for domain transactions.
+// A locking read serializes publication with quote creation and order placement;
+// callers must retain the transaction until their own decision has committed.
+func PublicOfferingTx(ctx context.Context, tx *sql.Tx, merchant, store uuid.UUID, lock bool) (PublicOffering, error) {
+	p := PublicOffering{MerchantID: merchant, StoreID: store}
+	queries := sqlgen.New(tx)
+	var row sqlgen.ReadPublicOfferingRow
+	var err error
+	if lock {
+		var locked sqlgen.LockPublicOfferingRow
+		locked, err = queries.LockPublicOffering(ctx, sqlgen.LockPublicOfferingParams{MerchantID: merchant, ID: store})
+		row = sqlgen.ReadPublicOfferingRow(locked)
+	} else {
+		row, err = queries.ReadPublicOffering(ctx, sqlgen.ReadPublicOfferingParams{MerchantID: merchant, ID: store})
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return p, ErrNotFound
+	}
+	if err != nil {
+		return p, err
+	}
+	if row.PublicDocument == nil {
+		return p, errors.New("published offering has no public document")
+	}
+	p.DisplayName, p.Generation, p.Revision = row.DisplayName, row.PublicationGeneration, row.Revision
+	p.Model = offering.Model{ID: row.ModelID, Version: row.ModelVersion}
+	p.Document = *row.PublicDocument
+	return p, err
+}
+func GetPublicOffering(ctx context.Context, db *sql.DB, merchant, store uuid.UUID) (PublicOffering, error) {
+	tx, err := database.TenantTransaction(ctx, db, merchant)
+	if err != nil {
+		return PublicOffering{}, err
+	}
+	defer tx.Rollback()
+	p, err := PublicOfferingTx(ctx, tx, merchant, store, false)
+	if err != nil {
+		return p, err
+	}
+	return p, tx.Commit()
+}

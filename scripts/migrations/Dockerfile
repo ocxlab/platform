@@ -1,9 +1,9 @@
 FROM ghcr.io/sbdchd/squawk:2.70.0@sha256:95707f5660dfadbc61cf9d9565384b54d157dcb4e8d3c30db78dd7056be293e9 AS squawk
 FROM golang:1.26@sha256:26326682769ca980f8f1d3b1f52be2dd1c1d25270e3de3fe0c97d6bb65df3556 AS goose
 WORKDIR /src
-COPY services/provider/go.mod services/provider/go.sum ./
+COPY services/platform/go.mod services/platform/go.sum ./
 RUN go mod download
-COPY services/provider/cmd/migration-replay/main.go ./main.go
+COPY services/platform/cmd/migration-replay/main.go ./main.go
 RUN CGO_ENABLED=0 go build -o /migration-replay ./main.go
 FROM mcr.microsoft.com/devcontainers/python:3.13@sha256:15f58ad71b05185d37052bf965024e87a206c14812f037e52093d5ee3d83cd80
 USER root

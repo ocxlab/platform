@@ -14,9 +14,9 @@ working
 **/playwright-report
 **/.stryker-tmp
 **/reports
-services/provider/internal/httpapi/generated.go
-services/provider/internal/ucpcontract/generated.go
-services/provider/internal/**/sqlgen
-services/provider/internal/problems/catalog.generated.json
+services/platform/internal/httpapi/generated.go
+services/platform/internal/ucpcontract/generated.go
+services/platform/internal/**/sqlgen
+services/platform/internal/problems/catalog.generated.json
 apps/web/src/lib/api/generated.d.ts
 apps/web/src/lib/i18n/errors.generated.ts

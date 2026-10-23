@@ -14,7 +14,7 @@ import psycopg2
 from psycopg2 import sql
 
 ROOT = Path('/workspace')
-MIGRATIONS = ROOT / 'services/provider/internal/database/migrations'
+MIGRATIONS = ROOT / 'services/platform/internal/infra/database/migrations'
 BASELINE = ROOT / 'scripts/migrations/baseline.json'
 WORK = ROOT / 'working/migrations'
 PASSWORD = 'migration_review_local_only'

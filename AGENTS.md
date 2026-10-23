@@ -7,14 +7,17 @@ publish, register services, or use real payment credentials without authorizatio
 ## Development
 
 - Use the root `Taskfile.yml` as the command interface. No CI configuration yet.
-- Organize runtimes under `services/`: `provider/` for the owned Go implementation,
+- Organize runtimes under `services/`: `platform/` for the owned Go implementation,
   `onix/` for retained network-runtime packaging/configuration. Put UIs under
   `apps/`, contracts under `contracts/`, and multi-component composition under
   `deploy/`. Logical module boundaries need not be separate runtimes.
-- Keep provider `go.mod`, `cmd/` executable entry points, and `internal/` private
-  packages inside `services/provider/`. Do not spread language-specific source
+- Keep platform `go.mod`, `cmd/` executable entry points, and `internal/` private
+  packages inside `services/platform/`. Do not spread language-specific source
   directories across the root. Actual automation scripts belong under `scripts/`
   if needed; `cmd/` is not a build-script directory.
+- Group shared technical infrastructure under `services/platform/internal/infra/`.
+  Business capabilities and domain modules remain outside `infra/`. Folder
+  boundaries do not require separate Go modules or deployments.
 - Run builds, formatting, tests, and development services in Docker. Do not require
   host Go, PostgreSQL, Python, or a cloud account. Task and Docker are host tools.
   Exception: the user requests local Node/pnpm for Svelte/Vite hot reload through

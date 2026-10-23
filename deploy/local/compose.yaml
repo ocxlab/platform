@@ -30,7 +30,7 @@ services:
   go-lint:
     profiles: [tools]
     image: golangci/golangci-lint:v2.15.0@sha256:fbfcfd12a6f8d7f1b97b3362ca80fc2a244d46863148c73cb88e7793af96c481
-    working_dir: /workspace/services/provider
+    working_dir: /workspace/services/platform
     environment:
       GOTOOLCHAIN: local
     volumes:
@@ -124,7 +124,7 @@ services:
     profiles: [browser]
     build:
       context: .
-      dockerfile: services/provider/Dockerfile
+      dockerfile: services/platform/Dockerfile
       target: api
     environment:
       OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@test-db:5432/ocp_test?sslmode=disable
@@ -199,7 +199,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: services/provider/Dockerfile
+      dockerfile: services/platform/Dockerfile
       target: api
     environment:
       OCP_DATABASE_URL: postgres://ocp_app:ocp_app_local_only@db:5432/ocp_dev?sslmode=disable
@@ -248,9 +248,9 @@ services:
     profiles: [tools]
     build:
       context: .
-      dockerfile: services/provider/Dockerfile
+      dockerfile: services/platform/Dockerfile
       target: tools
-    working_dir: /workspace/services/provider
+    working_dir: /workspace/services/platform
     environment:
       GOTOOLCHAIN: local
     volumes:

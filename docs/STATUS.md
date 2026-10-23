@@ -1,5 +1,34 @@
 # Development status
 
+## Platform source hierarchy and shared infrastructure
+
+23 October 2026. The Go service root is now `services/platform/`; its sibling
+`services/onix/` is unchanged. Database setup/migrations, telemetry, HTTP runtime
+helpers, and object-storage/image processing live under `internal/infra/`.
+Business modules remain outside infrastructure. Imports, Task/Docker wiring,
+generation paths/ignores, migration tooling, and repository references follow
+the new paths. Infrastructure dependency checks permit shared route/error
+classifications but reject application/domain/transport implementation imports.
+
+This is source organization, not a new deployment: the Go module identity,
+combined core/Food default, selectable processes, contracts, 103 named SQL
+statements, and 18 historical migrations are unchanged. No channels, Watermill,
+broker, or SSE behavioral change is included. Historical review records retain
+their original source locators. Integration checks caught an old relative path
+in the historical-migration fixture; it was corrected and both affected upgrade
+tests passed on rerun.
+
+Final verification passed: full `task check` (generation checks, Spectral,
+ten migration-workflow tests, unchanged historical hashes, zero Go lint issues,
+vet/race, PostgreSQL integration in 53.269 seconds, 94 frontend tests, zero
+Svelte diagnostics, and API/web image builds). `task test:domains` passed in
+26.051 seconds, including actual core/Food replicas, Shopping/Lodging isolation,
+worker recovery against a test receiver, and pinned UCP source-schema checks.
+`task smoke` passed from the new service path; development data was preserved
+and the ordinary combined API remains running. Temporary test databases are
+stopped. Generated code remains ignored and untracked. No new browser, mutation,
+Schemathesis, native ONIX, production-cost, or independent-review result is claimed.
+
 ## Business SQL generation covers every current owner
 
 23 October 2026. Step 2 expands sqlc from 33 to 103 named statements across core,
@@ -40,7 +69,7 @@ remain deferred to the requested discussion.
 23 October 2026. Step 1 of the cleanup plan separates shared persistence under
 `internal/core/persistence` from Food quote/order/fulfilment persistence under
 `internal/food/persistence`. Connection budgets, tenant transactions, role checks,
-and the unchanged 18-file Goose history now live under `internal/database`.
+and the unchanged 18-file Goose history now live under `internal/infra/database`.
 Existing sqlc inputs generate separate ignored core/Food packages (16 and 17
 queries respectively); this relocates the existing 33 queries, not a broader SQL
 conversion. The obsolete central persistence/generated-output tree was removed.
@@ -161,7 +190,7 @@ no development data was reset. Mutation and browser suites were not rerun for
 this tooling-only batch; their preceding results remain recorded below.
 
 With explicit approval, the four verified empty root trees `backend/`, `cmd/`,
-`internal/` and `tools/` were removed. Active sources under `services/provider/`
+`internal/` and `tools/` were removed. Active sources under `services/platform/`
 and all data/cache volumes were preserved; see [cleanup](REPOSITORY-CLEANUP.md).
 The separate migration-tool evaluation is now complete in sibling
 `ocp-lab/experiments/migration_tooling/README.md`: 18 migration Up sections,
@@ -530,7 +559,7 @@ demo food photos (Döner, Margherita, falafel) are retained with exact prompts,
 checksums, and item associations under `assets/demo/food/`; optimized JPEGs total
 840,012 bytes. They are prepared assets, not yet visible on a storefront.
 
-The Go `internal/media` signer uses pinned AWS SDK v2 modules. Upload bytes go
+The Go `internal/infra/media` signer uses pinned AWS SDK v2 modules. Upload bytes go
 directly from the client to storage using short-lived presigned URLs bound to
 type, size, key, and SHA-256. No provider upload proxy, storage credentials in
 clients, or custom signature algorithm was added. The storage primitive is not

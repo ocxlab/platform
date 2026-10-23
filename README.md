@@ -157,15 +157,16 @@ tools regenerate the Docker development SvelteKit graph.
 There is no CI configuration. The same Task commands can be called by CI later.
 First builds need registry access for the pinned images; later dependency updates
 may require authorized module downloads. Go module dependencies are pinned in
-`services/provider/go.mod` and `go.sum`. Go and PostgreSQL versions/digests are recorded in the provider Dockerfile
+`services/platform/go.mod` and `go.sum`. Go and PostgreSQL versions/digests are recorded in the platform Dockerfile
 and local Compose file;
 they are tested development pins, not a promise to use those versions forever.
 
 ## Layout and next increment
 
-- `services/provider/`: owned Go API/worker runtime; its own module and tests.
-- `services/provider/cmd/`: API, local checks, contract tooling, migration, and development provisioning entry points.
-- `services/provider/internal/`: private Go implementation packages.
+- `services/platform/`: owned Go API/worker runtime; its own module and tests.
+- `services/platform/cmd/`: API, local checks, contract tooling, migration, and development provisioning entry points.
+- `services/platform/internal/`: private Go implementation packages.
+- `services/platform/internal/infra/`: database setup, telemetry, HTTP runtime, and object-storage/image adapters.
 - `services/onix/`: retained network runtime boundary and integration plan.
 - `apps/web/`: SvelteKit merchant workspace, public storefront, and provider administration.
 - `deploy/local/`: local composition of independently runnable components.
@@ -175,7 +176,7 @@ they are tested development pins, not a promise to use those versions forever.
 
 The module path `ocp.local/platform` is a local import namespace. It does not
 register a domain, select a Git hosting organization, or define a merchant identity.
-Inside `services/provider/`, Go's `cmd/` convention groups executable entry points, not build
+Inside `services/platform/`, Go's `cmd/` convention groups executable entry points, not build
 scripts; `internal/` marks packages whose imports are restricted by Go. They are
 not repository-wide categories. Build tasks remain in the root Taskfile; actual
 future automation scripts can go under `scripts/` if needed.

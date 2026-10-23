@@ -18,7 +18,7 @@ acceptance record supersedes the original scaffold status below as work complete
 
 Task is the command interface, and Docker supplies compilers, runtime checks, and
 local services. There is no CI configuration or production cloud dependency.
-The Go module under `services/provider/` and PostgreSQL service leave room for a monorepo containing
+The Go module under `services/platform/` and PostgreSQL service leave room for a monorepo containing
 frontend applications, contracts, and integrations without selecting their tools
 prematurely. Runtime images run as non-root; local database administration is
 explicitly a development convenience, not the application's future database role.
@@ -53,7 +53,7 @@ does not call for empty packages, compulsory microservices, or one database per
 merchant. As UI applications arrive, they can live under `apps/`; versioned API
 descriptions and generated-code conventions belong under `contracts/`; retained
 composition belongs under `deploy/`. The provider Go module lives under
-`services/provider/`; retained ONIX packaging/configuration lives under
+`services/platform/`; retained ONIX packaging/configuration lives under
 `services/onix/`, separately from the owned implementation. Do not group all
 backend runtimes into a single language directory or import upstream source into
 the owned module without an actual reuse decision.

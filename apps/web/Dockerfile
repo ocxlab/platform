@@ -1,10 +1,10 @@
 # Tested Node 24 cohort. Local and container builds share pnpm-lock.yaml.
 FROM golang:1.26@sha256:26326682769ca980f8f1d3b1f52be2dd1c1d25270e3de3fe0c97d6bb65df3556 AS contracts
-WORKDIR /workspace/services/provider
+WORKDIR /workspace/services/platform
 ENV GOTOOLCHAIN=local
-COPY services/provider/go.mod services/provider/go.sum ./
+COPY services/platform/go.mod services/platform/go.sum ./
 RUN go mod download
-COPY services/provider/cmd/contracts ./cmd/contracts
+COPY services/platform/cmd/contracts ./cmd/contracts
 COPY contracts/openapi/v1 /workspace/contracts/openapi/v1
 RUN go run ./cmd/contracts
 

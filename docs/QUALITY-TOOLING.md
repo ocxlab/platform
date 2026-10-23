@@ -80,7 +80,7 @@ checkout admission, quotes, orders, and development-payment records.
 | Network catalog | 2 |
 
 The config reads all Goose migrations in ascending order from
-`internal/database/migrations`. Each owner generates a private, ignored `sqlgen`
+`internal/infra/database/migrations`. Each owner generates a private, ignored `sqlgen`
 package. No generated type crosses the handwritten application/HTTP boundary.
 This does not introduce an ORM, connection pool, runtime dependency, or deployment.
 
@@ -126,7 +126,7 @@ still required for authorization, concurrency, rollback, and agreement semantics
 
 The 23 October 2026 follow-up audit finds two normal runtime execution call sites,
 down from 66 before this expansion: transaction-local tenant context and the
-restricted-role startup check, both in `internal/database/database.go`. They are
+restricted-role startup check, both in `internal/infra/database/database.go`. They are
 connection/security infrastructure, intentionally independent of domain query
 packages. Six administrative demo-data setup calls remain in
 `internal/devsetup/restaurant.go`; they are not customer/merchant runtime paths.

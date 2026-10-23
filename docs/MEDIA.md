@@ -12,7 +12,7 @@ short-lived upload grants, verify completion, and resolve checked images.
 Merchant operations use the same offering read/write permissions as menu work;
 neither a UUID nor a successful storage PUT authorizes an attachment.
 
-The Go `internal/media` package uses the official AWS SDK v2 S3 presigner, not a
+The Go `internal/infra/media` package uses the official AWS SDK v2 S3 presigner, not a
 custom signature implementation. It binds an upload to a key, SHA-256 checksum,
 content type, exact content length, and expiry. Accepted types are JPEG, PNG,
 and WebP; the current limit is 10 MiB and the maximum URL lifetime is 15 minutes.
