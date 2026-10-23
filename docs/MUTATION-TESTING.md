@@ -12,6 +12,7 @@ Run Docker and use the root Task interface:
 ```sh
 task test:mutation:web
 task test:mutation:go
+task test:mutation:work
 ```
 
 The web runner pins Stryker core/Vitest runner **10.0.0** and uses a dedicated
@@ -30,10 +31,48 @@ Reports are local ignored artifacts:
 
 - `apps/web/reports/mutation/mutation.html` and `mutation.json`;
 - `reports/mutation/go/payment.json` and `food.json`.
+- `reports/mutation/go/work.json` for the separate worker task.
 
 Sandbox directories and reports are also excluded from Docker build context.
 
+The worker task targets `core/work/scheduler.go` and `worker.go`, using unit fakes
+in the same isolated-copy workflow. It excludes `store.go`, `stats.go`, and
+`wake.go`, whose live database behavior is exercised by integration tests instead.
+Gremlins matches these exclusions against basenames; the initial exploratory run
+used a directory-prefixed expression and unintentionally included those adapters.
+The corrected task's report lists only the two intended files. Architecture guards,
+SQL functions, telemetry internals, and browser behavior are not mutated by this task.
+
 ## Executed results
+
+23 October 2026. `task test:mutation:work` completed with **54 killed, four
+surviving, and two uncovered** mutations: **93.10% efficacy** (54/58 exercised)
+and **96.67% mutant coverage** (58/60). No timeouts, nonviable mutations, or skipped
+mutations were reported. The run took about 113 seconds. The preceding same-scope run
+was 53/58; adding an explicit empty-drain metric assertion killed that survivor.
+Other new assertions cover valid concurrency/safety limits, wake spacing, unexpected
+clean listener exit, lease/timeout lengths, stable identities, and attempt outcomes.
+
+Four scheduler mutations survive:
+
+| Location | Mutation | Assessment |
+| --- | --- | --- |
+| `scheduler.go:75` | Pause when delay is zero as well as positive. | Apparent timing-boundary equivalence: a zero-duration timer expires immediately. Not a general proof of equivalence under every scheduling interleaving. |
+| `scheduler.go:88` | Snapshot only after strictly more than a minute, rather than at least a minute. | Exact elapsed-time boundary not asserted. The unit test checks rate limiting, not a full minute-long cadence. |
+| `scheduler.go:108` | Change arithmetic in the five-second claim/finish-error fallback. | Exact fallback interval is a coverage gap: tests recover using a shorter safety interval, which caps either value. |
+| `scheduler.go:117` | Change arithmetic in the five-second schedule-error fallback. | Same interval-assertion gap as the preceding row; error recovery itself is tested. |
+
+The two uncovered expressions are the minimum-drain constant declaration and the
+two-second cleanup timeout for a wake source that ignores cancellation. Existing
+tests exercise cooperative cancellation, not that forced-wait boundary. These
+gaps remain visible; they are not counted as killed or silently suppressed.
+Unit tests cover reconnect delay growth/reset, but `wake.go` is outside this
+mutation scope. SQL ACL/fencing and process-crash tests are separate evidence.
+
+The earlier exploratory run's exclusion mismatch is documented above; its broader
+totals are not compared with this final narrower scope. The machine-readable report
+remains an ignored local artifact; [summary CSV](evidence/worker-mutation-2026-10-23.csv)
+retains the final counts and explicit scope.
 
 22 October 2026, Europe/Berlin (UTC+02:00). After adding pickup-action eligibility,
 the same four-module Stryker scope killed **188/189 (99.47%)** mutants, with one

@@ -1,0 +1,2 @@
+date,tool,version,scope,killed,survived,uncovered,timed_out,nonviable,skipped,efficacy_percent,mutant_coverage_percent,elapsed_seconds
+2026-10-23,Gremlins,v0.6.0,core/work scheduler.go and worker.go,54,4,2,0,0,0,93.10,96.67,112.919632814

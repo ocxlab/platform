@@ -1,5 +1,39 @@
 # Development status
 
+## Worker review and mutation handoff
+
+23 October 2026. All four batches of the
+[modular-monolith worker plan](MODULAR-MONOLITH-PLAN.md) are verified. Engineering
+and protocol AI reviewers accepted the implementation at `9ae979b`; engineering
+also reread and accepted the reconnect correction. Repeated short-lived listener
+attempts now back off to 30 seconds instead of resetting to one second on every
+successful LISTEN. A successful attempt lasting at least 30 seconds resets the
+delay. Cancellation remains prompt. The protocol review's explicit trigger-owner
+suggestion is nonblocking future hardening; no historical SQL was rewritten.
+See [review findings and disposition](reviews/notification-worker-implementation.md).
+
+New assertions cover concurrency/safety limits, wake spacing, unexpected clean
+listener exit, the 30-second lease, ten-second handler and three-second cleanup
+deadlines, stable identity, retry/final-failure reporting, rejected completion,
+storage errors, and empty-drain metrics. The isolated Gremlins run killed 54 of
+58 exercised mutations (93.10%), with four timing-related survivors and two
+uncovered expressions. All gaps and excluded files are explicit in
+[mutation testing](MUTATION-TESTING.md); this is not whole-system coverage.
+
+Final `task check` passed: generation/reproducibility, Spectral, migration tooling,
+Squawk/baseline hashes, zero lint issues, vet/race, PostgreSQL integration
+(113.734 seconds), 94 frontend tests, zero Svelte diagnostics, and API/web builds.
+The latest worker tests also passed focused lint and formatting checks. `task smoke`
+passed. `task test:domains` passed (33.885 seconds), including process-kill/replay,
+worker recovery after external receipt, isolation/saturation, and pinned UCP schema
+checks. Native ONIX passed in batch 3 (8.442 seconds); it was not rerun for this
+backoff/test-only follow-up. No new browser or frontend mutation run is claimed.
+
+Generated code remains ignored, development data is preserved, and disposable test
+databases are stopped. No broker, extra deployment, frontend library, or SSE change
+was added. Next is the pending API/MCP work, then provider administration and the
+planned Beckn/ONIX work. XState/TanStack remains a separate discussion.
+
 ## Worker observability and recovery evidence
 
 23 October 2026. Batch 3 adds bounded OTel signals for listener activity, scheduling,

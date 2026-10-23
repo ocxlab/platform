@@ -55,7 +55,9 @@ Drains start no more frequently than every 100 milliseconds. Overdue or contende
 work uses that minimum delay rather than a tight loop. A storage error schedules
 another attempt within five seconds, capped by the safety interval. Listener
 connection attempts have a five-second timeout and reconnect backoff from one to
-30 seconds. Normal idle operation waits for a hint or safety timer; this is reduced
+30 seconds. Repeated short-lived connections also increase that delay. A successful
+listener attempt lasting at least 30 seconds resets it to one second; cancellation
+interrupts the wait. Normal idle operation waits for a hint or safety timer; this is reduced
 polling, not zero polling.
 
 Each worker adds one dedicated PostgreSQL connection, identified as
@@ -96,7 +98,8 @@ version from the existing history instead of reserving version 19.
 Full regression and runtime results are recorded in [development status](STATUS.md).
 Batch 3 adds optional backlog snapshots, worker telemetry, remaining recovery tests,
 and bounded idle/burst observations; see [worker evidence](WORKER-EVIDENCE.md).
-Final engineering/protocol implementation review and targeted mutation testing
-remain batch 4 of the [plan](MODULAR-MONOLITH-PLAN.md).
+The [final engineering/protocol review](reviews/notification-worker-implementation.md)
+accepts the bounded implementation. [Mutation testing](MUTATION-TESTING.md) records
+the scheduler/attempt scope, surviving timing mutations, and coverage gaps.
 This change does not implement production payment or kitchen work, alter Beckn
 checkout, select hosting, or establish a cloud-cost saving.

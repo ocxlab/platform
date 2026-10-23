@@ -37,13 +37,21 @@ func signalWake(out chan<- WakeSignal, signal WakeSignal) bool {
 	}
 }
 
+func reconnectDelay(previous time.Duration, stable bool) time.Duration {
+	if stable {
+		return time.Second
+	}
+	return max(time.Second, min(30*time.Second, previous*2))
+}
+
 func (p PostgresWake) Run(ctx context.Context, out chan<- WakeSignal) error {
-	backoff := time.Second
+	backoff := time.Duration(0)
 	for ctx.Err() == nil {
+		started := time.Now()
 		connected := p.listen(ctx, out)
-		if connected {
-			backoff = time.Second
-		}
+		// A successful LISTEN that immediately disconnects is still a failure
+		// streak. Reset only after a minimally stable session.
+		backoff = reconnectDelay(backoff, connected && time.Since(started) >= 30*time.Second)
 		timer := time.NewTimer(backoff)
 		select {
 		case <-ctx.Done():
@@ -51,7 +59,6 @@ func (p PostgresWake) Run(ctx context.Context, out chan<- WakeSignal) error {
 			return nil
 		case <-timer.C:
 		}
-		backoff = min(30*time.Second, backoff*2)
 	}
 	return nil
 }

@@ -271,6 +271,12 @@ tasks:
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/mutation-go.sh'
 
+  test:mutation:work:
+    desc: Mutate worker scheduling and attempt rules in an isolated source copy
+    deps: [generate:go]
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps tools sh /workspace/scripts/mutation-work.sh'
+
   vet:
     desc: Run Go static checks inside Docker
     deps: [generate:go]

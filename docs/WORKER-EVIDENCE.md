@@ -53,8 +53,11 @@ private label values and exercise the bounded metric vocabulary. Existing SSE
 authorization and reconnect tests remain part of regression; browser polling and
 SSE behavior are unchanged.
 
-Same-author receiver and native-network results, full regression outcomes, and
-remaining final review are recorded in [development status](STATUS.md). A test
+Same-author receiver and native-network results and full regression outcomes are
+recorded in [development status](STATUS.md). The final
+[engineering/protocol review](reviews/notification-worker-implementation.md) accepts
+the bounded implementation; [mutation testing](MUTATION-TESTING.md) records its
+explicitly limited scope and remaining gaps. A test
 receiver is not native ONIX, and neither is independent protocol conformance.
 
 ## Operational interpretation

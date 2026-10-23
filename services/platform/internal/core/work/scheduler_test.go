@@ -19,6 +19,7 @@ type fakeStore struct {
 	claims        int
 	schedules     int
 	remaining     int
+	claimTimes    []time.Time
 	delay         *time.Duration
 	finish        func(context.Context, workmodel.Effect, bool, time.Duration) (bool, error)
 	claimError    error
@@ -29,6 +30,7 @@ func (s *fakeStore) Claim(ctx context.Context, domains []capability.Domain, batc
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.claims++
+	s.claimTimes = append(s.claimTimes, time.Now())
 	if s.claimError != nil {
 		return nil, s.claimError
 	}
@@ -121,6 +123,31 @@ func TestSchedulerListenBeforeScanAndCoalescesHints(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestSchedulerSpacesRepeatedDrains(t *testing.T) {
+	store := &fakeStore{}
+	wake := fakeWake{make(chan WakeSignal, 1)}
+	w := testWorker(store, wake)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- w.Run(ctx) }()
+	for n := 1; n <= 3; n++ {
+		wake.input <- Changed
+		waitFor(t, func() bool { c, _ := store.counts(); return c >= n })
+	}
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	for n := 1; n < len(store.claimTimes); n++ {
+		if elapsed := store.claimTimes[n].Sub(store.claimTimes[n-1]); elapsed < 90*time.Millisecond {
+			t.Fatalf("wake hints bypassed drain spacing: %s", elapsed)
+		}
+	}
+}
 func TestSchedulerSafetyAndDueTimersWithoutHints(t *testing.T) {
 	for _, safety := range []bool{true, false} {
 		t.Run(map[bool]string{true: "safety", false: "due"}[safety], func(t *testing.T) {
@@ -208,6 +235,16 @@ func TestSchedulerRejectsBadConfiguration(t *testing.T) {
 		t.Fatal("accepted invalid safety interval")
 	}
 }
+
+func TestSchedulerAcceptsMaximumSafetyInterval(t *testing.T) {
+	w := testWorker(&fakeStore{}, fakeWake{make(chan WakeSignal)})
+	w.SafetyInterval = time.Hour
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := w.Run(ctx); err != nil {
+		t.Fatalf("rejected supported safety boundary: %v", err)
+	}
+}
 func TestSchedulerRecoversStoreError(t *testing.T) {
 	store := &fakeStore{claimError: errors.New("temporary database failure")}
 	wake := fakeWake{make(chan WakeSignal, 1)}
@@ -230,6 +267,30 @@ func TestSchedulerRecoversStoreError(t *testing.T) {
 }
 
 type stoppedWake struct{}
+
+type silentlyStoppedWake struct{}
+
+func (silentlyStoppedWake) Run(context.Context, chan<- WakeSignal) error { return nil }
+
+func TestUnexpectedCleanWakeExitIsAnError(t *testing.T) {
+	w := testWorker(&fakeStore{}, silentlyStoppedWake{})
+	if err := w.Run(context.Background()); err == nil || err.Error() != "work wake source stopped" {
+		t.Fatalf("unexpected clean exit was hidden: %v", err)
+	}
+}
+
+func TestReconnectDelay(t *testing.T) {
+	previous := time.Duration(0)
+	for _, want := range []time.Duration{time.Second, 2 * time.Second, 4 * time.Second, 8 * time.Second, 16 * time.Second, 30 * time.Second, 30 * time.Second} {
+		previous = reconnectDelay(previous, false)
+		if previous != want {
+			t.Fatalf("flapping connection delay: got %s want %s", previous, want)
+		}
+	}
+	if got := reconnectDelay(previous, true); got != time.Second {
+		t.Fatalf("stable connection did not reset delay: %s", got)
+	}
+}
 
 func (stoppedWake) Run(context.Context, chan<- WakeSignal) error { return errors.New("stopped") }
 func TestUnexpectedWakeExitStopsWorker(t *testing.T) {

@@ -1,6 +1,6 @@
 # Modular monolith and notification-driven work
 
-23 October 2026. Status: batches 1–3 verified; batch 4 pending. This plan turns the engineering,
+23 October 2026. Status: batches 1–4 verified. This plan turns the engineering,
 protocol, and Astra design reviews into bounded implementation batches. Review
 record: sibling `ocp-lab/runs/notification-driven-work-review.md`.
 
@@ -112,20 +112,25 @@ binary. Recovery tests include the existing batch 2 coverage rerun in regression
 
 ## Batch 4: Regression, review, and handoff
 
-- [ ] Use Docker-backed Task commands, regenerate sqlc/OpenAPI artifacts as needed,
+- [x] Use Docker-backed Task commands, regenerate sqlc/OpenAPI artifacts as needed,
   and keep generated code ignored. Preserve development data.
-- [ ] Run focused tests, migration checks, `task check`, `task smoke`, and
+- [x] Run focused tests, migration checks, `task check`, `task smoke`, and
   `task test:domains` for affected runtime/recovery paths. Run relevant existing
   network checks when publisher wiring changes. Use targeted Go mutation testing
   for new scheduling/guard logic where practical; report exclusions and survivors.
-- [ ] Obtain engineering and protocol reviews of the implemented change and its
+- [x] Obtain engineering and protocol reviews of the implemented change and its
   evidence; resolve material findings before calling the batch complete.
-- [ ] Update this checklist, `docs/STATUS.md`, and the research status/progress
+- [x] Update this checklist, `docs/STATUS.md`, and the research status/progress
   references. Inspect staged changes and commit coherent verified chunks locally.
 
 Stopping point: the existing catalog worker runs notification-first with durable
 recovery, ownership guards protect the relevant seams, SSE and product behavior
 remain intact, and the implementation has passed review and regression.
+
+Completed evidence: [implementation review](reviews/notification-worker-implementation.md),
+[mutation scope and gaps](MUTATION-TESTING.md), and [development status](STATUS.md).
+The protocol review's optional trigger-owner hardening remains documented follow-up,
+not a blocking finding or an unimplemented part of the accepted scheduling behavior.
 
 ## Deferred growth path and subsequent product work
 
