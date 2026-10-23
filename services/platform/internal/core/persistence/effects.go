@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
+	"ocp.local/platform/internal/core/offering"
 	"ocp.local/platform/internal/core/persistence/sqlgen"
-	"ocp.local/platform/internal/offering/food"
 )
 
 type Effect struct {
@@ -58,7 +58,7 @@ func EnqueueEffect(ctx context.Context, tx *sql.Tx, e Effect) (uuid.UUID, error)
 }
 
 func validCatalogIntent(i CatalogIntent) bool {
-	if i.Generation < 1 || i.Revision == nil || *i.Revision < 1 || len(i.DisplayName) == 0 || len(i.DisplayName) > 800 || i.Model != food.Model {
+	if i.Generation < 1 || i.Revision == nil || *i.Revision < 1 || len(i.DisplayName) == 0 || len(i.DisplayName) > 800 || i.Model != offering.FoodMenu {
 		return false
 	}
 	switch i.Action {

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"ocp.local/platform/internal/core/persistence"
-	"ocp.local/platform/internal/devfixtures"
+	"ocp.local/platform/tests/fixtures"
 )
 
 func main() {

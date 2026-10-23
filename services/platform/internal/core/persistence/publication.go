@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
+	"ocp.local/platform/internal/core/offering"
 	"ocp.local/platform/internal/core/persistence/sqlgen"
-	"ocp.local/platform/internal/offering"
 )
 
 type Publication struct {

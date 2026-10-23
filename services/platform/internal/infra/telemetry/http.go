@@ -13,8 +13,8 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 
-	"ocp.local/platform/internal/capability"
-	"ocp.local/platform/internal/problems"
+	"ocp.local/platform/internal/core/capability"
+	"ocp.local/platform/internal/core/problems"
 )
 
 type Observer struct {

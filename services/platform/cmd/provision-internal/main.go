@@ -8,10 +8,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/cmd/api/transport/ucpinternal"
+	"ocp.local/platform/internal/core/capability"
+	"ocp.local/platform/internal/core/ucp/sessionkit"
 	"ocp.local/platform/internal/infra/database"
-	"ocp.local/platform/internal/sessionkit"
-	"ocp.local/platform/internal/ucpinternal"
 	"os"
 	"time"
 )

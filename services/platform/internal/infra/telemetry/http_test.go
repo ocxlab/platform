@@ -19,7 +19,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
 )
 
 func TestHTTPDomainLabelsAreBounded(t *testing.T) {

@@ -3,7 +3,7 @@ package payment
 import (
 	"context"
 	"database/sql"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
 	"ocp.local/platform/internal/payment/persistence/sqlgen"
 )
 

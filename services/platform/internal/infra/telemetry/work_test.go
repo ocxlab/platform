@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
 	"strings"
 	"testing"
 )

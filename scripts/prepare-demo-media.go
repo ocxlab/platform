@@ -29,7 +29,7 @@ func prepare() error {
 		return err
 	}
 	var records []map[string]any
-	fixture, err := os.ReadFile(filepath.Join(root, "services/platform/internal/devfixtures/restaurant.json"))
+	fixture, err := os.ReadFile(filepath.Join(root, "services/platform/tests/fixtures/restaurant.json"))
 	if err != nil {
 		return err
 	}

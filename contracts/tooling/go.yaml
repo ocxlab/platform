@@ -1,5 +1,5 @@
 package: httpapi
-output: internal/httpapi/generated.go
+output: cmd/api/transport/httpapi/generated.go
 generate:
   models: true
   std-http-server: true

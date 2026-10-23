@@ -3,7 +3,7 @@ package payment
 import (
 	"context"
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
 	"testing"
 )
 

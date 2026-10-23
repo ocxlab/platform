@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"ocp.local/platform/internal/devsetup"
 	"ocp.local/platform/internal/infra/database"
+	"ocp.local/platform/tests/devsetup"
 	"os"
 	"time"
 )

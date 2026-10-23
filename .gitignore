@@ -14,9 +14,9 @@ working/
 .DS_Store
 Thumbs.db
 # Rebuild from owned contracts; never mix custom implementation into these files.
-/services/platform/internal/httpapi/generated.go
-/services/platform/internal/ucpcontract/generated.go
-/services/platform/internal/**/sqlgen/
-/services/platform/internal/problems/catalog.generated.json
+/services/platform/cmd/api/transport/httpapi/generated.go
+/services/platform/internal/core/ucp/contract/generated.go
+/services/platform/**/sqlgen/
+/services/platform/internal/core/problems/catalog.generated.json
 /apps/web/src/lib/api/generated.d.ts
 /apps/web/src/lib/i18n/errors.generated.ts

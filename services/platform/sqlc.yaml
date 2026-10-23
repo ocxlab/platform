@@ -40,11 +40,11 @@ sql:
         out: internal/lodging/persistence/sqlgen
   - engine: postgresql
     schema: internal/infra/database/migrations
-    queries: internal/ucpinternal/persistence/queries
+    queries: cmd/api/transport/ucpinternal/persistence/queries
     gen:
       go:
         <<: *go
-        out: internal/ucpinternal/persistence/sqlgen
+        out: cmd/api/transport/ucpinternal/persistence/sqlgen
   - engine: postgresql
     schema: internal/infra/database/migrations
     queries: internal/payment/persistence/queries
@@ -54,8 +54,8 @@ sql:
         out: internal/payment/persistence/sqlgen
   - engine: postgresql
     schema: internal/infra/database/migrations
-    queries: internal/networkcatalog/persistence/queries
+    queries: internal/discovery/persistence/queries
     gen:
       go:
         <<: *go
-        out: internal/networkcatalog/persistence/sqlgen
+        out: internal/discovery/persistence/sqlgen

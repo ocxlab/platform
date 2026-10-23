@@ -25,13 +25,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/cmd/api/transport/httpapi"
+	"ocp.local/platform/internal/core/capability"
+	"ocp.local/platform/internal/core/offering"
 	"ocp.local/platform/internal/core/persistence"
-	"ocp.local/platform/internal/httpapi"
-	"ocp.local/platform/internal/networkcatalog"
-	"ocp.local/platform/internal/offering"
-	"ocp.local/platform/internal/offering/food"
-	"ocp.local/platform/internal/work"
+	"ocp.local/platform/internal/core/work"
+	"ocp.local/platform/internal/discovery"
+	"ocp.local/platform/internal/food/offering"
 )
 
 const root = "/workspace/working/native-onix"

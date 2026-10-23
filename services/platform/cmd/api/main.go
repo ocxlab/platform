@@ -14,16 +14,16 @@ import (
 	"syscall"
 	"time"
 
-	"ocp.local/platform/internal/capability"
-	"ocp.local/platform/internal/httpapi"
+	"ocp.local/platform/cmd/api/config"
+	"ocp.local/platform/cmd/api/transport/httpapi"
+	"ocp.local/platform/cmd/api/transport/ucpinternal"
+	"ocp.local/platform/internal/core/capability"
+	"ocp.local/platform/internal/core/updates"
+	"ocp.local/platform/internal/core/work"
+	"ocp.local/platform/internal/discovery"
 	"ocp.local/platform/internal/infra/media"
 	"ocp.local/platform/internal/infra/runtimehttp"
 	"ocp.local/platform/internal/infra/telemetry"
-	"ocp.local/platform/internal/networkcatalog"
-	"ocp.local/platform/internal/orderupdates"
-	"ocp.local/platform/internal/runtimeconfig"
-	"ocp.local/platform/internal/ucpinternal"
-	"ocp.local/platform/internal/work"
 )
 
 func main() {

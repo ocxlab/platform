@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/offering"
+	"ocp.local/platform/internal/core/offering"
 )
 
 var ErrMediaCapacity = errors.New("media storage allocation limit reached")

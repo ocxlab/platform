@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"ocp.local/platform/internal/devfixtures"
+	"ocp.local/platform/tests/fixtures"
 	"testing"
 )
 

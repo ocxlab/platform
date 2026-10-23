@@ -1,5 +1,5 @@
 package: ucpcontract
-output: internal/ucpcontract/generated.go
+output: internal/core/ucp/contract/generated.go
 generate:
   models: true
   client: true

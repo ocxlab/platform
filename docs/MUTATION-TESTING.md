@@ -73,7 +73,7 @@ when the cookie is absent. Deleting `undefined` from this string-keyed map is a
 no-op; this appears behaviorally equivalent. It remains visible in the report.
 
 The three Go survivors alter redundant arithmetic guards in
-`internal/offering/food/selection.go`: two affect `MaxTotal-unit`, and one replaces
+`internal/food/offering/selection.go`: two affect `MaxTotal-unit`, and one replaces
 `MaxTotal/quantity` with multiplication. Later line/aggregate limits reject the
 same excessive totals under the validated, bounded inputs. This is a qualitative
 equivalence assessment, not a proof for arbitrary inputs or future changes.

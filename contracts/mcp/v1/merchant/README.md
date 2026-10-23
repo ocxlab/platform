@@ -27,10 +27,10 @@ they grant no authority. Merchant ownership and PostgreSQL tenant policies remai
 in force. Provider-admin and guest credentials are not merchant credentials.
 
 The schema-authoring source is the typed inputs in
-[`agenttools`](../../../../services/platform/internal/agenttools/merchant.go)
-and its [menu detail inputs](../../../../services/platform/internal/agenttools/menu_details.go).
+[`agenttools`](../../../../services/platform/internal/food/adapters/mcp/merchant.go)
+and its [menu detail inputs](../../../../services/platform/internal/food/adapters/mcp/menu_details.go).
 Focused edits and comparison inputs are in
-[`menu_edits.go`](../../../../services/platform/internal/agenttools/menu_edits.go).
+[`menu_edits.go`](../../../../services/platform/internal/food/adapters/mcp/menu_edits.go).
 The pinned SDK derives and validates JSON Schemas, exposed by `tools/list`.
 The extras input uses a narrow schema refinement to advertise a non-null array;
 field definitions and descriptions still derive from its typed input.

@@ -61,15 +61,15 @@ tasks:
   sql:generate:
     desc: Generate ignored Go queries from owned SQL and Goose migrations
     deps: [tools:build]
-    sources: [services/platform/sqlc.yaml, services/platform/internal/**/persistence/queries/*.sql, services/platform/internal/infra/database/migrations/*.sql]
+    sources: [services/platform/sqlc.yaml, services/platform/internal/**/persistence/queries/*.sql, services/platform/cmd/api/transport/ucpinternal/persistence/queries/*.sql, services/platform/internal/infra/database/migrations/*.sql]
     generates:
       - services/platform/internal/core/persistence/sqlgen/*.go
       - services/platform/internal/food/persistence/sqlgen/*.go
       - services/platform/internal/shopping/persistence/sqlgen/*.go
       - services/platform/internal/lodging/persistence/sqlgen/*.go
-      - services/platform/internal/ucpinternal/persistence/sqlgen/*.go
+      - services/platform/cmd/api/transport/ucpinternal/persistence/sqlgen/*.go
       - services/platform/internal/payment/persistence/sqlgen/*.go
-      - services/platform/internal/networkcatalog/persistence/sqlgen/*.go
+      - services/platform/internal/discovery/persistence/sqlgen/*.go
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools sqlc generate'
 
@@ -111,7 +111,7 @@ tasks:
     deps: [generate:go]
     cmds:
       - '{{.COMPOSE}} up --detach --wait test-db'
-      - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable -e OCP_TEST_API_BINARY=/tmp/ocp-api -e OCP_TEST_UCP_SOURCE=true tools sh -ec ''go build -o /tmp/ocp-api ./cmd/api; go test -race -count=1 ./internal/integration -run "TestInternal|TestDomainProcess|TestWorkerProcess|TestServiceProcess" -v'''
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable -e OCP_TEST_API_BINARY=/tmp/ocp-api -e OCP_TEST_UCP_SOURCE=true tools sh -ec ''go build -o /tmp/ocp-api ./cmd/api; go test -race -count=1 ./tests/integration -run "TestInternal|TestDomainProcess|TestWorkerProcess|TestServiceProcess" -v'''
 
   services:dev:
     desc: Start optional separate core and Food API processes on ports 18182 and 18183
@@ -143,7 +143,7 @@ tasks:
     desc: Exercise native ONIX publication, crawl, withdrawal, discovery, and authoritative quotes
     cmds:
       - task: network:dev
-      - '{{.NETWORK_COMPOSE}} run --rm --no-deps -e OCP_TEST_NATIVE_NETWORK=true tools go test -race -count=1 ./internal/integration -run TestNativeONIXFoodJourney -v'
+      - '{{.NETWORK_COMPOSE}} run --rm --no-deps -e OCP_TEST_NATIVE_NETWORK=true tools go test -race -count=1 ./tests/integration -run TestNativeONIXFoodJourney -v'
 
   network:stop:
     desc: Stop only the synthetic network services, preserving generated keys and local databases
@@ -165,7 +165,7 @@ tasks:
     cmds:
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
-        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/platform/internal/httpapi/generated.go services/platform/internal/ucpcontract/generated.go ":(glob)services/platform/internal/**/sqlgen/**" services/platform/internal/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
+        'tracked=$(git -c safe.directory=/workspace -C /workspace ls-files -- services/platform/cmd/api/transport/httpapi/generated.go services/platform/internal/core/ucp/contract/generated.go ":(glob)services/platform/**/sqlgen/**" services/platform/internal/core/problems/catalog.generated.json apps/web/src/lib/api/generated.d.ts apps/web/src/lib/i18n/errors.generated.ts); if [ -n "$tracked" ]; then printf "%s\n" "$tracked"; exit 1; fi'
 
   media:start:
     desc: Start optional local S3-compatible storage without changing application data
@@ -231,7 +231,7 @@ tasks:
     cmds:
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
-        'unformatted=$(gofmt -l cmd internal); if [ -n "$unformatted" ]; then printf "%s\n" "$unformatted"; exit 1; fi'
+        'unformatted=$(gofmt -l cmd internal tests); if [ -n "$unformatted" ]; then printf "%s\n" "$unformatted"; exit 1; fi'
 
   test:
     desc: Run Go unit tests inside Docker
@@ -249,7 +249,7 @@ tasks:
     desc: Check safe OTel signals, streaming, and local OTLP/HTTP export without Grafana
     deps: [generate:go]
     cmds:
-      - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./internal/infra/telemetry ./internal/agenttools ./internal/httpapi ./cmd/api'
+      - '{{.COMPOSE}} run --rm --no-deps tools go test -race -count=1 ./internal/infra/telemetry ./internal/food/adapters/mcp ./cmd/api/transport/httpapi ./cmd/api'
 
   test:mutation:web:
     desc: Run Stryker on basket, checkout and session TypeScript rules and write local reports
@@ -415,7 +415,7 @@ tasks:
     desc: Generate Go and TypeScript error catalogs from module-owned contract files
     sources: [contracts/errors/*.json, scripts/generate-errors.mjs]
     generates:
-      - services/platform/internal/problems/catalog.generated.json
+      - services/platform/internal/core/problems/catalog.generated.json
       - apps/web/src/lib/i18n/errors.generated.ts
     cmds:
       - '{{.COMPOSE}} build web-tools'
@@ -435,7 +435,7 @@ tasks:
       - contracts/tooling/go.yaml
       - services/platform/go.mod
       - services/platform/go.sum
-    generates: [services/platform/internal/httpapi/generated.go]
+    generates: [services/platform/cmd/api/transport/httpapi/generated.go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go tool oapi-codegen --config ../../contracts/tooling/go.yaml ../../contracts/build/provider.openapi.json'
 
@@ -445,11 +445,11 @@ tasks:
       - task: contracts:generate
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
-        'sed "s@^output:.*@output: /tmp/generated.go@" ../../contracts/tooling/go.yaml > /tmp/codegen.yaml; go tool oapi-codegen --config /tmp/codegen.yaml ../../contracts/build/provider.openapi.json; cmp internal/httpapi/generated.go /tmp/generated.go'
+        'sed "s@^output:.*@output: /tmp/generated.go@" ../../contracts/tooling/go.yaml > /tmp/codegen.yaml; go tool oapi-codegen --config /tmp/codegen.yaml ../../contracts/build/provider.openapi.json; cmp cmd/api/transport/httpapi/generated.go /tmp/generated.go'
       - task: contracts:internal:generate
       - >-
         {{.COMPOSE}} run --rm --no-deps tools sh -ec
-        'sed "s@^output:.*@output: /tmp/internal-generated.go@" ../../contracts/tooling/internal-go.yaml > /tmp/internal-codegen.yaml; go tool oapi-codegen --config /tmp/internal-codegen.yaml ../../contracts/build/internal.openapi.json; cmp internal/ucpcontract/generated.go /tmp/internal-generated.go'
+        'sed "s@^output:.*@output: /tmp/internal-generated.go@" ../../contracts/tooling/internal-go.yaml > /tmp/internal-codegen.yaml; go tool oapi-codegen --config /tmp/internal-codegen.yaml ../../contracts/build/internal.openapi.json; cmp internal/core/ucp/contract/generated.go /tmp/internal-generated.go'
 
   contracts:internal:bundle:
     desc: Validate and bundle the isolated internal UCP cohort contract
@@ -463,7 +463,7 @@ tasks:
     desc: Generate ignored internal UCP cohort models and client
     deps: [contracts:internal:bundle]
     sources: [contracts/build/internal.openapi.json, contracts/tooling/internal-go.yaml, services/platform/go.mod, services/platform/go.sum]
-    generates: [services/platform/internal/ucpcontract/generated.go]
+    generates: [services/platform/internal/core/ucp/contract/generated.go]
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps tools go tool oapi-codegen --config ../../contracts/tooling/internal-go.yaml ../../contracts/build/internal.openapi.json'
 
@@ -526,7 +526,7 @@ tasks:
     cmds:
       - defer: '{{.COMPOSE}} stop test-db'
       - '{{.COMPOSE}} up --force-recreate --detach --wait test-db'
-      - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable tools go test -race -count=1 ./internal/integration'
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_TEST_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable tools go test -race -count=1 ./tests/integration'
 
   db:check:
     desc: Execute a harmless SQL connectivity check against the local database

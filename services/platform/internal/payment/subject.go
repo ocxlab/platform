@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
 )
 
 // Subject identifies the domain-owned record requesting a financial operation.

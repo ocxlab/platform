@@ -15,6 +15,16 @@ HTTP runtime utilities, and object-storage/image processing. Commerce behavior
 and public catalog projections remain in their business modules. This hierarchy
 does not introduce extra Go modules, containers, brokers, or remote calls.
 
+There are exactly seven immediate `internal/` directories: `core`, `food`,
+`shopping`, `lodging`, `payment`, `discovery`, and `infra`. Core contains shared
+application operations, Offering contract identifiers/dispatch, UCP helpers,
+update streams, and catalog work. Food contains its menu implementation, purchase
+persistence, and merchant MCP adapter. Cross-domain HTTP composition lives under
+`cmd/api/transport/`, with process configuration under `cmd/api/config/`.
+Shared tests and development-only provisioning/fixtures live under `tests/`.
+Business packages cannot import those transports or development helpers; a layout
+test rejects new peer directories under `internal/`.
+
 | Source package | Responsibility |
 | --- | --- |
 | `internal/core/persistence` | Merchant/provider grants, store records, catalog revisions/publication, media records, authorized replay, and durable catalog intents |
@@ -22,7 +32,7 @@ does not introduce extra Go modules, containers, brokers, or remote calls.
 | `internal/shopping` | Shopping catalog, stock, checkout sessions, and orders |
 | `internal/lodging` | Property catalog, stay pricing, booking sessions, and allocation |
 | `internal/payment` | Shared typed payment subjects/terms, payment transition rules, and pay-later obligations |
-| `internal/networkcatalog` | Public catalog delivery, discovery projections, and search |
+| `internal/discovery` | Public catalog delivery, discovery projections, and search |
 | `internal/infra/database` | Connection budgets, tenant transaction setup, restricted-role checks, and the ordered Goose migration history |
 
 The existing Offering registry and its Food model implement menu validation,
@@ -33,7 +43,10 @@ customer account operations belong to core, including their eventual MCP tools;
 this refactor does not implement those operations.
 
 All seven query owners keep separate `persistence/{queries,sqlgen}` directories,
-including core, Food, Shopping, Lodging, internal UCP, payment, and network catalog.
+including core, Food, Shopping, Lodging, internal UCP, payment, and discovery.
+Internal UCP's credential/replay queries sit beneath its composed HTTP adapter
+at `cmd/api/transport/ucpinternal/`; discovery owns its queries under
+`internal/discovery/`.
 They read the same ordered Goose history under `infra/database/migrations` and
 do not share generated Go types.
 Handwritten application types and an explicitly passed SQL transaction remain

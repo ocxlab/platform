@@ -10,10 +10,18 @@ Lodging, payment, and network catalog retain their business ownership outside
 that technical group. The single Go module and selectable runtime compositions
 are unchanged; directory separation does not require separate deployments.
 
+`internal/` has exactly seven owner directories: `core`, `food`, `shopping`,
+`lodging`, `payment`, `discovery`, and `infra`. Shared application operations,
+Offering contracts, UCP helpers, and update streams sit beneath `core`; menu
+validation and merchant MCP tools sit beneath `food`. `cmd/api/transport/`
+composes public and internal HTTP adapters, and `cmd/api/config/` selects the
+runtime. Shared integration/architecture tests and development fixtures live
+under `tests/`. Architecture tests enforce this hierarchy and dependency direction.
+
 The current request path is generated HTTP routing → credential/action checks →
 request validation → Offering or store operation → transaction-scoped SQL.
-`internal/httpapi` adapts HTTP; `internal/offering` owns model dispatch;
-`internal/offering/food` validates the initial catalog definition;
+`cmd/api/transport/httpapi` adapts HTTP; `internal/core/offering` owns model dispatch;
+`internal/food/offering` validates the initial catalog definition;
 `internal/core/persistence` owns shared account, store, catalog, and replay access;
 `internal/food/persistence` owns quotes, orders, and fulfilment.
 `internal/infra/database` owns migration execution and connection/tenant setup. Each

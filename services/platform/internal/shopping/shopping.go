@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
+	"ocp.local/platform/internal/core/ucp/sessionkit"
 	"ocp.local/platform/internal/payment"
-	"ocp.local/platform/internal/sessionkit"
 	"ocp.local/platform/internal/shopping/persistence/sqlgen"
 )
 

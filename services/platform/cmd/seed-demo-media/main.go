@@ -18,14 +18,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/commerce"
+	"ocp.local/platform/cmd/api/transport/httpapi"
+	"ocp.local/platform/internal/core/application"
+	"ocp.local/platform/internal/core/offering"
 	"ocp.local/platform/internal/core/persistence"
-	"ocp.local/platform/internal/devfixtures"
-	"ocp.local/platform/internal/devsetup"
-	"ocp.local/platform/internal/httpapi"
+	"ocp.local/platform/internal/food/offering"
 	"ocp.local/platform/internal/infra/media"
-	"ocp.local/platform/internal/offering"
-	"ocp.local/platform/internal/offering/food"
+	"ocp.local/platform/tests/devsetup"
+	"ocp.local/platform/tests/fixtures"
 )
 
 func main() {

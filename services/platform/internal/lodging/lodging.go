@@ -13,10 +13,10 @@ import (
 	_ "time/tzdata"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
+	"ocp.local/platform/internal/core/ucp/sessionkit"
 	"ocp.local/platform/internal/lodging/persistence/sqlgen"
 	"ocp.local/platform/internal/payment"
-	"ocp.local/platform/internal/sessionkit"
 )
 
 type Service struct{}

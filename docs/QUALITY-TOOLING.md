@@ -63,7 +63,9 @@ the latter must return 400, not report a storage outage.
 ## sqlc retains application transactions
 
 Application query adoption now covers 103 named statements in seven owner-specific
-`internal/<owner>/persistence/queries/` directories. Related concerns have separate
+`persistence/queries/` directories beneath their owners. Six live under
+`internal/`; internal UCP transport lives under `cmd/api/transport/ucpinternal/`.
+Related concerns have separate
 files: for example, Shopping separates catalog, checkout sessions, and orders;
 Lodging separates properties, booking sessions, and allocations. Core owns shared
 credentials, stores, publication, media, replay, and durable work access. Food owns
@@ -129,14 +131,15 @@ down from 66 before this expansion: transaction-local tenant context and the
 restricted-role startup check, both in `internal/infra/database/database.go`. They are
 connection/security infrastructure, intentionally independent of domain query
 packages. Six administrative demo-data setup calls remain in
-`internal/devsetup/restaurant.go`; they are not customer/merchant runtime paths.
+`tests/devsetup/restaurant.go`; they are not customer/merchant runtime paths.
 The SSE listener's pgx `LISTEN` command, executable bootstrap SQL, test fixtures,
 and SQL inside Goose migrations/functions are outside this application-query
 inventory. These are call-site counts, not distinct-query counts or percentages.
 
-`internal/architecture/sql_ownership_test.go` rejects direct
+`tests/architecture/sql_ownership_test.go` rejects direct
 `ExecContext`, `QueryContext`, `QueryRowContext`, and `PrepareContext` calls
-outside generated output, database setup, and development setup. A positive
+in `internal/` and `cmd/api/transport/`, except generated output and database
+setup. Development setup lives separately under `tests/devsetup/`. A positive
 control checks calls with variable statements too. The guard covers those
 database/sql call forms; it is not a general proof against every possible SQL
 execution mechanism.

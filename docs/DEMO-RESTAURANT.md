@@ -66,7 +66,7 @@ not the restaurant's individual store or its API authorization scope.
 - Open the merchant menu editor with all 48 products. This is an acceptance load
   case, not a claim that the current long editor/selector is the intended final UX.
 
-The source lives in `services/platform/internal/devfixtures/restaurant.json` and
+The source lives in `services/platform/tests/fixtures/restaurant.json` and
 the builder beside it. There are no real photos, payment accounts, allergens, or
 restaurant promises. Intended sections are retained in fixture metadata because
 the installed menu schema cannot yet represent categories. See the

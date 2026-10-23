@@ -16,6 +16,11 @@ publish, register services, or use real payment credentials without authorizatio
   directories across the root. Actual automation scripts belong under `scripts/`
   if needed; `cmd/` is not a build-script directory.
 - Group shared technical infrastructure under `services/platform/internal/infra/`.
+  The only immediate `internal/` directories are `core`, `food`, `shopping`,
+  `lodging`, `payment`, `discovery`, and `infra`; nest packages beneath their owner.
+  Cross-domain HTTP composition belongs under `cmd/api/transport/`, process
+  configuration under `cmd/api/config/`, and shared test/development support under
+  `tests/`. Business packages must not import executable transports or test helpers.
   Business capabilities and domain modules remain outside `infra/`. Folder
   boundaries do not require separate Go modules or deployments.
 - Run builds, formatting, tests, and development services in Docker. Do not require

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"ocp.local/platform/internal/food/offering"
 	"ocp.local/platform/internal/food/persistence/sqlgen"
-	"ocp.local/platform/internal/offering/food"
 )
 
 var ErrQuoteExpired = errors.New("quote expired")

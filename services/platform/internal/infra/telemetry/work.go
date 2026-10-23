@@ -5,7 +5,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
 	"time"
 )
 

@@ -1,5 +1,42 @@
 # Development status
 
+## Complete owner-based directory grouping
+
+23 October 2026. Follow-up to the source-root rename: `services/platform/internal/`
+now contains exactly `core`, `food`, `shopping`, `lodging`, `payment`, `discovery`,
+and `infra`. Previously flat application, menu, MCP, UCP-helper, update, and worker
+packages are nested beneath their owners. Cross-domain HTTP composition lives
+under `cmd/api/transport/`, process configuration under `cmd/api/config/`, and
+shared integration/architecture tests and development helpers under `tests/`.
+The old flat folders were moved, not retained as duplicate implementations.
+
+A new layout guard rejects additional immediate `internal/` directories. Expanded
+dependency checks reject business imports of executable transports, development
+helpers, or other commerce-domain implementations. They exposed an existing
+core-to-Food dependency for a catalog identifier; the identifier now belongs to
+the shared Offering contract, without changing the accepted model or validation.
+The SQL ownership guard also covers the relocated internal HTTP transport.
+Generation, ignores, Task/Docker builds, mutation command paths, and current
+documentation follow the new layout; generated code remains untracked.
+
+This is one Go module with the same runtime compositions, not new deployments.
+The 103 SQL statements, API schemas, dependencies, and 18 migration contents are
+unchanged. Migration squashing and channels/Watermill remain deferred. The rebuilt
+combined development API passed `task smoke` without resetting development data.
+Separate-process checks passed in 23.171 seconds, including core/Food replicas,
+Shopping/Lodging isolation, worker recovery against a test receiver, and pinned
+UCP source-schema checks. Full regression passed generation/contract checks,
+ten migration-workflow tests, unchanged historical hashes, zero Go lint issues,
+vet/race, PostgreSQL integration (52.750 seconds), 94 frontend tests, and zero
+Svelte errors/warnings. API and web image builds passed, completing `task check`.
+
+The architecture guard initially rejected the core-to-Food identifier dependency;
+after the contract identifier move, its focused rerun and full race run passed.
+Formatting checks also include the new `tests/` tree. No new browser, mutation,
+Schemathesis, native ONIX, real-payment, production-cost, or independent-review
+result is claimed. Temporary database test services are stopped; the ordinary
+combined development API remains running.
+
 ## Platform source hierarchy and shared infrastructure
 
 23 October 2026. The Go service root is now `services/platform/`; its sibling

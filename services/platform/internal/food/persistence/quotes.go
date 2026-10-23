@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/offering"
+	"ocp.local/platform/internal/core/offering"
 )
 
 var ErrQuoteCapacity = errors.New("active quote capacity exceeded")

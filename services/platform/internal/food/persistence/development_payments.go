@@ -7,7 +7,7 @@ import (
 	corestore "ocp.local/platform/internal/core/persistence"
 
 	"github.com/google/uuid"
-	"ocp.local/platform/internal/capability"
+	"ocp.local/platform/internal/core/capability"
 	"ocp.local/platform/internal/food/persistence/sqlgen"
 	"ocp.local/platform/internal/payment"
 )
