@@ -13,6 +13,7 @@ import (
 // results, merchant identifiers, or arbitrary client-supplied tool names.
 func (o *Observer) StartMerchantTool(ctx context.Context, name string) (context.Context, func(string)) {
 	switch name {
+	case "preview_menu_publication", "publish_menu_revision":
 	case "find_my_stores", "inspect_menu", "inspect_menu_item", "inspect_item_extras", "set_item_availability", "update_item_prices", "review_menu_changes", "inspect_meal_offers", "save_meal_offer", "inspect_menu_structure", "save_menu_item", "organize_menu_categories":
 	default:
 		name = "_OTHER"
@@ -27,7 +28,7 @@ func (o *Observer) StartMerchantTool(ctx context.Context, name string) (context.
 		case "":
 		case "forbidden":
 			outcome = "forbidden"
-		case "invalid_request", "not_found", "revision_conflict", "idempotency_conflict", "unsupported_model", "invalid_offering":
+		case "invalid_request", "not_found", "revision_conflict", "publication_conflict", "idempotency_conflict", "unsupported_model", "invalid_offering":
 			outcome = "rejected"
 		case "timeout":
 			outcome = "timeout"

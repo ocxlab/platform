@@ -61,8 +61,10 @@ alike, so agents do not need to remember what they previously changed. Its
 JSON Pointer locations describe exact revision-local fields, not durable item
 identity. Reordered arrays can generate positional differences. The current
 review is mechanical and paginated; it is not human approval, a semantic
-change summary, or a publication capability. Publishing still happens in the
-merchant workspace.
+change summary, or a publication capability. `preview_menu_publication` compares
+an exact revision with the published baseline; `publish_menu_revision` requires
+that selection's token, generation, and explicit merchant confirmation. The token
+binds a selection, not human consent; agents must obtain consent separately.
 
 ## Balance context size against calls
 

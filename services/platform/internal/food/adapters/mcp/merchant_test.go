@@ -54,9 +54,9 @@ func TestToolDiscoveryAndSchema(t *testing.T) {
 		scopes []string
 		count  int
 	}{
-		{"none", nil, 0}, {"store", []string{"store:read"}, 1}, {"menu", []string{"offering:read"}, 6},
+		{"none", nil, 0}, {"store", []string{"store:read"}, 1}, {"menu", []string{"offering:read"}, 7},
 		{"write_without_read", []string{"offering:write"}, 0},
-		{"full", []string{"store:read", "offering:read", "offering:write"}, 12},
+		{"full", []string{"store:read", "offering:read", "offering:write"}, 14},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()

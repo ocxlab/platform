@@ -3,15 +3,17 @@
 Owners can use an MCP client to find their stores, search menu summaries,
 inspect a dish's sizes and selected extras, change availability or prices in a private
 draft, and review exact changes between retained revisions. The adapter shares the Offering
-write operation with REST; it does not forward arbitrary API calls or let an
-agent publish a menu. The [tool contract](../contracts/mcp/v1/merchant/README.md)
+write operation with REST; it does not forward arbitrary API calls. Publication
+has a separate exact-revision preview and explicit confirmation operation.
+The [tool contract](../contracts/mcp/v1/merchant/README.md)
 records inputs, permissions, retries, compact outputs, and errors.
 
 Extras inspection preserves default choices and size-dependent surcharge overrides.
 Focused price edits can change a base surcharge or a named size override without
 replacing the rest of the menu. Meal offers have a compact overview/detail read
 and a focused create/update tool, including eligibility, add-on choices, and
-upgrade surcharges. Broader setup/order/account intentions remain in the
+upgrade surcharges. Focused dish/category setup and reviewed publication are
+also implemented. Order/account intentions remain in the
 [continuation plan](API-MCP-CONTINUATION.md).
 
 ## Try it locally
@@ -20,7 +22,7 @@ Run `task dev`, then `task dev:stores` to find an existing store handle. Obtain 
 one-hour development MCP credential with `task dev:mcp-credential STORE=store-2`
 (substitute your handle). This prints the token explicitly for local use, not to
 ordinary API logs. It covers that store's owning merchant, including their other
-stores, and only the nine current tools. It is not a UI login or REST credential.
+stores, using the current scope-filtered tools. It is not a UI login or REST credential.
 
 Connect your client to `http://127.0.0.1:18180/mcp/merchant`, select Streamable
 HTTP, and supply `Authorization: Bearer <token>`. The Compose stack enables

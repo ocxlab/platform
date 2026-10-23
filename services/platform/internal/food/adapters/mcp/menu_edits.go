@@ -86,7 +86,7 @@ func (s Merchant) addMenuEditTools(server *mcp.Server, p persistence.Principal) 
 			return toolError(commerce.ErrInvalid)
 		}
 		end := min(in.Offset+20, len(changes))
-		out := map[string]any{"store": in.Store, "from_revision": in.FromRevision, "to_revision": in.ToRevision, "changes": changes[in.Offset:end], "total_changes": len(changes), "state": "private_draft", "next_action": "Review all change pages. Publication requires a separate explicit merchant action in the workspace."}
+		out := map[string]any{"store": in.Store, "from_revision": in.FromRevision, "to_revision": in.ToRevision, "changes": changes[in.Offset:end], "total_changes": len(changes), "state": "private_draft", "next_action": "Review all change pages. Preview against the publication and obtain explicit approval before publishing."}
 		if end < len(changes) {
 			out["next_offset"] = end
 		}

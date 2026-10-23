@@ -1,5 +1,18 @@
 # Development status
 
+## Merchant MCP reviewed publication
+
+23 October 2026. `preview_menu_publication` and `publish_menu_revision` add
+separate review and confirmation intentions, bringing catalog-scoped discovery
+to fourteen tools. Preview is paginated and tied to an exact retained revision
+and publication generation. The selection digest is not human-consent evidence.
+Publishing uses Core's existing authorized transaction, audit, and replay.
+
+Focused HTTP/PostgreSQL MCP regression passed (7.345 seconds), including denied
+confirmation, invalid tokens, exact older-revision publication after a new draft,
+successful replay, stale generations, and denied read-only publication. The
+combined full gate follows the merchant order batch.
+
 ## Merchant MCP menu setup
 
 23 October 2026. Three new intentions extend the existing Food tools:

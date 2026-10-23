@@ -109,26 +109,42 @@ func (s Merchant) addMenuSetupTools(server *mcp.Server, p persistence.Principal)
 	mcp.AddTool(server, &mcp.Tool{Name: "inspect_menu_structure", Description: "Read ordered categories, their translations and item counts, without dishes or extras. Latest empty stores return revision zero. Use this before organizing a menu.", Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true, OpenWorldHint: &closed}}, func(ctx context.Context, _ *mcp.CallToolRequest, in struct {
 		Store    string `json:"store"`
 		Revision int64  `json:"revision,omitempty"`
-	}) (*mcp.CallToolResult, map[string]any, error) { if in.Revision < 0 {
-		return toolError(commerce.ErrInvalid)
-	}; store, err := s.resolve(ctx, p, in.Store); if err != nil {
-		return toolError(err)
-	}; base, err := persistence.GetOffering(ctx, s.DB, p.MerchantID, store, in.Revision); if errors.Is(err, persistence.ErrNotFound) && in.Revision == 0 {
-		return nil, map[string]any{"store": in.Store, "revision": 0, "categories": []menuCategory{}, "item_counts": map[string]int{}, "uncategorized": 0}, nil
-	}; if err != nil {
-		return toolError(err)
-	}; if base.Model != food.Model {
-		return toolError(offering.ErrUnsupported)
-	}; var doc struct {
-		Categories []menuCategory `json:"categories"`
-		Items      []menuItem     `json:"items"`
-	}; if err = json.Unmarshal(base.Document, &doc); err != nil {
-		return toolError(err)
-	}; if doc.Categories == nil {
-		doc.Categories = []menuCategory{}
-	}; counts := map[string]int{}; for _, item := range doc.Items {
-		counts[item.Category]++
-	}; uncategorized := counts[""]; delete(counts, ""); return nil, map[string]any{"store": in.Store, "revision": base.Revision, "categories": doc.Categories, "item_counts": counts, "uncategorized": uncategorized}, nil })
+	}) (*mcp.CallToolResult, map[string]any, error) {
+		if in.Revision < 0 {
+			return toolError(commerce.ErrInvalid)
+		}
+		store, err := s.resolve(ctx, p, in.Store)
+		if err != nil {
+			return toolError(err)
+		}
+		base, err := persistence.GetOffering(ctx, s.DB, p.MerchantID, store, in.Revision)
+		if errors.Is(err, persistence.ErrNotFound) && in.Revision == 0 {
+			return nil, map[string]any{"store": in.Store, "revision": 0, "categories": []menuCategory{}, "item_counts": map[string]int{}, "uncategorized": 0}, nil
+		}
+		if err != nil {
+			return toolError(err)
+		}
+		if base.Model != food.Model {
+			return toolError(offering.ErrUnsupported)
+		}
+		var doc struct {
+			Categories []menuCategory `json:"categories"`
+			Items      []menuItem     `json:"items"`
+		}
+		if err = json.Unmarshal(base.Document, &doc); err != nil {
+			return toolError(err)
+		}
+		if doc.Categories == nil {
+			doc.Categories = []menuCategory{}
+		}
+		counts := map[string]int{}
+		for _, item := range doc.Items {
+			counts[item.Category]++
+		}
+		uncategorized := counts[""]
+		delete(counts, "")
+		return nil, map[string]any{"store": in.Store, "revision": base.Revision, "categories": doc.Categories, "item_counts": counts, "uncategorized": uncategorized}, nil
+	})
 	if !p.AuthorizesMerchant(p.MerchantID, "offering:write") {
 		return
 	}

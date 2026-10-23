@@ -4,7 +4,7 @@ The merchant MCP helps owners find a managed store, inspect its menu, change
 availability, prices, and meal offers in a private draft, and review retained
 changes. It is an intention-oriented interface, not an export of every REST
 operation. Publication remains a separate
-merchant workspace action, so an agent's draft edit cannot change the live menu.
+separate confirmed publication action, so a draft edit cannot change the live menu.
 
 The endpoint is `/mcp/merchant`. Its local implementation uses the released Go
 SDK's Streamable HTTP transport. This developer slice is not a public OAuth
@@ -146,7 +146,7 @@ require modifiers, be customized separately, or recursively apply another deal.
 An unavailable add-on may remain configured but cannot be ordered. Saving preserves
 menu items and other offers, uses the shared Offering write, and has the same
 revision/retry guarantees as dish edits. Review changes before separate publication
-in the workspace. Offer deletion is not exposed as a merchant tool yet.
+through the confirmed publication flow. Offer deletion is not exposed as a merchant tool yet.
 
 ## Errors and evidence
 
@@ -177,3 +177,18 @@ is required for new IDs. Supplied size/modifier arrays replace those complete
 lists. `organize_menu_categories` replaces categories and explicit assignments
 atomically. All three use Food's existing model; write results are private
 draft revisions, not publication or customer price promises.
+
+## Reviewed publication
+
+`preview_menu_publication` compares an exact positive Food revision against the
+current published revision, or an empty baseline before first publication.
+Results contain at most 20 field changes, the current generation and suspension
+flag, and a selection-binding token. Continuations must retain revision and
+generation; changed generations require a new preview. Review every page.
+
+`publish_menu_revision` requires offering read/write, that exact revision and
+generation, the preview token, `confirmed=true`, and a retry key. Confirmation
+must follow explicit merchant instruction. The digest is not authorization or
+proof that a human reviewed the pages. The shared publication operation retains
+audit/replay atomically and cannot clear provider suspension. Successful retries
+return historical results; read again to learn current visibility.

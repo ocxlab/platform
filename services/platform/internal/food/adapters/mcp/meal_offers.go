@@ -134,7 +134,7 @@ func (s Merchant) addMealOfferTools(server *mcp.Server, p persistence.Principal)
 		if err := json.Unmarshal(result.Body, &revision); err != nil {
 			return toolError(err)
 		}
-		return nil, map[string]any{"store": in.Store, "offer": in.Offer.ID, "base_revision": in.ExpectedRevision, "draft_revision": revision.Revision, "state": "private_draft", "replayed": result.Replayed, "next_action": "Review all pages of review_menu_changes before a separate explicit publication in the merchant workspace."}, nil
+		return nil, map[string]any{"store": in.Store, "offer": in.Offer.ID, "base_revision": in.ExpectedRevision, "draft_revision": revision.Revision, "state": "private_draft", "replayed": result.Replayed, "next_action": "Preview the exact revision against the publication and obtain explicit merchant approval before publishing."}, nil
 	})
 }
 
