@@ -8,7 +8,7 @@ import (
 )
 
 func TestModularBundleIsDeterministic(t *testing.T) {
-	source := "../../../../contracts/openapi/v1/openapi.yaml"
+	source := "../../../../../contracts/openapi/v1/openapi.yaml"
 	dir := t.TempDir()
 	one := filepath.Join(dir, "one.json")
 	two := filepath.Join(dir, "two.json")

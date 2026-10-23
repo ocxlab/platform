@@ -18,6 +18,14 @@ composes public and internal HTTP adapters, and `cmd/api/config/` selects the
 runtime. Shared integration/architecture tests and development fixtures live
 under `tests/`. Architecture tests enforce this hierarchy and dependency direction.
 
+`cmd` means executable commands. `cmd/api/` starts the application;
+`cmd/ops/` contains operational commands such as database migration;
+`cmd/build/` contains contract-building tooling; `cmd/dev/` contains local
+credential provisioning and demo seeding; and `cmd/test/` contains smoke,
+fixture, migration-replay, and network-acceptance harnesses. Each executable
+has its own `main.go`. Use the existing root Task commands rather than depending
+on these source paths; grouping commands does not add deployments.
+
 The current request path is generated HTTP routing → credential/action checks →
 request validation → Offering or store operation → transaction-scoped SQL.
 `cmd/api/transport/httpapi` adapts HTTP; `internal/core/offering` owns model dispatch;
@@ -41,7 +49,7 @@ or `lodging`. Core/Food can therefore share a cheap initial process and later
 scale as separate processes without replacing their application operations.
 Shopping/Lodging remain internal-only and independently selectable. Separate
 processes still share the database's capacity and failure modes.
-`cmd/migrate` and `cmd/provision` use `OCP_MIGRATION_DATABASE_URL` explicitly.
+`cmd/ops/migrate` and `cmd/dev/provision` use `OCP_MIGRATION_DATABASE_URL` explicitly.
 Compose/Task supply local-only defaults. The API never runs migrations or accepts
 administrator database credentials as a fallback. Credential provisioning prints
 the token once and stores only its digest. Production signup/login is not implemented.

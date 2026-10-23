@@ -87,6 +87,35 @@ func TestInternalDirectoryOwners(t *testing.T) {
 	}
 }
 
+func TestCommandEntryPointLayout(t *testing.T) {
+	root := filepath.Join("..", "..", "cmd")
+	var commands []string
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if !entry.IsDir() && entry.Name() == "main.go" {
+			relative, err := filepath.Rel(root, filepath.Dir(path))
+			if err != nil {
+				return err
+			}
+			commands = append(commands, filepath.ToSlash(relative))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := []string{
+		"api", "build/contracts", "dev/provision", "dev/provision-internal",
+		"dev/seed-demo", "dev/seed-demo-media", "ops/migrate",
+		"test/browser-fixture", "test/check-local", "test/migration-replay", "test/network-lab",
+	}
+	if !slices.Equal(commands, expected) {
+		t.Fatalf("command entry points = %v, want %v; group commands by purpose", commands, expected)
+	}
+}
+
 func TestDependencyGuardRejectsReverseAndForeignImports(t *testing.T) {
 	for _, tc := range []struct {
 		owner, dependency string

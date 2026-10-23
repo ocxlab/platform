@@ -3,7 +3,7 @@ FROM golang:1.26@sha256:26326682769ca980f8f1d3b1f52be2dd1c1d25270e3de3fe0c97d6bb
 WORKDIR /src
 COPY services/platform/go.mod services/platform/go.sum ./
 RUN go mod download
-COPY services/platform/cmd/migration-replay/main.go ./main.go
+COPY services/platform/cmd/test/migration-replay/main.go ./main.go
 RUN CGO_ENABLED=0 go build -o /migration-replay ./main.go
 FROM mcr.microsoft.com/devcontainers/python:3.13@sha256:15f58ad71b05185d37052bf965024e87a206c14812f037e52093d5ee3d83cd80
 USER root

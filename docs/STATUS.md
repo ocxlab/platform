@@ -1,5 +1,32 @@
 # Development status
 
+## Commands grouped by purpose
+
+23 October 2026. `services/platform/cmd/` now contains `api/`, `ops/`, `build/`,
+`dev/`, and `test/`. The API entry point stays in place. Migration execution moved
+to `ops/migrate`; contract bundling to `build/contracts`; local provisioning and
+demo seeding to `dev/`; and browser fixtures, smoke checks, migration replay, and
+the synthetic network harness to `test/`. The commands were moved, not copied.
+Task command names remain unchanged; source paths, Docker copies/builds, and the
+contract bundler's relative test-fixture path follow the grouping.
+
+A command-layout test checks all eleven entry points. The generic `build` ignore
+rules initially omitted the new contract-builder source from the Docker context;
+explicit source-only exceptions now include `cmd/build/` in Git and Docker while
+leaving generated output ignored. Application behavior, dependencies, contracts,
+SQL, migration history, and deployment composition are unchanged.
+
+Verification passed: focused layout/command compilation tests, full `task check`,
+the corrected `task smoke` rerun, and read-only `task dev:stores`. Full checks
+include generation guards, Spectral, ten migration-workflow tests, unchanged
+historical hashes, zero Go lint issues, vet/race, PostgreSQL integration (54.908
+seconds), frontend tests, zero Svelte errors/warnings, and API/web image builds.
+The relocated contract bundler's deterministic-source test passed too.
+Generated files remain untracked; development data was preserved, the API is
+running, and disposable test databases are stopped. No new browser, mutation,
+Schemathesis, native ONIX, separate-process-suite, or independent-review run is
+claimed for this command-only reorganization.
+
 ## Complete owner-based directory grouping
 
 23 October 2026. Follow-up to the source-root rename: `services/platform/internal/`

@@ -10,6 +10,8 @@ working
 **/node_modules
 **/.svelte-kit
 **/build
+!services/platform/cmd/build
+!services/platform/cmd/build/**
 **/test-results
 **/playwright-report
 **/.stryker-tmp

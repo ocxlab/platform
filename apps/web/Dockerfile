@@ -4,9 +4,9 @@ WORKDIR /workspace/services/platform
 ENV GOTOOLCHAIN=local
 COPY services/platform/go.mod services/platform/go.sum ./
 RUN go mod download
-COPY services/platform/cmd/contracts ./cmd/contracts
+COPY services/platform/cmd/build/contracts ./cmd/build/contracts
 COPY contracts/openapi/v1 /workspace/contracts/openapi/v1
-RUN go run ./cmd/contracts
+RUN go run ./cmd/build/contracts
 
 FROM node:24-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS tools
 RUN npm install --global pnpm@11.20.0

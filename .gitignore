@@ -4,6 +4,8 @@
 .task/
 .pnpm-store/
 build/
+!/services/platform/cmd/build/
+!/services/platform/cmd/build/**
 coverage/
 reports/
 .stryker-tmp/

@@ -15,6 +15,10 @@ publish, register services, or use real payment credentials without authorizatio
   packages inside `services/platform/`. Do not spread language-specific source
   directories across the root. Actual automation scripts belong under `scripts/`
   if needed; `cmd/` is not a build-script directory.
+  Keep the application under `cmd/api/`; group other executable commands by
+  purpose under `cmd/ops/`, `cmd/build/`, `cmd/dev/`, and `cmd/test/`.
+  These are Go executables, not shell scripts. Preserve public Task command names
+  when reorganizing their source paths.
 - Group shared technical infrastructure under `services/platform/internal/infra/`.
   The only immediate `internal/` directories are `core`, `food`, `shopping`,
   `lodging`, `payment`, `discovery`, and `infra`; nest packages beneath their owner.
