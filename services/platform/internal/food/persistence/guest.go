@@ -25,6 +25,16 @@ var ErrGuestCapacity = errors.New("active guest capacity exceeded")
 // A guest is an opaque, store-bound checkout grant, not an account. Only its
 // digest is retained; the secret never enters quotes, order history or replays.
 func CreateGuestSession(ctx context.Context, db *sql.DB, merchant, store uuid.UUID) (GuestSession, error) {
+	return createGuestSession(ctx, db, merchant, store, false)
+}
+
+// CreateGuestMCPSession is local provisioning, not public OAuth or token exchange.
+// It creates a new checkout actor; it never adopts another guest's purchases.
+func CreateGuestMCPSession(ctx context.Context, db *sql.DB, merchant, store uuid.UUID) (GuestSession, error) {
+	return createGuestSession(ctx, db, merchant, store, true)
+}
+
+func createGuestSession(ctx context.Context, db *sql.DB, merchant, store uuid.UUID, mcp bool) (GuestSession, error) {
 	tx, err := database.TenantTransaction(ctx, db, merchant)
 	if err != nil {
 		return GuestSession{}, err
@@ -54,8 +64,15 @@ func CreateGuestSession(ctx context.Context, db *sql.DB, merchant, store uuid.UU
 		return GuestSession{}, err
 	}
 	result := GuestSession{Token: "ocg_" + base64.RawURLEncoding.EncodeToString(entropy[:])}
+	if mcp {
+		result.Token = "ocm_" + base64.RawURLEncoding.EncodeToString(entropy[:])
+	}
 	digest := sha256.Sum256([]byte(result.Token))
-	result.ExpiresAt, err = queries.InsertGuestGrant(ctx, sqlgen.InsertGuestGrantParams{MerchantID: merchant, StoreID: store, ID: uuid.New(), TokenHash: digest[:]})
+	if mcp {
+		result.ExpiresAt, err = queries.InsertGuestMCPGrant(ctx, sqlgen.InsertGuestMCPGrantParams{MerchantID: merchant, StoreID: store, ID: uuid.New(), TokenHash: digest[:]})
+	} else {
+		result.ExpiresAt, err = queries.InsertGuestGrant(ctx, sqlgen.InsertGuestGrantParams{MerchantID: merchant, StoreID: store, ID: uuid.New(), TokenHash: digest[:]})
+	}
 	if err != nil {
 		return GuestSession{}, err
 	}

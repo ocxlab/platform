@@ -175,6 +175,12 @@ func main() {
 	if os.Getenv("OCP_LOCAL_MERCHANT_MCP") == "true" {
 		options = append(options, httpapi.WithLocalMerchantMCP())
 	}
+	if os.Getenv("OCP_LOCAL_CUSTOMER_MCP") == "true" {
+		options = append(options, httpapi.WithLocalCustomerMCP())
+	}
+	if os.Getenv("OCP_LOCAL_ACCOUNT_MCP") == "true" {
+		options = append(options, httpapi.WithLocalAccountMCP())
+	}
 	if process.Service != "core" && process.Domains != "none" {
 		updates := orderupdates.New()
 		go updates.Run(ctx, os.Getenv("OCP_DATABASE_URL"))

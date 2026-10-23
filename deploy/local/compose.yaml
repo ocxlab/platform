@@ -206,6 +206,8 @@ services:
       OCP_DEVELOPMENT_PAYMENTS: 'true'
       OCP_OTEL_EXPORTER: ${OCP_OTEL_EXPORTER:-none}
       OCP_LOCAL_MERCHANT_MCP: 'true'
+      OCP_LOCAL_CUSTOMER_MCP: 'true'
+      OCP_LOCAL_ACCOUNT_MCP: 'true'
       OCP_MEDIA_ENABLED: 'true'
       OCP_MEDIA_INTERNAL_ENDPOINT: http://object-store:9000
       OCP_MEDIA_PUBLIC_ENDPOINT: http://localhost:18900

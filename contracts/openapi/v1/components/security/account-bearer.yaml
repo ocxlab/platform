@@ -1,0 +1,4 @@
+type: http
+scheme: bearer
+bearerFormat: opaque
+description: Resource-bound account grant. Separate merchant/customer REST and MCP audiences; no commerce or payment authority. Local bootstrap is not OAuth.

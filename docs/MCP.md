@@ -14,8 +14,11 @@ replacing the rest of the menu. Meal offers have a compact overview/detail read
 and a focused create/update tool, including eligibility, add-on choices, and
 upgrade surcharges. Focused dish/category setup and reviewed publication are
 also implemented. Merchant order inbox/detail, decisions, and pickup progression
-use the same authorized Food application operations as REST. Account intentions remain in the
-[continuation plan](API-MCP-CONTINUATION.md).
+use the same authorized Food application operations as REST. The separate
+[Customer Food MCP](CUSTOMER-MCP.md) now supports browse/configure/price/commit
+and own-order progress. Core's [account interfaces](ACCOUNT-MANAGEMENT.md) support
+personal profile reads and preference edits through separate REST/MCP audiences;
+they are not production identity or saved-payment management.
 
 ## Try it locally
 

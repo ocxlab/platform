@@ -16,6 +16,8 @@ info:
 servers:
   - url: /
 tags:
+  - name: Customer account
+    description: Customer profile and application preferences, separately authorized from purchases.
   - name: Customer commerce
     description: Public browsing and guest-scoped quotes, orders, and payment interaction.
   - name: Merchant account
@@ -29,6 +31,10 @@ tags:
 security:
   - BearerAuth: []
 paths:
+  /api/v1/merchant-account/profile:
+    $ref: paths/merchant-account-profile.yaml
+  /api/v1/customer-account/profile:
+    $ref: paths/customer-account-profile.yaml
   /api/v1/merchants/{merchantId}/stores/{storeId}/media:
     $ref: paths/media-uploads.yaml
   /api/v1/merchants/{merchantId}/stores/{storeId}/media/{mediaId}:
@@ -118,6 +124,8 @@ components:
     RequestID:
       $ref: components/headers/request-id.yaml
   securitySchemes:
+    AccountBearerAuth:
+      $ref: components/security/account-bearer.yaml
     GuestBearerAuth:
       $ref: components/security/guest-bearer.yaml
     BearerAuth:
@@ -125,6 +133,10 @@ components:
     ProviderBearerAuth:
       $ref: components/security/provider-bearer.yaml
   schemas:
+    AccountProfile:
+      $ref: schemas/accounts/profile.yaml#/AccountProfile
+    ChangeAccountProfile:
+      $ref: schemas/accounts/profile.yaml#/ChangeAccountProfile
     PlainText:
       $ref: schemas/common/text.yaml#/PlainText
     StoreDisplayName:

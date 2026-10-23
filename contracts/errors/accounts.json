@@ -1,0 +1,7 @@
+{
+  "account_revision_conflict": {
+    "status": 409,
+    "title": "Profile changed",
+    "message_key": "error-accounts-account-revision-conflict"
+  }
+}

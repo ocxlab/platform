@@ -74,7 +74,7 @@ rules:
       - field: x-access
         function: enumeration
         functionOptions:
-          values: [public, guest, merchant, provider]
+          values: [public, guest, merchant, provider, account]
   get-no-request-body:
     description: GET inputs belong in path/query parameters, not request bodies.
     severity: error

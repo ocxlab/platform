@@ -113,7 +113,7 @@ func TestCommandEntryPointLayout(t *testing.T) {
 		t.Fatal(err)
 	}
 	expected := []string{
-		"api", "build/contracts", "dev/provision", "dev/provision-internal",
+		"api", "build/contracts", "dev/account", "dev/customer-mcp", "dev/provision", "dev/provision-internal",
 		"dev/seed-demo", "dev/seed-demo-media", "ops/migrate",
 		"test/browser-fixture", "test/check-local", "test/migration-replay", "test/network-lab",
 	}

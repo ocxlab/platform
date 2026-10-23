@@ -90,6 +90,20 @@ func TenantTransaction(ctx context.Context, db *sql.DB, merchant uuid.UUID) (*sq
 	return tx, nil
 }
 
+// Account scope is distinct from merchant commerce authority. It never sets a
+// merchant identifier or grants access to stores, orders, or saved payments.
+func AccountTransaction(ctx context.Context, db *sql.DB, account uuid.UUID) (*sql.Tx, error) {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err = tx.ExecContext(ctx, `SELECT set_config('ocp.account_id',$1,true)`, account.String()); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	return tx, nil
+}
+
 // CheckRuntimeRole rejects migration/administrative connections in the API.
 func CheckRuntimeRole(ctx context.Context, db *sql.DB) error {
 	var safe bool

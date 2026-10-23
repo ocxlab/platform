@@ -16,6 +16,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"github.com/google/uuid"
+	accounttools "ocp.local/platform/internal/core/adapters/mcp"
 	"ocp.local/platform/internal/core/application"
 	"ocp.local/platform/internal/core/capability"
 	"ocp.local/platform/internal/core/offering"
@@ -36,6 +37,8 @@ type Server struct {
 	offeringUpdates     *orderupdates.Hub
 	telemetry           *telemetry.Observer
 	localMerchantMCP    bool
+	localCustomerMCP    bool
+	localAccountMCP     bool
 	mediaStore          commerce.MediaStorage
 	domainSelection     string
 	service             string
@@ -62,6 +65,8 @@ func WithMediaStorage(storage commerce.MediaStorage) Option {
 
 // WithLocalMerchantMCP enables only the localhost development adapter.
 func WithLocalMerchantMCP() Option { return func(s *Server) { s.localMerchantMCP = true } }
+func WithLocalCustomerMCP() Option { return func(s *Server) { s.localCustomerMCP = true } }
+func WithLocalAccountMCP() Option  { return func(s *Server) { s.localAccountMCP = true } }
 
 func WithTelemetry(observer *telemetry.Observer) Option {
 	return func(s *Server) { s.telemetry = observer }
@@ -108,17 +113,22 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 		problem(w, 400, "invalid_request", "Request does not match the API contract.", nil)
 	}})
 	scopes := map[string]string{}
+	accountKinds := map[string]string{"GetMerchantAccountProfile": "merchant", "ChangeMerchantAccountProfile": "merchant", "GetCustomerAccountProfile": "customer", "ChangeCustomerAccountProfile": "customer"}
 	known := map[string]bool{"store:write": true, "store:read": true, "offering:read": true, "offering:write": true, "publication:read": true, "publication:manage": true, "quote:create": true, "order:create": true, "order:read": true, "order:cancel": true, "order:manage": true, "order:inspect": true}
 	public := map[string]bool{"WatchPublicOffering": true, "GetPublicMediaImage": true, "GetPublicFoodOrdering": true, "GetLiveness": true, "GetPublicOffering": true, "CreateFoodQuote": true, "CreateGuestSession": true, "ListPublicStores": true, "GetPublicStoreByHandle": true}
 	guest := map[string]bool{"CreateGuestFoodQuote": true, "PlaceFoodOrder": true, "GetGuestFoodOrder": true, "GetGuestFoodQuote": true, "CancelGuestFoodOrder": true, "ChangeDevelopmentPayment": true, "GetGuestFoodOrderByReference": true, "WatchGuestFoodOrder": true}
 	provider := map[string]bool{"AdminGetPublication": true, "AdminSuspendPublication": true, "AdminGetFoodOrder": true, "AdminListStores": true, "AdminListFoodOrders": true}
 	for pathName, path := range spec.Paths.Map() {
+		known["account:read"], known["account:write"] = true, true
 		domain, domainOK := path.Extensions["x-commerce-boundary"].(string)
 		if !domainOK || (domain != "shared" && domain != "model" && !capability.Domain(domain).Valid()) || (strings.Contains(pathName, "/food/") && domain != string(capability.Food)) {
 			return nil, errors.New("every path must declare a recognized commerce admission class")
 		}
 		for _, operation := range path.Operations() {
 			expectedAccess := "merchant"
+			if accountKinds[operation.OperationID] != "" {
+				expectedAccess = "account"
+			}
 			if guest[operation.OperationID] {
 				expectedAccess = "guest"
 			}
@@ -142,6 +152,9 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 				effective = *operation.Security
 			}
 			scheme := "BearerAuth"
+			if accountKinds[operation.OperationID] != "" {
+				scheme = "AccountBearerAuth"
+			}
 			if guest[operation.OperationID] {
 				scheme = "GuestBearerAuth"
 			}
@@ -179,10 +192,36 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 		}
 	}
 	var merchantMCP http.Handler
+	accountsMCP := map[string]http.Handler{}
+	if server.localAccountMCP && server.service != "food" {
+		for _, kind := range []string{"merchant", "customer"} {
+			accountsMCP["/mcp/account/"+kind] = (accounttools.Accounts{DB: db, Kind: kind, Observer: server.telemetry}).LocalHandler()
+		}
+	}
+	var customerMCP http.Handler
+	if server.localCustomerMCP && server.service != "core" && domains.Allows(capability.Food) {
+		customerMCP = (agenttools.Customer{DB: db, Observer: server.telemetry}).LocalHandler()
+	}
 	if server.localMerchantMCP && server.service != "food" && domains.Allows(capability.Food) {
 		merchantMCP = (agenttools.Merchant{DB: db, Models: server.models, Observer: server.telemetry}).LocalHandler()
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if handler := accountsMCP[r.URL.Path]; handler != nil {
+			if server.telemetry != nil {
+				server.telemetry.HTTP(w, r, r.URL.Path, "AccountMCP", handler.ServeHTTP, "")
+			} else {
+				handler.ServeHTTP(w, r)
+			}
+			return
+		}
+		if customerMCP != nil && r.URL.Path == agenttools.CustomerPath {
+			if server.telemetry != nil {
+				server.telemetry.HTTP(w, r, agenttools.CustomerPath, "CustomerFoodMCP", customerMCP.ServeHTTP, capability.Food)
+			} else {
+				customerMCP.ServeHTTP(w, r)
+			}
+			return
+		}
 		if merchantMCP != nil && r.URL.Path == agenttools.MerchantPath {
 			if server.telemetry != nil {
 				server.telemetry.HTTP(w, r, agenttools.MerchantPath, "MerchantMCP", merchantMCP.ServeHTTP, capability.Food)
@@ -217,7 +256,27 @@ func NewHandler(db *sql.DB, options ...Option) (http.Handler, error) {
 				problem(w, 503, "unavailable", "This commerce domain is not enabled on this process.", nil)
 				return
 			}
-			if !public[route.Operation.OperationID] {
+			if kind := accountKinds[route.Operation.OperationID]; kind != "" {
+				header := r.Header.Get("Authorization")
+				if !strings.HasPrefix(header, "Bearer ") {
+					problem(w, 401, "unauthenticated", "A valid account credential is required.", nil)
+					return
+				}
+				p, e := persistence.AuthenticateAccount(r.Context(), db, strings.TrimPrefix(header, "Bearer "), persistence.AccountResource(kind, "rest"))
+				if errors.Is(e, persistence.ErrUnauthenticated) {
+					problem(w, 401, "unauthenticated", "A valid account credential is required.", nil)
+					return
+				}
+				if e != nil {
+					problem(w, 503, "unavailable", "Account authentication is unavailable.", nil)
+					return
+				}
+				if !p.Allows(scopes[route.Operation.OperationID]) {
+					problem(w, 403, "forbidden", "Account scope is required.", nil)
+					return
+				}
+				r = r.WithContext(context.WithValue(r.Context(), accountPrincipalKey{}, p))
+			} else if !public[route.Operation.OperationID] {
 				header := r.Header.Get("Authorization")
 				if !strings.HasPrefix(header, "Bearer ") {
 					problem(w, 401, "unauthenticated", "A valid bearer credential is required.", nil)

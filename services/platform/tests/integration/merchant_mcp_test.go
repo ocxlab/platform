@@ -29,12 +29,16 @@ type rpcResponse struct {
 }
 
 func mcpRequest(t *testing.T, server *httptest.Server, token, method string, params any, status int) rpcResponse {
+	return mcpRequestAt(t, server, "/mcp/merchant", token, method, params, status)
+}
+
+func mcpRequestAt(t *testing.T, server *httptest.Server, path, token, method string, params any, status int) rpcResponse {
 	t.Helper()
 	if p, ok := params.(map[string]any); ok {
 		p["_meta"] = map[string]any{"io.modelcontextprotocol/protocolVersion": "2026-07-28", "io.modelcontextprotocol/clientCapabilities": map[string]any{}}
 	}
 	body, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": 1, "method": method, "params": params})
-	r, err := http.NewRequest("POST", server.URL+"/mcp/merchant", strings.NewReader(string(body)))
+	r, err := http.NewRequest("POST", server.URL+path, strings.NewReader(string(body)))
 	must(t, err)
 	r.Header.Set("Authorization", "Bearer "+token)
 	r.Header.Set("Content-Type", "application/json")

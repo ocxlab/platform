@@ -22,3 +22,7 @@ SELECT count(*) FROM commerce.guest_grants WHERE merchant_id=$1 AND store_id=$2 
 
 -- name: InsertGuestGrant :one
 INSERT INTO commerce.guest_grants(merchant_id,store_id,id,token_hash,expires_at) VALUES($1,$2,$3,$4,clock_timestamp()+interval '7 days') RETURNING expires_at;
+
+-- name: InsertGuestMCPGrant :one
+INSERT INTO commerce.guest_grants(merchant_id,store_id,id,token_hash,expires_at,resource)
+VALUES($1,$2,$3,$4,clock_timestamp()+interval '1 hour','customer-food-mcp') RETURNING expires_at;

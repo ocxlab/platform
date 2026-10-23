@@ -1,0 +1,69 @@
+x-commerce-boundary: shared
+get:
+  operationId: GetMerchantAccountProfile
+  tags: [Merchant account]
+  summary: Inspect your account profile
+  description: Read only the authenticated account's personal profile and language preference.
+  x-access: account
+  x-required-scope: account:read
+  security:
+    - AccountBearerAuth: []
+  responses:
+    '200':
+      description: Current profile.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/accounts/profile.yaml#/AccountProfile
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml
+put:
+  operationId: ChangeMerchantAccountProfile
+  tags: [Merchant account]
+  summary: Change your account profile
+  description: Replace editable preferences with an expected revision and retained retry key. Does not change merchant trading identity, commerce scopes, or saved payment data.
+  x-access: account
+  x-required-scope: account:write
+  security:
+    - AccountBearerAuth: []
+  parameters:
+    - $ref: ../components/parameters/idempotency-key.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/accounts/profile.yaml#/ChangeAccountProfile
+  responses:
+    '200':
+      description: Saved profile, or the original successful result on matching retry.
+      headers:
+        X-Request-ID:
+          $ref: ../components/headers/request-id.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/accounts/profile.yaml#/AccountProfile
+    '400':
+      $ref: ../components/responses/problem.yaml
+    '401':
+      $ref: ../components/responses/problem.yaml
+    '403':
+      $ref: ../components/responses/problem.yaml
+    '409':
+      $ref: ../components/responses/problem.yaml
+    '503':
+      $ref: ../components/responses/problem.yaml
+    'default':
+      $ref: ../components/responses/problem.yaml

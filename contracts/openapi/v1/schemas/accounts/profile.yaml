@@ -1,0 +1,50 @@
+AccountDisplayName:
+  allOf:
+    - $ref: ../common/text.yaml#/PlainText
+    - type: string
+      minLength: 1
+      maxLength: 160
+      pattern: '\S'
+  description: Personal profile display name, not the merchant's trading or store name.
+AccountLocale:
+  type: string
+  enum: [de, en, ar]
+  description: Preferred application language; does not change menu translations.
+AccountProfile:
+  type: object
+  additionalProperties: false
+  required: [id, kind, display_name, locale, revision, updated_at]
+  properties:
+    id:
+      $ref: ../common/identifier.yaml
+    kind:
+      type: string
+      enum: [merchant, customer]
+      description: Immutable account surface, not commerce permission.
+    display_name:
+      $ref: '#/AccountDisplayName'
+    locale:
+      $ref: '#/AccountLocale'
+    revision:
+      type: integer
+      format: int64
+      minimum: 1
+    updated_at:
+      type: string
+      format: date-time
+  description: The authenticated account's profile; no credentials or payment data.
+ChangeAccountProfile:
+  type: object
+  additionalProperties: false
+  required: [expected_revision, display_name, locale]
+  properties:
+    expected_revision:
+      type: integer
+      format: int64
+      minimum: 1
+      description: Exact profile revision inspected before changing preferences.
+    display_name:
+      $ref: '#/AccountDisplayName'
+    locale:
+      $ref: '#/AccountLocale'
+  description: Complete replacement of editable profile fields, never identity or permissions.

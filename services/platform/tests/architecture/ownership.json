@@ -1,5 +1,6 @@
 {
   "tables": {
+    "auth.accounts":"core", "auth.account_grants":"core", "auth.account_replays":"core", "auth.account_audit":"core",
     "auth.merchants": "core", "auth.grants": "core", "auth.provider_grants": "core",
     "commerce.stores": "core", "commerce.offering_revisions": "core",
     "commerce.request_replays": "core", "commerce.publication_audit": "core",
@@ -16,8 +17,9 @@
     "lodging.bookings": "lodging", "lodging.allocations": "lodging", "payments.obligations": "payment"
   },
   "functions": {
+    "auth.lookup_account_grant":"core",
     "auth.lookup_grant": "core", "auth.lookup_resource_grant": "core",
-    "auth.lookup_provider_grant": "core", "auth.lookup_guest_grant": "core",
+    "auth.lookup_provider_grant": "core", "auth.lookup_guest_grant": "core", "auth.lookup_guest_resource_grant": "core",
     "commerce.list_public_stores": "core", "commerce.public_store_by_number": "core",
     "commerce.admin_stores": "core", "commerce.admin_orders": "core",
     "commerce.notify_food_order_change": "food", "commerce.notify_public_offering_change": "core",
@@ -27,6 +29,7 @@
     "discovery.accept_catalog": "discovery", "commerce_internal.lookup_grant": "core"
   },
   "exceptions": [
+    {"path":"internal/food/persistence/queries/checkout.sql","query":"InsertGuestMCPGrant","object":"commerce.guest_grants","access":"write","reason":"Local resource-bound guest creation uses the same atomic Food checkout admission as InsertGuestGrant; no account or commerce-wide credential is issued."},
     {"path":"internal/food/persistence/queries/checkout.sql","query":"PruneAbandonedGuestGrants","object":"commerce.guest_grants","access":"write","reason":"Food checkout owns bounded guest-capacity cleanup; Core credential table remains shared until guest admission has an owned application boundary."},
     {"path":"internal/food/persistence/queries/checkout.sql","query":"PruneAbandonedGuestGrants","object":"commerce.guest_request_replays","access":"read","reason":"Do not remove guest grants with retained authorized replay outcomes."},
     {"path":"internal/food/persistence/queries/checkout.sql","query":"CountActiveGuestGrants","object":"commerce.guest_grants","access":"read","reason":"Store-scoped guest checkout capacity in the existing admission transaction."},

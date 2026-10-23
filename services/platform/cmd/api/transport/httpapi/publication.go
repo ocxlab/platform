@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	foodstore "ocp.local/platform/internal/food/persistence"
+	foodapp "ocp.local/platform/internal/food/application"
 	"strings"
 
 	"github.com/google/uuid"
@@ -64,29 +64,18 @@ func (s *Server) createFoodQuote(w http.ResponseWriter, r *http.Request, merchan
 		problem(w, 400, "invalid_request", "Invalid food selection.", nil)
 		return
 	}
-	calculate := func(p persistence.PublicOffering) (foodstore.QuoteCalculation, error) {
-		locale := ""
-		if body.Locale != nil {
-			locale = string(*body.Locale)
-		}
-		priced, total, expires, err := food.PriceModel(p.Model, p.Document, lines, locale, p.EvaluatedAt)
-		if err != nil {
-			return foodstore.QuoteCalculation{}, err
-		}
-		encoded, err := json.Marshal(priced)
-		note := ""
-		if body.Note != nil {
-			note = *body.Note
-		}
-		return foodstore.QuoteCalculation{Lines: encoded, Total: total, Note: note, ExpiresAt: expires}, err
+	locale, note := "", ""
+	if body.Locale != nil {
+		locale = string(*body.Locale)
 	}
-	var value foodstore.FoodQuote
-	var err error
+	if body.Note != nil {
+		note = *body.Note
+	}
+	var actor persistence.Principal
 	if guest {
-		value, err = foodstore.CreateGuestFoodQuote(r.Context(), s.db, principal(r), body.PublicationGeneration, calculate)
-	} else {
-		value, err = foodstore.CreateFoodQuote(r.Context(), s.db, merchant, store, body.PublicationGeneration, calculate)
+		actor = principal(r)
 	}
+	value, err := (foodapp.Checkout{DB: s.db}).Quote(r.Context(), actor, merchant, store, body.PublicationGeneration, lines, locale, note, guest)
 	if err != nil {
 		write(w, nil, err)
 		return

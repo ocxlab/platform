@@ -515,6 +515,19 @@ tasks:
     cmds:
       - '{{.COMPOSE}} run --rm --no-deps -e OCP_DEV_MERCHANT -e OCP_DEV_STORE -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/dev/provision -merchant-mcp'
 
+  dev:customer-mcp-credential:
+    desc: Print a separate one-hour Food checkout MCP credential for a visible STORE=store-N (local only)
+    env:
+      OCP_DEV_STORE: '{{.STORE | default ""}}'
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_DEV_STORE -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/dev/customer-mcp'
+
+  dev:account-credential:
+    desc: Create a local account fixture or grant for ACCOUNT=UUID (KIND, TRANSPORT, NAME, MERCHANT)
+    deps: [generate:go]
+    cmds:
+      - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_dev:ocp_local_only@db:5432/ocp_dev?sslmode=disable tools go run ./cmd/dev/account -kind="{{.KIND | default "customer"}}" -transport="{{.TRANSPORT | default "mcp"}}" -name="{{.NAME | default ""}}" -account="{{.ACCOUNT | default ""}}" -merchant="{{.MERCHANT | default ""}}"'
+
   mcp:inspect:
     desc: Check local merchant tool schemas using pinned Inspector (set OCP_MCP_TOKEN first)
     preconditions:

@@ -1,9 +1,8 @@
 package httpapi
 
 import (
-	"database/sql"
-	"encoding/json"
 	"net/http"
+	foodapp "ocp.local/platform/internal/food/application"
 	foodstore "ocp.local/platform/internal/food/persistence"
 
 	"github.com/google/uuid"
@@ -25,10 +24,7 @@ func (s *Server) PlaceFoodOrder(w http.ResponseWriter, r *http.Request, merchant
 		problem(w, 400, "invalid_request", "A quote reference and pickup fulfilment are required.", nil)
 		return
 	}
-	canonical, _ := json.Marshal(body)
-	result, err := persistence.Mutate(r.Context(), s.db, principal(r), "placeFoodOrder", store.String(), params.IdempotencyKey, canonical, func(tx *sql.Tx) (any, error) {
-		return foodstore.PlaceFoodOrder(r.Context(), tx, principal(r), body.QuoteId, uuid.MustParse(w.Header().Get("X-Request-ID")))
-	})
+	result, err := (foodapp.Checkout{DB: s.db}).Place(r.Context(), principal(r), body.QuoteId, params.IdempotencyKey, uuid.MustParse(w.Header().Get("X-Request-ID")))
 	write(w, result, err)
 }
 

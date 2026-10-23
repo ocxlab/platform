@@ -1,5 +1,40 @@
 # Development status
 
+## Customer Food MCP and Core account profiles
+
+24 October 2026. Customer Food MCP now has ten bounded intentions covering local
+store/menu discovery, dish/meal details, immutable priced-basket inspection and
+revision, explicit order confirmation, own-order tracking, and cancellation.
+REST and MCP share Food checkout operations; prices, agreed terms, durable work,
+audit, and successful retries retain their existing transactional authority.
+The new local one-hour checkout credential has its own resource audience and
+does not adopt browser purchases. See [customer access and limits](CUSTOMER-MCP.md).
+
+Core now owns merchant/customer personal profiles and language preferences,
+modular GET/PUT contracts, and two account intentions on each separate account
+MCP. Account credentials cannot authorize commerce. Profile changes recheck
+grants, enforce account RLS and expected revisions, serialize concurrent retries,
+and commit minimal audit/replay evidence atomically. These are explicitly
+provisioned development accounts, not OAuth, signup, recovery, addresses, or
+saved-payment support. See [account management](ACCOUNT-MANAGEMENT.md).
+
+The focused HTTP/PostgreSQL run passed for Customer MCP, both account kinds, and
+concurrent account retries (3.879 seconds). Full `task check` then passed source-only
+generation checks, Spectral, sqlc, migration replay/Squawk, zero Go lint issues,
+vet/race tests, PostgreSQL integration (81.450 seconds), Svelte checks/tests, and
+API/web builds. The gate caught and corrected a local-command lint issue before
+passing. `task smoke` passed after rebuilding the API and applying migrations
+without resetting development data; this checks liveness, credential rejection,
+and SQL connectivity, not commerce readiness. The expanded Food Gremlins run
+killed 193 mutants with zero survivors and 197 uncovered unit-runner expressions.
+
+Tests cover denied credential audiences/scopes, cross-actor/account isolation,
+revocation, stale edits, retained retry results, exact confirmed totals, replay
+after quote deletion/menu withdrawal, and no duplicate concurrent account edit.
+No new independent review, Inspector run, production identity setup, real payment,
+or model-driven task evaluation is claimed. Frontend state ownership is the next
+coherent slice; provider admin remains gated on the founder's screenshots.
+
 ## Merchant MCP batches completed
 
 24 October 2026. The three authorized merchant batches are implemented: focused

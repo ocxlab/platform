@@ -25,6 +25,9 @@ SELECT $1,m.id,$2,ARRAY(SELECT jsonb_array_elements_text(sqlc.arg(scopes_json)::
 -- name: LookupGuestGrant :one
 SELECT id::uuid,merchant_id::uuid,store_id::uuid FROM auth.lookup_guest_grant($1);
 
+-- name: LookupGuestResourceGrant :one
+SELECT id::uuid,merchant_id::uuid,store_id::uuid FROM auth.lookup_guest_resource_grant($1,$2);
+
 -- name: LockActiveGuestGrant :one
 SELECT id FROM commerce.guest_grants WHERE merchant_id=$1 AND store_id=$2 AND id=$3 AND NOT revoked AND expires_at>clock_timestamp() FOR SHARE;
 

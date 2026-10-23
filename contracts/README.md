@@ -13,6 +13,13 @@ is maintained separately from REST. It documents task-oriented tool semantics;
 the pinned SDK derives their JSON Schemas from typed inputs. It is not an
 automatic OpenAPI-to-tool export or a replacement for these REST definitions.
 
+The [Customer Food contract](mcp/v1/customer/README.md) describes browsing,
+explicit priced baskets, and owned pickup orders. The separate
+[Core account contracts](mcp/v1/accounts/README.md) cover personal profile
+inspection and preferences, not commerce or payment authority. Their modular
+REST resources live under `schemas/accounts/` and use an `account` access
+audience with distinct merchant/customer, REST/MCP resources.
+
 ```text
 contracts/
   openapi/v1/
@@ -153,7 +160,7 @@ every retry. Unknown offering models return 422, not optimistic acceptance.
 Revisit retention/archival before general availability; do not enable unbounded
 merchant write volume without that explicit operational and contract decision.
 
-Each operation declares `x-access` as public, merchant, provider, or guest. Public operations
+Each operation declares `x-access` as public, merchant, provider, guest, or account. Public operations
 also explicitly clear security; private operations use the matching bearer scheme
 and an `x-required-scope`. Startup rejects inconsistent audiences or unknown/missing
 actions. These local extensions describe opaque grants, not OAuth scope negotiation.

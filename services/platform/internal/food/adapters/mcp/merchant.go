@@ -6,9 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +18,7 @@ import (
 	"ocp.local/platform/internal/core/persistence"
 	"ocp.local/platform/internal/food/offering"
 	foodstore "ocp.local/platform/internal/food/persistence"
+	"ocp.local/platform/internal/infra/mcplocal"
 	"ocp.local/platform/internal/infra/telemetry"
 )
 
@@ -35,80 +34,15 @@ type Merchant struct {
 // scoped development grant is checked afresh on every stateless HTTP request.
 // Remote deployment requires a production OAuth resource-server boundary.
 func (s Merchant) LocalHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("X-Request-ID", uuid.NewString())
-		host := r.Host
-		if parsed, _, err := net.SplitHostPort(host); err == nil {
-			host = parsed
-		}
-		if host != "localhost" && host != "127.0.0.1" && host != "[::1]" && host != "::1" {
-			boundaryError(w, 403, "forbidden")
-			return
-		}
-		if origin := r.Header.Get("Origin"); origin != "" {
-			scheme := "http"
-			if r.TLS != nil {
-				scheme = "https"
-			}
-			u, err := url.Parse(origin)
-			if err != nil || u.Scheme != scheme || u.Host != r.Host || u.Path != "" || u.RawQuery != "" || u.Fragment != "" || u.User != nil {
-				boundaryError(w, 403, "forbidden")
-				return
-			}
-		}
-		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", "POST")
-			boundaryError(w, 405, "method_not_allowed")
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-		header := r.Header.Get("Authorization")
-		if !strings.HasPrefix(header, "Bearer ") {
-			boundaryError(w, 401, "unauthenticated")
-			return
-		}
-		p, err := persistence.AuthenticateResource(ctx, s.DB, strings.TrimPrefix(header, "Bearer "), persistence.MerchantMCP)
-		if errors.Is(err, persistence.ErrUnauthenticated) {
-			boundaryError(w, 401, "unauthenticated")
-			return
-		}
-		if err != nil {
-			boundaryError(w, 503, "unavailable")
-			return
-		}
-		// Per-request server prevents one merchant's tool discovery or principal
-		// from being retained in another request's session.
-		server := s.server(p)
-		handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, &mcp.StreamableHTTPOptions{
-			Stateless: true, JSONResponse: true, MaxRequestBodyBytes: 262144, PropagateRequestCancellation: true,
-		})
-		handler.ServeHTTP(privateResponse{w}, r.WithContext(ctx))
-	})
+	return localHandler(s.DB, func(ctx context.Context, db *sql.DB, token string) (persistence.Principal, error) {
+		return persistence.AuthenticateResource(ctx, db, token, persistence.MerchantMCP)
+	}, s.server)
 }
 
-// The SDK controls its transport cache headers. Preserve our stronger private-
-// response policy at commitment rather than letting a later header overwrite it.
-type privateResponse struct{ http.ResponseWriter }
-
-func (w privateResponse) Unwrap() http.ResponseWriter { return w.ResponseWriter }
-func (w privateResponse) WriteHeader(status int) {
-	w.Header().Set("Cache-Control", "no-store")
-	w.ResponseWriter.WriteHeader(status)
-}
-func (w privateResponse) Write(data []byte) (int, error) {
-	w.Header().Set("Cache-Control", "no-store")
-	return w.ResponseWriter.Write(data)
-}
-
-func boundaryError(w http.ResponseWriter, status int, code string) {
-	if status == 401 {
-		w.Header().Set("WWW-Authenticate", `Bearer realm="local-merchant-mcp"`)
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]any{"type": "about:blank", "status": status, "title": http.StatusText(status), "code": code, "instance": "urn:uuid:" + w.Header().Get("X-Request-ID")})
+func localHandler(db *sql.DB, authenticate func(context.Context, *sql.DB, string) (persistence.Principal, error), serverFor func(persistence.Principal) *mcp.Server) http.Handler {
+	return mcplocal.Handler(func(ctx context.Context, token string) (persistence.Principal, error) {
+		return authenticate(ctx, db, token)
+	}, serverFor, persistence.ErrUnauthenticated)
 }
 
 type storesInput struct {
@@ -370,6 +304,22 @@ func toolError(err error) (*mcp.CallToolResult, map[string]any, error) {
 	var publicationConflict *persistence.PublicationConflict
 	var orderConflict *foodstore.OrderRevisionConflict
 	switch {
+	case errors.Is(err, persistence.ErrUnauthenticated):
+		code, next = "unauthenticated", "Authenticate again with the correct resource-bound credential."
+	case errors.Is(err, food.ErrSelection):
+		code, next = "invalid_selection", "Inspect the dish and required choices; correct the selection before retrying."
+	case errors.Is(err, foodstore.ErrQuoteExpired):
+		code, next = "quote_expired", "Reprice the basket and obtain confirmation of its new total."
+	case errors.Is(err, foodstore.ErrQuoteUsed):
+		code, next = "quote_already_placed", "Retry the original placement key or inspect the existing order; do not place again."
+	case errors.Is(err, foodstore.ErrOrderingPaused):
+		code, next = "ordering_paused", "The store is not accepting new orders."
+	case errors.Is(err, foodstore.ErrQuoteCapacity):
+		code, next = "quote_capacity", "Wait before retrying checkout."
+	case errors.Is(err, foodstore.ErrGuestCapacity):
+		code, next = "guest_capacity", "Wait before retrying checkout."
+	case errors.Is(err, persistence.ErrPublicStoreCursor):
+		code, next = "invalid_request", "Keep the original query with its returned continuation."
 	case errors.Is(err, commerce.ErrForbidden):
 		code, next = "forbidden", "Request the required merchant permission."
 	case errors.Is(err, commerce.ErrInvalid):

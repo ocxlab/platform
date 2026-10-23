@@ -113,7 +113,7 @@ func TestProtectedOperationsDeclareScope(t *testing.T) {
 	for _, path := range spec.Paths.Map() {
 		for _, operation := range path.Operations() {
 			access, ok := operation.Extensions["x-access"].(string)
-			if !ok || (access != "merchant" && access != "provider" && access != "public" && access != "guest") {
+			if !ok || (access != "merchant" && access != "provider" && access != "public" && access != "guest" && access != "account") {
 				t.Fatalf("missing audience: %s", operation.OperationID)
 			}
 			for status, response := range operation.Responses.Map() {
@@ -134,6 +134,7 @@ func TestProtectedOperationsDeclareScope(t *testing.T) {
 				continue
 			}
 			scope, ok := operation.Extensions["x-required-scope"].(string)
+			known["account:read"], known["account:write"] = true, true
 			if !ok || !known[scope] {
 				t.Fatalf("missing action policy: %s", operation.OperationID)
 			}

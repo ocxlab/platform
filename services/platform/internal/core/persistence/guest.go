@@ -23,6 +23,18 @@ func AuthenticateGuest(ctx context.Context, db *sql.DB, token string) (Principal
 	return p, err
 }
 
+func AuthenticateCustomerMCP(ctx context.Context, db *sql.DB, token string) (Principal, error) {
+	if len(token) != 47 || token[:4] != "ocm_" {
+		return Principal{}, ErrUnauthenticated
+	}
+	digest := sha256.Sum256([]byte(token))
+	row, err := sqlgen.New(db).LookupGuestResourceGrant(ctx, sqlgen.LookupGuestResourceGrantParams{Candidate: digest[:], RequestedResource: "customer-food-mcp"})
+	if errors.Is(err, sql.ErrNoRows) {
+		return Principal{}, ErrUnauthenticated
+	}
+	return Principal{ID: row.ID, MerchantID: row.MerchantID, StoreID: row.StoreID, Guest: true, Scopes: []string{"quote:create", "order:create", "order:read", "order:cancel"}}, err
+}
+
 // Recheck at the application transaction boundary, including before replay.
 func CheckGuest(ctx context.Context, tx *sql.Tx, p Principal) error {
 	if !p.Guest {
