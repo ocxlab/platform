@@ -2,7 +2,8 @@
   import { useI18n } from '$lib/i18n/context';
   const { t, locale } = useI18n();
   import { tick, untrack, onMount } from 'svelte';
-  import { invalidateAll } from '$app/navigation';
+  import { afterNavigate, beforeNavigate, invalidateAll } from '$app/navigation';
+  import { page } from '$app/state';
   import { liveUpdates } from '$lib/live-updates';
   import FoodBasket from '$lib/components/FoodBasket.svelte';
   import MenuBrowser from '$lib/components/MenuBrowser.svelte';
@@ -14,12 +15,22 @@
   import { mealChoices, menuName } from '$lib/food-menu';
   let { data, form } = $props();
   let interactive = $state(false);
-  onMount(() => {
-    interactive = true;
-    const updates = liveUpdates(`${window.location.pathname}/updates`, invalidateAll, () => {});
+  let navigating = $state(false);
+  let navigationEpoch = $state(0);
+  const updatesPath = $derived(`${page.url.pathname}/updates`);
+  let suspend = () => {};
+  beforeNavigate(() => { suspend(); navigating = true; });
+  afterNavigate(() => { navigating = false; navigationEpoch++; });
+  onMount(() => { interactive = true; });
+  $effect(() => {
+    void navigationEpoch;
+    if (!interactive || navigating) return;
+    const endpoint = updatesPath;
+    const updates = untrack(() => liveUpdates(endpoint, invalidateAll, () => {}));
+    suspend = updates.close;
     const visible = () => updates.visible(document.visibilityState === 'visible');
-    visible(); document.addEventListener('visibilitychange', visible);
-    return () => { updates.close(); document.removeEventListener('visibilitychange', visible); };
+    untrack(visible); document.addEventListener('visibilitychange', visible);
+    return () => { suspend = () => {}; updates.close(); document.removeEventListener('visibilitychange', visible); };
   });
   let itemId = $state(untrack(() => data.selectedItem));
   let configurationHeading = $state<HTMLHeadingElement>();

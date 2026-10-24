@@ -1,0 +1,103 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { basketCheckout, type CheckedBasket } from './basket-checkout';
+
+const checked = { quote: { id: 'quote-1' }, intent: { quote: 'quote-1', key: 'same-retry-key' } } as CheckedBasket;
+describe('basket checkout lifecycle', () => {
+  afterEach(() => vi.useRealTimers());
+  it('invalidates a ready selection immediately and renews an expired quote on request', async () => {
+    vi.useFakeTimers(); const check = vi.fn().mockResolvedValue(checked);
+    const actor = basketCheckout(check).start();
+    expect(actor.getSnapshot().context).toEqual({ desired: '', requested: '', checked: undefined, error: false });
+    actor.send({ type: 'CHANGE', input: 'one' }); await vi.advanceTimersByTimeAsync(349);
+    expect(check).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(actor.getSnapshot().matches('ready')).toBe(true);
+    actor.send({ type: 'CHANGE', input: 'two' }); actor.send({ type: 'PLACE' });
+    expect(actor.getSnapshot().matches('debouncing')).toBe(true);
+    await vi.advanceTimersByTimeAsync(350);
+    expect(actor.getSnapshot().context.requested).toBe('two');
+    actor.send({ type: 'RETRY' }); expect(actor.getSnapshot().matches('debouncing')).toBe(true);
+    await vi.advanceTimersByTimeAsync(350); expect(check).toHaveBeenCalledTimes(3);
+    actor.send({ type: 'CHANGE', input: '' });
+    expect(actor.getSnapshot().context).toEqual({ desired: '', requested: '', checked: undefined, error: false });
+    actor.stop();
+  });
+  it('queues changed inputs during placement and renews them only after failure', async () => {
+    vi.useFakeTimers(); const check = vi.fn().mockResolvedValue(checked);
+    const actor = basketCheckout(check).start(); actor.send({ type: 'CHANGE', input: 'one' });
+    await vi.advanceTimersByTimeAsync(350); actor.send({ type: 'PLACE' });
+    actor.send({ type: 'CHANGE', input: 'two' }); await vi.advanceTimersByTimeAsync(1000);
+    expect(actor.getSnapshot().matches('placing')).toBe(true); expect(check).toHaveBeenCalledTimes(1);
+    actor.send({ type: 'REJECTED' }); expect(actor.getSnapshot().matches('debouncing')).toBe(true);
+    await vi.advanceTimersByTimeAsync(350); expect(check).toHaveBeenCalledTimes(2);
+    actor.send({ type: 'PLACE' }); actor.send({ type: 'REJECTED' });
+    actor.send({ type: 'RETRY' }); expect(actor.getSnapshot().matches('debouncing')).toBe(true);
+    await vi.advanceTimersByTimeAsync(350); expect(check).toHaveBeenCalledTimes(3); actor.stop();
+  });
+  it('discards an old failed check, and clears quote failures when explicitly retried', async () => {
+    vi.useFakeTimers(); let reject!: (reason: Error) => void;
+    const check = vi.fn().mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail; }))
+      .mockRejectedValueOnce(new Error('latest failed')).mockResolvedValue(checked);
+    const actor = basketCheckout(check).start(); actor.send({ type: 'CHANGE', input: 'one' });
+    await vi.advanceTimersByTimeAsync(350); actor.send({ type: 'CHANGE', input: 'two' });
+    reject(new Error('old failed')); await vi.advanceTimersByTimeAsync(0);
+    expect(actor.getSnapshot().matches('debouncing')).toBe(true); expect(actor.getSnapshot().context.error).toBe(false);
+    await vi.advanceTimersByTimeAsync(350);
+    expect(actor.getSnapshot().context.error).toBe(true); expect(actor.getSnapshot().matches('quoteFailed')).toBe(true);
+    actor.send({ type: 'RETRY' }); await vi.advanceTimersByTimeAsync(350);
+    expect(actor.getSnapshot().matches('ready')).toBe(true); expect(actor.getSnapshot().context.error).toBe(false); actor.stop();
+  });
+  it('debounces and serializes cookie-writing quotes, ignoring stale results', async () => {
+    vi.useFakeTimers();
+    let finish!: (value: CheckedBasket) => void;
+    const check = vi.fn((_input: string, _signal: AbortSignal) => new Promise<CheckedBasket>(resolve => { finish = resolve; }));
+    const actor = basketCheckout(check).start();
+    actor.send({ type: 'CHANGE', input: 'old' });
+    await vi.advanceTimersByTimeAsync(350);
+    actor.send({ type: 'CHANGE', input: 'new' });
+    actor.send({ type: 'PLACE' });
+    expect(actor.getSnapshot().matches('quoting')).toBe(true);
+    expect(check).toHaveBeenCalledTimes(1);
+    finish(checked); await vi.advanceTimersByTimeAsync(0);
+    expect(actor.getSnapshot().matches('debouncing')).toBe(true);
+    expect(actor.getSnapshot().context.checked).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(350);
+    expect(check).toHaveBeenCalledTimes(2);
+    expect(check.mock.calls[1][0]).toBe('new');
+    finish(checked); await vi.advanceTimersByTimeAsync(0);
+    expect(actor.getSnapshot().matches('ready')).toBe(true);
+    expect(actor.getSnapshot().context.requested).toBe('new'); actor.stop();
+  });
+  it('permits deliberate placement retry with the same intent but never automatic retry', async () => {
+    vi.useFakeTimers(); const check = vi.fn().mockResolvedValue(checked);
+    const actor = basketCheckout(check).start(); actor.send({ type: 'PLACE' });
+    expect(actor.getSnapshot().matches('idle')).toBe(true);
+    actor.send({ type: 'CHANGE', input: 'basket' }); await vi.advanceTimersByTimeAsync(350);
+    actor.send({ type: 'PLACE' }); actor.send({ type: 'PLACE' });
+    expect(actor.getSnapshot().matches('placing')).toBe(true);
+    actor.send({ type: 'REJECTED' }); await vi.advanceTimersByTimeAsync(10_000);
+    expect(actor.getSnapshot().matches('placeFailed')).toBe(true);
+    expect(check).toHaveBeenCalledTimes(1);
+    expect(actor.getSnapshot().context.checked?.intent).toEqual(checked.intent);
+    actor.send({ type: 'PLACE' }); actor.send({ type: 'REDIRECTED' });
+    expect(actor.getSnapshot().status).toBe('done'); actor.stop();
+  });
+  it('fails closed, retries only on request, clears empty selections, and aborts disposal', async () => {
+    vi.useFakeTimers(); const check = vi.fn().mockRejectedValue(new Error('offline'));
+    const actor = basketCheckout(check).start();
+    actor.send({ type: 'CHANGE', input: 'basket' }); await vi.advanceTimersByTimeAsync(350);
+    expect(actor.getSnapshot().matches('quoteFailed')).toBe(true);
+    actor.send({ type: 'PLACE' }); await vi.advanceTimersByTimeAsync(60_000);
+    expect(check).toHaveBeenCalledTimes(1);
+    actor.send({ type: 'RETRY' }); await vi.advanceTimersByTimeAsync(350);
+    expect(check).toHaveBeenCalledTimes(2);
+    actor.send({ type: 'CHANGE', input: '' });
+    expect(actor.getSnapshot().matches('idle')).toBe(true); actor.stop();
+    let signal!: AbortSignal; let finish!: (value: CheckedBasket) => void;
+    const late = basketCheckout((_input, abort) => { signal = abort; return new Promise(resolve => { finish = resolve; }); }).start();
+    late.send({ type: 'CHANGE', input: 'basket' }); await vi.advanceTimersByTimeAsync(350);
+    late.stop(); expect(signal.aborted).toBe(true);
+    finish(checked); await vi.advanceTimersByTimeAsync(0);
+    expect(late.getSnapshot().context.checked).toBeUndefined();
+  });
+});

@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { onMount, tick, untrack } from 'svelte';
-  import { deserialize, enhance } from '$app/forms';
+  import { onMount, tick } from 'svelte';
+  import { applyAction, deserialize, enhance } from '$app/forms';
+  import { basketCheckout, type CheckedBasket } from '$lib/basket-checkout';
   import type { components } from '$lib/api/generated';
   import { basketMeal, mealChoices, basketPrice, basketSignature, menuName, validBasketLine, type BasketLine, type FoodMenu } from '$lib/food-menu';
   import { useI18n } from '$lib/i18n/context';
@@ -35,17 +36,15 @@
   let basketDialog = $state<HTMLDialogElement>();
   let reopenBasket = false;
   let heading = $state<HTMLHeadingElement>();
-  let validatedQuote = $state(untrack(() => quote));
-  let validatedIntent = $state(untrack(() => intent));
-  let validatedInput = $state('');
-  let checking = $state(false);
+  let checkout = $state<ReturnType<typeof basketCheckout>>();
+  let checkoutState = $state<ReturnType<ReturnType<typeof basketCheckout>['getSnapshot']>>();
+  const validatedQuote = $derived(checkoutState?.context.checked?.quote);
+  const validatedIntent = $derived(checkoutState?.context.checked?.intent);
+  const checking = $derived(checkoutState?.matches('debouncing') || checkoutState?.matches('quoting'));
   let checkError = $state('');
   let refresh = $state(0);
-  let alive = true;
-  let pending = false;
-  let desiredInput = '';
   let ready = $state(false);
-  let busy = $state(false);
+  const busy = $derived(checkoutState?.matches('placing') || checkoutState?.matches('complete'));
   let status = $state('');
   let expandedNotes = $state<number[]>([]);
   const notePrefix = $props.id();
@@ -54,7 +53,7 @@
   const item = $derived(menu.items.find(item => item.id === selected));
   const signature = $derived(basketSignature(lines, note));
   const input = $derived(JSON.stringify({ publication_generation: generation, locale: locale(), lines, note }));
-  const currentQuote = $derived(validatedQuote && validatedInput === input && basketSignature(validatedQuote.lines.map(l => l.selection), validatedQuote.note ?? '') === signature ? validatedQuote : undefined);
+  const currentQuote = $derived(validatedQuote && checkoutState?.context.requested === input && (checkoutState.matches('ready') || checkoutState.matches('placeFailed') || busy) && basketSignature(validatedQuote.lines.map(l => l.selection), validatedQuote.note ?? '') === signature ? validatedQuote : undefined);
   const total = $derived(lines.reduce((sum, line) => sum + basketPrice(menu, line), 0));
   const configuredLine = $derived<BasketLine>({ item_id: selected, variant_id: variant, quantity, options: options.map(value => { const [group_id, option_id] = value.split(':'); return { group_id, option_id }; }),
     ...(meal ? { meal_deal: { deal_id: meal, addon_item_id: addon.split(':')[0] ?? '', addon_variant_id: addon.split(':')[1] ?? '' } } : {}), ...(itemNote ? { note: itemNote } : {}) });
@@ -72,43 +71,32 @@
       && typeof basket.note === 'string' && [...basket.note].length <= 500) {
       lines = basket.lines; note = basket.note;
     } else if (!saved && quote) { lines = quote.lines.map(line => line.selection); note = quote.note ?? ''; }
-    ready = true;
-    return () => { alive = false; };
+    const actor = basketCheckout(checkBasket);
+    actor.subscribe(value => { checkoutState = value; });
+    actor.start(); checkout = actor; ready = true;
+    return () => { actor.stop(); };
   });
-  async function synchronize() {
-    if (pending || !desiredInput || !alive || untrack(() => busy)) return;
-    const requested = desiredInput;
-    pending = true; checking = true; checkError = '';
-    try {
+  async function checkBasket(requested: string, signal: AbortSignal): Promise<CheckedBasket> {
+      checkError = '';
       const body = new FormData(); body.set('basket', requested);
-      const response = await fetch('?/quote', { method: 'POST', body, headers: { 'x-sveltekit-action': 'true', 'x-ocp-basket-preview': 'true' } });
+      const response = await fetch('?/quote', { signal, method: 'POST', body, headers: { 'x-sveltekit-action': 'true', 'x-ocp-basket-preview': 'true' } });
       const result = deserialize(await response.text());
-      if (!alive || desiredInput !== requested) return;
       if (result.type === 'success') {
-        const data = result.data as { quote: components['schemas']['FoodQuote']; intent: { quote: string; key: string } };
-        validatedQuote = data.quote; validatedIntent = data.intent; validatedInput = requested;
-      } else {
-        checkError = result.type === 'failure' ? String((result.data as { error?: string })?.error ?? t('basket-check-failed')) : t('basket-check-failed');
+        return result.data as CheckedBasket;
       }
-    } catch { if (alive && desiredInput === requested) checkError = t('basket-check-failed'); }
-    finally {
-      pending = false;
-      if (alive && desiredInput && desiredInput !== requested) void synchronize();
-      else checking = false;
-    }
+      throw new Error(result.type === 'failure' ? String((result.data as { error?: string })?.error ?? t('basket-check-failed')) : t('basket-check-failed'));
   }
   $effect(() => {
-    const payload = input; const revision = refresh;
-    if (!ready) return;
-    desiredInput = lines.length && accepting ? payload : '';
-    if (!desiredInput) { checking = false; checkError = ''; return; }
-    checking = true;
-    const timer = setTimeout(() => { void revision; void synchronize(); }, 350);
-    return () => clearTimeout(timer);
+    if (!ready || !checkout) return;
+    void refresh;
+    checkout.send({ type: 'CHANGE', input: lines.length && accepting ? input : '' });
+  });
+  $effect(() => {
+    checkError = checkoutState?.context.error ? t('basket-check-failed') : '';
   });
   $effect(() => {
     if (!currentQuote) return;
-    const timer = setTimeout(() => { validatedInput = ''; refresh++; }, Math.max(0, Date.parse(currentQuote.expires_at) - Date.now()));
+    const timer = setTimeout(() => { checkout?.send({ type: 'RETRY' }); }, Math.max(0, Date.parse(currentQuote.expires_at) - Date.now()));
     return () => clearTimeout(timer);
   });
   $effect(() => {
@@ -196,9 +184,25 @@
       {#if checkError}<ActionButton type="button" label={t('basket-retry')} onclick={() => refresh++} />{/if}
       {#if currentQuote && validatedIntent && validatedIntent.quote === currentQuote.id && !checking}
         <section id="selection-quote" aria-label={t('storefront-quote')}>
-          <form method="POST" action="?/place" use:enhance={() => { busy = true; return async ({ result, update }) => {
-            try { if (result.type === 'redirect') sessionStorage.setItem(storageKey, JSON.stringify({ generation, lines: [], note: '' })); } catch { /* storage optional */ }
-            try { await update(); } finally { busy = false; }
+          <form method="POST" action="?/place" use:enhance={({ cancel }) => {
+            if (!checkoutState || !(checkoutState.matches('ready') || checkoutState.matches('placeFailed')) || !currentQuote || checking || !accepting) { cancel(); return; }
+            checkout?.send({ type: 'PLACE' });
+            return async ({ result, update }) => {
+            if (result.type === 'redirect') {
+              // The action's 303 is the authority for the destination. Apply it
+              // explicitly; no basket refresh may interrupt receipt navigation.
+              basketDialog?.close();
+              // The server has confirmed placement. Persist before navigation
+              // destroys this component and its reactive derived values.
+              try { sessionStorage.setItem(storageKey, JSON.stringify({ generation, lines: [], note: '' })); } catch { /* storage optional */ }
+              try {
+                await applyAction(result);
+                checkout?.send({ type: 'REDIRECTED' });
+              } catch { checkout?.send({ type: 'REJECTED' }); basketDialog?.showModal(); }
+            } else {
+              checkout?.send({ type: 'REJECTED' });
+              await update({ reset: false, invalidateAll: false });
+            }
           }; }}>
             <input type="hidden" name="quote" value={validatedIntent.quote} /><input type="hidden" name="key" value={validatedIntent.key} />
             <ActionButton icon={ShoppingBag} label={t('storefront-place')} disabled={busy || !accepting} />

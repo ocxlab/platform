@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation';
+  import { untrack } from 'svelte';
+  import { afterNavigate, beforeNavigate, invalidateAll } from '$app/navigation';
   import { useI18n } from '$lib/i18n/context';
   import { liveUpdates, type LiveStatus } from '$lib/live-updates';
   import Radio from '@lucide/svelte/icons/radio';
@@ -8,13 +9,23 @@
   const { t } = useI18n();
   let status = $state<LiveStatus>('connecting');
   let manual = () => {};
+  let suspend = () => {};
+  let navigating = $state(false);
+  let navigationEpoch = $state(0);
+  beforeNavigate(() => { suspend(); navigating = true; });
+  afterNavigate(() => { navigating = false; navigationEpoch++; });
   $effect(() => {
-    const updates = liveUpdates(url, read ?? invalidateAll, value => { status = value; });
+    void navigationEpoch;
+    if (navigating) return;
+    const endpoint = url;
+    const reader = read ?? invalidateAll;
+    const updates = untrack(() => liveUpdates(endpoint, reader, value => { status = value; }));
+    suspend = updates.close;
     manual = updates.refresh;
     const visibility = () => updates.visible(document.visibilityState === 'visible');
-    visibility();
+    untrack(visibility);
     document.addEventListener('visibilitychange', visibility);
-    return () => { manual = () => {}; document.removeEventListener('visibilitychange', visibility); updates.close(); };
+    return () => { manual = () => {}; suspend = () => {}; document.removeEventListener('visibilitychange', visibility); updates.close(); };
   });
 </script>
 <div class="live-controls">

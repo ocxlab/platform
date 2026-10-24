@@ -29,6 +29,7 @@ test('48-product fixture loads for merchants and guests and prices a configured 
   await page.getByRole('button', { name: 'Connect merchant' }).click();
   await expect(page.getByRole('row', { name: /Large menu demo/ })).toContainText('48');
   await page.getByRole('link', { name: 'Large menu demo', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/merchant/stores/large-menu-demo-${store.handle}$`));
   await expect(page.getByLabel('Item name', { exact: true })).toHaveCount(48);
   await expect(page.getByLabel('Category name', { exact: true })).toHaveCount(7);
   await page.getByLabel('Category name', { exact: true }).first().fill('Kitchen favourites');

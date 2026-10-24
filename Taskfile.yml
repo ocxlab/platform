@@ -373,7 +373,7 @@ tasks:
       - '{{.COMPOSE}} up --force-recreate --detach --wait test-db'
       - '{{.COMPOSE}} run --rm --no-deps -e OCP_MIGRATION_DATABASE_URL=postgres://ocp_test:ocp_test_local_only@test-db:5432/ocp_test?sslmode=disable tools go run ./cmd/ops/migrate'
       - '{{.COMPOSE}} up --force-recreate --detach --wait browser-api browser-web-dev'
-      - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/test/browser-fixture | {{.COMPOSE}} run --rm --no-deps -T -e OCP_BROWSER_URL=http://browser-web-dev:3000 browser node scripts/run-browser-tests.mjs'
+      - '{{.COMPOSE}} run --rm --no-deps tools go run ./cmd/test/browser-fixture | {{.COMPOSE}} run --rm --no-deps -T -e OCP_BROWSER_URL=http://browser-web-dev:3000 browser node scripts/run-browser-tests.mjs {{.CLI_ARGS}}'
 
   check:
     desc: Run formatting checks, vet, race tests, and the runtime build locally

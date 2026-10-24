@@ -48,6 +48,18 @@ profile/preferences tools are now implemented; see their linked contracts and
 development status for verified behavior. Full-merchant local MCP credentials now include
 order read/manage; existing restricted credentials are not silently upgraded.
 
+## Configurable currencies follow-up
+
+After the current checkout, frontend-state, OAuth, and saved-payment work, remove
+Shopping's hard-coded EUR assumption. Providers in other countries must be able
+to configure supported/default currencies. Preserve the currency on each offer,
+quote, agreed order, and payment; validate matching currencies rather than silently
+converting amounts. Account for currency-specific minor units and localized display.
+Include the shared Payment `Terms.Validate` EUR restriction, Food contracts,
+fixtures, persistence constraints, and price formatting in that audit, rather
+than changing only Shopping's literal.
+This is a recorded follow-up, not implemented multi-currency support or an FX service.
+
 ## Verification and boundaries
 
 Keep OpenAPI modular, generated artifacts ignored, stable safe error codes, tenant

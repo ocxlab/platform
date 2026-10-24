@@ -47,6 +47,22 @@ SQL functions, telemetry internals, and browser behavior are not mutated by this
 
 ## Executed results
 
+24 October 2026. A focused Stryker run of `src/lib/basket-checkout.ts`
+killed **87 of 92 mutations (94.57%)**, with five survivors and zero uncovered
+expressions, timeouts, or errors. Its first run scored 75%; additional tests now
+cover ready-input invalidation, placement-time input changes, stale failures,
+explicit retries, expiry renewal, and initial context. Six actor tests exercise
+serialized cookie-writing quotes, fail-closed placement, duplicate submission,
+retained retry identity, and disposal. Run in `web-mutation` with
+`pnpm exec stryker run --mutate src/lib/basket-checkout.ts`.
+
+The survivors remove type metadata, make the CHANGE-only action's event guard
+unconditional, change the unused machine ID, or change initial requested/error
+values overwritten by idle entry. They appear equivalent under the current
+wiring; this is not a proof for future callers. No mutants were suppressed.
+The run does not mutate enhanced Svelte forms, browser redirects, or database
+checkout. Those require separate browser and integration evidence.
+
 24 October 2026. A focused Stryker run on the new XState-based
 `src/lib/live-updates.ts` killed **111 of 114 mutations (97.37%)**, with three
 survivors, zero uncovered expressions, timeouts, or errors. The survivors remove

@@ -2,7 +2,20 @@ import { reviewBasket } from './support/basket';
 import { test, expect } from '@playwright/test';
 const fixture = JSON.parse(process.env.OCP_BROWSER_FIXTURE ?? '{}') as { merchant_id: string; merchant_token: string; provider_token: string };
 test('merchant publishes, guest selects, provider suspends and restores', async ({ page, browser, request }) => {
+  // This covers several complete orders, moderation, payments and RTL layouts.
+  // Bound the whole journey separately; individual assertions retain their limits.
+  test.setTimeout(240_000);
   const browserErrors: string[] = [];
+  await page.addInitScript(() => {
+    const sources: EventSource[] = [];
+    const Native = window.EventSource;
+    window.EventSource = class extends Native {
+      constructor(url: string | URL, options?: EventSourceInit) { super(url, options); sources.push(this); }
+    };
+    (window as Window & { hintOldSources?: () => void }).hintOldSources = () => {
+      for (const source of sources) source.dispatchEvent(new Event('invalidate'));
+    };
+  });
   page.on('pageerror', error => browserErrors.push(error.stack ?? error.message));
   page.on('console', entry => { if (entry.text().includes('Failed to hydrate')) browserErrors.push(entry.text()); });
   await page.goto('/merchant');
@@ -33,8 +46,20 @@ test('merchant publishes, guest selects, provider suspends and restores', async 
   await expect(tabs.getByRole('link', { name: 'Menu', exact: true })).toHaveAttribute('aria-current', 'page');
   await tabs.getByRole('link', { name: 'Orders', exact: true }).click();
   await expect(tabs.getByRole('link', { name: 'Orders', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByText('Live updates connected', { exact: true })).toBeVisible();
+  // Deliver a late hint while the next route's data is in flight. The outgoing
+  // page must suspend SSE before it can invalidate (and win over) navigation.
+  let injected = false;
+  await page.locator('body').evaluate(body => body.removeAttribute('data-sveltekit-preload-data'));
+  await page.route('**/merchant/stores/*/__data.json*', async route => {
+    injected = true;
+    await page.evaluate(() => (window as Window & { hintOldSources?: () => void }).hintOldSources?.());
+    await route.continue();
+  });
   await tabs.getByRole('link', { name: 'Menu', exact: true }).click();
   await expect(page).toHaveURL(workspace);
+  expect(injected).toBe(true);
+  await page.unroute('**/merchant/stores/*/__data.json*');
   await page.goto('/merchant');
   await expect(page.getByRole('region', { name: 'Your stores' }).getByRole('link', { name: 'Neighbourhood Kitchen' })).toBeVisible();
   await expect(page.getByLabel('Store identifier', { exact: true })).toHaveCount(0);

@@ -1,5 +1,60 @@
 # Development status
 
+## Reviewed basket checkout and navigation correction
+
+24 October 2026. Basket quote/placement coordination now uses a focused XState
+actor; editable selections and dialogs remain Svelte state, and TanStack retains
+ownership of fetched receipt state. Quote POSTs are serialized because they write
+an intent cookie. Stale results cannot enable placement. Purchase submission is
+explicit, blocks duplicates, and retains its idempotency key for an intentional
+retry. A server-confirmed placement redirect stores an empty basket marker before
+navigation destroys the component, so returning to the menu cannot restore the
+previous order's retained quote. In-memory selections remain available if receipt
+navigation fails.
+
+SSE coordinators suspend synchronously before navigation and reconnect afterward.
+An initial reactive guard caused a refresh/connection feedback loop, caught by a
+failed production-browser run (seven of ten scenarios). The corrected lifecycle
+uses a derived endpoint string and untracked coordinator startup. The requested
+reviewer assessed the design, implementation, and test assertions; see
+[frontend evidence](FRONTEND-STATE-RESEARCH.md).
+
+The full `task check` passed, including Go race and PostgreSQL integration tests,
+107 frontend tests, zero Svelte diagnostics, contracts/Spectral/sqlc/migration
+checks, and builds. After the lifecycle correction, frontend checks passed again
+(107 tests, zero Svelte diagnostics). The final production build passed and all
+10 production-browser scenarios passed in 3.7 minutes, including the final basket
+storage correction. `task smoke` passed.
+The focused basket mutation run killed 87/92 mutants (94.57%), without uncovered
+expressions, errors, or timeouts; [remaining scope](MUTATION-TESTING.md).
+
+The final cold-start development run
+(`task test:browser:dev -- zzz-checkout-languages.spec.ts`; use `task.cmd` if the
+PowerShell npm shim consumes `--`) passed all three cases in 55.0 seconds.
+German, English, and Arabic modal basket placement reached the authorized live
+receipt without full-document reload. English also exercises an injected action
+failure, retained basket/key, no automatic retry, and duplicate-submit prevention.
+That cold-start run preceded the final storage-write positioning fix; subsequent
+production cases also assert the exact stored basket is empty after placement.
+This is pickup checkout, not delivery or real processor charging. Vite logs showed
+the forced initial optimization, with no later dependency-reoptimization reload.
+
+OAuth and saved instruments are **not implemented** by this batch. The
+[provider-backed follow-up](OAUTH-SAVED-PAYMENTS.md) records boundaries, acceptance
+gates, and the pending identity/payment-provider choices and test configuration.
+Administration redesign remains later. Configurable currencies are recorded in
+[the continuation plan](API-MCP-CONTINUATION.md), not implemented here.
+
+Tooling follow-up: the existing contract-bundling race test took 508.367 seconds;
+PostgreSQL integration took 346.427 seconds. Investigate these separately before
+changing test limits or weakening checks. Development application data was not
+reset; browser tests use disposable data.
+One subsequent production run passed nine cases but the multi-order publication
+walkthrough exhausted its 60-second total budget at its later menu-edit step.
+Only that whole-test budget is now 240 seconds; individual action/assertion
+limits and zero retries remain unchanged. The 48-item editor check now waits for
+its intended route before counting fields instead of racing SPA navigation.
+
 ## Researched XState/TanStack receipt foundation
 
 24 October 2026. Official documentation, tagged source, installed type definitions,
